@@ -33,7 +33,7 @@ graph TD
     AmCAT ---|HTTPS + 🔑| S3
 
     %% Clickable Links
-    click AmCAT "/amcat" "View AmCAT Technical Docs"
+    click AmCAT "./amcat" "View AmCAT Technical Docs"
 ```
 
 ---
