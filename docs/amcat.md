@@ -6,30 +6,25 @@ The architecture centers on a Caddy proxy that handles SSL termination and routi
 
 ```mermaid
 graph TD
-    User((Public/Researcher)) -->|HTTPS:443| Caddy[Caddy Proxy]
+    User((Public/Researcher)) -->|HTTPS| Caddy[Caddy Proxy]
     
-    subgraph "Frontend Layer"
+    subgraph SciCloud [Physical Server: SciCloud]
         Caddy -->|/| Vite[Vite Static Client]
+        Caddy -->|/api| FastAPI[AmCAT FastAPI Backend]
     end
 
-    subgraph "Application Layer"
-        Caddy -->|/api| FastAPI[FastAPI Backend]
-    end
-    
-    subgraph "Storage Layer (Distributed)"
-        FastAPI --> ES[(ElasticSearch)]
-        FastAPI --> S3[(S3 Object Storage)]
+    subgraph Storage [Physical Server: Data Storage]
+        FastAPI -->|HTTPS + 🔑| ES[(ElasticSearch)]
+        FastAPI -->|HTTPS + 🔑| S3[(S3 Object Storage)]
     end
 
-    subgraph "Authentication Flow"
+    subgraph Auth [Self hosted or service]
         FastAPI -.->|OIDC Handshake| IdP{OIDC Provider}
         IdP -.->|JWT w/ 2FA Claim| FastAPI
     end
     
-    note1[ES: Metadata & Textual Data]
-    note2[S3: Large-scale Research Files]
-    ES -.-> note1
-    S3 -.-> note2
+    %% Connections for direct S3 access mentioned earlier
+    Caddy -->|/s3 + pre-signed URL| S3
 ```
 
 ### Infrastructure Details
@@ -51,4 +46,8 @@ graph TD
 | **Backup** | Daily snapshot to University NAS |
 
 ---
-**Technical Note:** Authentication is verified via JWT tokens. As long as the OIDC Provider (IdP) enforces 2FA, the AmCAT FastAPI backend is considered protected by 2FA.
+**Technical Notes:** 
+
+* Authentication is verified via JWT tokens. As long as the OIDC Provider (IdP) enforces 2FA, the AmCAT FastAPI backend is considered protected by 2FA.
+
+* Browser authenticates via session cookie (signed, http-only, samesite lax) and CSRF token
