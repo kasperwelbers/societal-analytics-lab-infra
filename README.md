@@ -2,5 +2,3 @@
 ## How to
 
 test
-
-wtf
