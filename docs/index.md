@@ -12,12 +12,11 @@ graph TD
     User((Researcher))
     
     %% Authentication
-    subgraph Auth [Delegated]
-        IdP{OIDC Provider}
+    subgraph Auth [Cloud or physical server 2]
+        IdP{OIDC Provider - Authentik}
     end
     User -.->|OIDC Handshake| IdP
     IdP -.->|JWT w/ 2FA Claim| User
-    
 
     %% SciCloud Environment
     subgraph SciCloud [SciCloud]
