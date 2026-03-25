@@ -9,28 +9,44 @@ This diagram maps our primary physical servers to the high-level services access
 
 ```mermaid
 graph TD
-    User((Researcher)) -->|HTTPS| SciCloud
-    User -->|HTTPS| AuthWall{Auth Proxy / OIDC}
+    User((Researcher))
     
+    %% Authentication
+    subgraph Auth [Delegated]
+        IdP{OIDC Provider}
+    end
+    User -.->|OIDC Handshake| IdP
+    IdP -.->|JWT w/ 2FA Claim| User
+    
+
+    %% SciCloud Environment
     subgraph SciCloud [SciCloud]
         AmCAT[AmCAT Suite]
     end
     
+    %% Physical Server 1
     subgraph LabServices [Physical Server 1: LabServices]
-        AuthWall
-        AuthWall --> Whisper[Whisper AI]
-        AuthWall --> Ollama[Ollama LLM]
+        ProxyLab(Rev Proxy + AuthWall)
+        ProxyLab -->|port xxxx| Whisper
+        ProxyLab -->|port xxxx| Ollama
     end
 
+    %% Physical Server 2
     subgraph Storage [Physical Server 2: Data Storage]
+        ProxyStorage{Reverse Proxy}
         ES[(ElasticSearch)]
         S3[(S3 Storage)]
     end
+    
 
+    %% External Incoming Connections
+    User -->|HTTPS| AmCAT
+    User -->|HTTPS| ProxyLab
 
-    %% Internal Data Connections
-    AmCAT ---|HTTPS + 🔑| ES
-    AmCAT ---|HTTPS + 🔑| S3
+    %% Storage Routing (Internal via Proxy)
+    AmCAT -->|HTTPS + 🔑| ProxyStorage
+    ProxyStorage -->|port xxxx| ES
+    ProxyStorage -->|port xxxx| S3
 
     %% Clickable Links
     click AmCAT "./amcat" "View AmCAT Technical Docs"
@@ -42,13 +58,13 @@ graph TD
 
 | Physical Server | Hosted Services | Access Level | Primary Purpose |
 | :--- | :--- | :--- | :--- |
-| **SciCloud** | **[AmCAT](./amcat.md)** | Public / Auth | Main research application & API. |
+| **SciCloud** | **[AmCAT](./amcat.md)** | Public / Authentiated | Web Application & API for storing, managing and sharing data |
 | **Data Storage** | **ElasticSearch**, **S3** | Internal Only | Backend storage for text and large files. |
-| **LabServices** | **Whisper**, **Ollama** | Public / Auth | GPU-accelerated AI inference & transcription. |
+| **LabServices** | **Whisper**, **Ollama** | Authenticated | GPU-accelerated AI inference & transcription. |
 
 ---
 
-## 🔐 Security Standards
+## 🔐 Security Considerations
 * **Edge Security:** No service is exposed via plain HTTP. All traffic is TLS-encrypted.
 * **Identity:** We use a "Zero Trust" approach where the Caddy/Nginx proxy validates OIDC tokens before traffic reaches the service.
 * **2FA:** Multi-factor authentication is required for all researcher logins via the central Identity Provider.
