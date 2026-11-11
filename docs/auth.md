@@ -87,7 +87,7 @@ There are two requirements that all OIDC providers must meet to be compatible wi
 
 ### Changing OIDC providers
 
-Changing OIDC providers is a tricky thing. ==This was one of the main reason for considering doing the second factor on the server instead of the OIDC provider==.
+Changing OIDC providers is a tricky thing. ==This was one of the main reason for considering doing the second factor on the server instead of the OIDC provider. If OIDC providers are only used to verify email, most servers could just use a simple OIDC like Auth0 free tier, and switch when they want/need to. But this would have to be a second factor that cannot be recovered by email, like TOTP or Passkey==.
 
 The main problem is that the OIDC provider is the source of truth for the identity of a user. If you change OIDC providers, the `iss` and `sub` claims will change, and the server will not recognize the user anymore. This means that all roles and permissions assigned to that user will be lost.
 
