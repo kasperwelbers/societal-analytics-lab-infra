@@ -44,7 +44,3 @@ With JIT re-claiming, the server forgets the old identities, and users re-claim 
 Re-claiming relies on email ownership. Someone who controls a user's email address at the new provider (for instance after an address was reassigned) can claim that user's account and roles. Our safeguards limit this: email verification is required, roles of dormant users are disabled, and unclaimed accounts expire after 3 months. But the risk is not eliminated, so prefer account linking for servers with important data.
 
 For a server without sensitive data (e.g. a teaching server) this is usually acceptable. It is also the fallback for users who missed the account linking transition period.
-
-## Upstream federation does not keep identities
-
-It may seem possible to avoid migration by letting the new provider federate with the old one. This does **not** by itself keep the `iss` and `sub` values the same: the new provider issues tokens with its own `iss`, and generates its own `sub` (in Authentik, for instance, based on its own user ID or a configured attribute). So federation still requires one of the two strategies above.

@@ -4,7 +4,7 @@ All software developed by the Societal Analytics Lab (AmCAT, AnnoTinder) uses th
 
 * [Installation guide](./auth-install.md): choosing and setting up an OIDC provider.
 * [Migration guide](./auth-migration.md): moving to a different OIDC provider.
-* [Two-factor authentication: decision record](./auth-2fa.md): why 2FA is handled by the OIDC provider, and what we plan next.
+* [Two-factor authentication: where should it live?](./auth-2fa.md): why 2FA is handled by the OIDC provider, and what we could add later.
 
 ## OpenID Connect (OIDC)
 

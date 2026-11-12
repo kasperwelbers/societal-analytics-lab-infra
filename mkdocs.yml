@@ -9,7 +9,7 @@ nav:
       - Standard: auth.md
       - Installation guide: auth-install.md
       - Migration guide: auth-migration.md
-      - 2FA decision record: auth-2fa.md
+      - "2FA: where should it live?": auth-2fa.md
   - Lab authentication: lab-auth.md
 
 markdown_extensions:
