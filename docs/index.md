@@ -13,7 +13,7 @@ graph TD
     
     %% Authentication
     subgraph Auth [Cloud or physical server 2]
-        IdP{Lab OIDC Provider - ZITADEL}
+        IdP{Lab OIDC Provider - to be decided}
     end
     User -.->|OIDC Handshake| IdP
     IdP -.->|JWT w/ 2FA Claim| User
@@ -25,7 +25,7 @@ graph TD
     
     %% Physical Server 1
     subgraph LabServices [Physical Server 1: LabServices]
-        ProxyLab(Caddy + oauth2-proxy AuthWall)
+        ProxyLab(Rev Proxy + AuthWall)
         ProxyLab --> Whisper
         ProxyLab --> Ollama
     end
@@ -60,13 +60,13 @@ graph TD
 | **SciCloud** | **[AmCAT](./amcat.md)** | Public / Authenticated | Web Application & API for storing, managing and sharing data |
 | **Data Storage** | **ElasticSearch**, **S3** | Internal Only | Backend storage for text and large files. |
 | **LabServices** | **Whisper**, **Ollama** | Authenticated | GPU-accelerated AI inference & transcription. |
-| ==TODO: server for the lab OIDC provider== | **Lab OIDC provider** (ZITADEL) | Lab members | Identity provider for lab services, with 2FA. |
-| ==TODO: separate VM or ZITADEL Cloud== | **Shared OIDC provider** (ZITADEL) | Public (self-service organizations) | [Shared provider](./auth-install.md#option-1-our-shared-oidc-provider) for other teams hosting AmCAT or AnnoTinder without sensitive data. Kept separate from the lab OIDC provider. |
+| ==TODO: depends on decision== | **Lab OIDC provider** (to be decided: SRAM, ZITADEL or Authentik) | Lab members and collaborators | Identity provider for lab services, with 2FA. See [Lab authentication](./lab-auth.md). |
+| ==TODO: separate VM or ZITADEL Cloud== | **Shared OIDC provider** (ZITADEL, only for other teams) | Public (self-service organizations) | [Shared provider](./auth-install.md#option-1-our-shared-oidc-provider) for other teams hosting AmCAT or AnnoTinder without sensitive data. Kept separate from the lab OIDC provider. |
 
 ---
 
 ## 🔐 Security Considerations
 * **Edge Security:** No service is exposed via plain HTTP. All traffic is TLS-encrypted.
-* **Identity:** We use a "Zero Trust" approach: services without their own OIDC login sit behind Caddy with oauth2-proxy (forward auth), which checks the OIDC session before traffic reaches the service. Our own software (AmCAT, AnnoTinder) follows the [Authentication standard](./auth.md).
-* **2FA:** Multi-factor authentication is required for all researcher logins via the lab OIDC provider (ZITADEL).
+* **Identity:** We use a "Zero Trust" approach: services without their own OIDC login sit behind a forward-auth AuthWall, which checks the OIDC session before traffic reaches the service (see [Lab authentication](./lab-auth.md)). Our own software (AmCAT, AnnoTinder) follows the [Authentication standard](./auth.md).
+* **2FA:** Multi-factor authentication is required for all researcher logins via the lab OIDC provider.
 * **Resilience:** All servers perform daily off-site backups to the University NAS.

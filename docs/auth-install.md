@@ -11,7 +11,7 @@ You can start with option 1 and [migrate](./auth-migration.md) to option 2 later
 
 ## Option 1: our shared OIDC provider
 
-To make it easy to start, the Societal Analytics Lab offers a shared OIDC provider ([ZITADEL](https://zitadel.com)) with 2FA. You create your own organization there, and manage its users yourself. Other organizations at the shared provider can't see or manage your users.
+To make it easy to start, the Societal Analytics Lab offers a shared OIDC provider ([ZITADEL](https://zitadel.com)) with 2FA. It is open to anyone hosting our software, and separate from the identity provider for the lab's own infrastructure (see [Lab authentication](./lab-auth.md)). You create your own organization there, and manage its users yourself. Other organizations at the shared provider can't see or manage your users.
 
 ==TODO: URL of the shared provider (self-hosted or ZITADEL Cloud, to be decided).==
 
