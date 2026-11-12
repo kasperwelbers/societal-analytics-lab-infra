@@ -2,7 +2,7 @@
 
 All software developed by the Societal Analytics Lab (AmCAT, AnnoTinder) uses the same approach to authentication. This page is the standard: what our software does, and what it requires from the OIDC provider. For deployers, see also:
 
-* [Installation guide](./auth-install.md): choosing an OIDC provider, for the Basic or Institutional tier.
+* [Installation guide](./auth-install.md): choosing and setting up an OIDC provider.
 * [Migration guide](./auth-migration.md): moving to a different OIDC provider.
 * [Two-factor authentication: decision record](./auth-2fa.md): why 2FA is handled by the OIDC provider, and what we plan next.
 
@@ -14,18 +14,20 @@ This is an industry standard, because it outsources the hard part of authenticat
 
 Our software works with any OIDC provider that meets the [provider requirements](#oidc-provider-requirements). The person hosting our software chooses the provider, and is responsible for making sure it is suitable. The safest choice is a provider that is managed by a security team and has a helpdesk for account recovery. Talk to your institution's IT support circle.
 
-## Tiers
+## Choosing an OIDC provider
 
-The OIDC provider determines how a server can be used. We distinguish two tiers. Both require 2FA; they differ in who manages the provider, who handles account recovery, and which data is allowed.
+There are two options. Both require 2FA; they differ in who manages the provider, who handles account recovery, and which data is allowed. See the [Installation guide](./auth-install.md) for details.
 
-* **Basic.** For trying out our software, teaching, and other uses without sensitive data. Teams that don't have a suitable OIDC provider can use the lab's Basic provider (ZITADEL), where they create their own organization and manage their own users (see the [Installation guide](./auth-install.md#basic-the-labs-basic-provider)). We keep it running with best effort, but it is not suitable for sensitive data because:
+* **Option 1: our shared OIDC provider.** Free, for servers without sensitive data, such as teaching and pilots. Teams create their own organization at our provider (ZITADEL) and manage their own users. We keep it running with best effort, but it is not suitable for sensitive data because:
     * We do not have a security team that ensures the provider is always up to date. If the provider is compromised, your data is at risk.
     * As the operator of the provider, the lab could in principle log in as any of its users, so we could access your data. This will not fly with your institution's security team and data stewards.
-    * We do not have a helpdesk. Account recovery (e.g. a user who set up 2FA and lost the key) is handled by the admin of your own organization at the Basic provider.
-    * A Basic server must not hold sensitive research data. Note that names and email addresses of users (e.g. students) are still personal data. The web client shows server admins a **BASIC: not for sensitive data** label.
-* **Institutional.** For research data, including sensitive and personal data. The server uses an OIDC provider that is managed by a security team, with a helpdesk for account recovery and agreements with the institution. Typically this is chosen together with your institution's IT department. Moving from Basic to Institutional is a [migration](./auth-migration.md).
+    * We do not have a helpdesk. Account recovery (e.g. a user who set up 2FA and lost the key) is handled by the admin of your own organization at our provider.
+    * Names and email addresses of users (e.g. students) are still personal data, so the server must be used according to your institution's rules.
+* **Option 2: your own OIDC provider.** Required for sensitive research data. The safest choice is a provider that is managed by a security team, with a helpdesk for account recovery and agreements with your institution, such as your institution's own identity provider. Moving from our shared provider to your own is a [migration](./auth-migration.md).
 
-There is no tier without 2FA. For development on a local machine there is a separate [development mode](#development-mode).
+The server recognizes our shared provider by its issuer (`OIDC_HOST`). When it is used, the web client shows server admins a **Shared OIDC provider: not for sensitive data** label. This can't be turned off. For other providers, the person hosting the server is responsible for choosing a provider that fits the data.
+
+There is no option without 2FA. For development on a local machine there is a separate [development mode](#development-mode).
 
 ## OIDC provider requirements
 
@@ -46,7 +48,6 @@ There is no tier without 2FA. For development on a local machine there is a sepa
 | `AUTH_STEP_UP_MAX_AGE` | no | Maximum age in seconds of the last 2FA login for sensitive actions. Default: 600. |
 | `OIDC_PREVIOUS_HOST`, `OIDC_PREVIOUS_CLIENT_ID`, `OIDC_PREVIOUS_CLIENT_SECRET`, `OIDC_PREVIOUS_MFA_CLAIM` | no | The previous OIDC provider, only during a [migration](./auth-migration.md#account-linking). |
 | `OIDC_PREVIOUS_UNTIL` | no | Date after which the previous provider is no longer accepted. |
-| `AUTH_TIER` | yes | `basic` or `institutional`, see [Tiers](#tiers). Set by the hosting team, who is responsible for choosing the right tier. |
 | `AUTH_DEV_MODE` | no | Enables [development mode](#development-mode). Refused unless the server only listens on localhost. |
 
 ## Two-factor authentication (2FA)
@@ -66,13 +67,13 @@ Our software also supports direct API access via API keys. These are application
 
 The web client shows server admins a list of warnings for things that make the server less secure:
 
-* **Basic tier.** The server runs in the Basic tier (`AUTH_TIER=basic`) and must not hold sensitive data (see [Tiers](#tiers)).
+* **Shared OIDC provider.** The server uses our shared OIDC provider, and must not hold sensitive data (see [Choosing an OIDC provider](#choosing-an-oidc-provider)).
 * **No 2FA signal.** Recent logins did not contain the configured `OIDC_MFA_CLAIM`, so sensitive actions are blocked. Check the provider's 2FA settings and `OIDC_MFA_CLAIM`.
 * **Migration not finished.** `OIDC_PREVIOUS_HOST` is still configured after `OIDC_PREVIOUS_UNTIL`.
 
 ## Development mode
 
-`AUTH_DEV_MODE` lets developers run our software on their own machine without an OIDC provider, logged in as a local admin. The server refuses to start in development mode unless it only listens on localhost. Development mode is never used for Basic or Institutional servers.
+`AUTH_DEV_MODE` lets developers run our software on their own machine without an OIDC provider, logged in as a local admin. The server refuses to start in development mode unless it only listens on localhost. Development mode is never used for servers that other people use.
 
 ## For developers
 

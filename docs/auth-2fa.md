@@ -218,14 +218,14 @@ Option A is the common pattern for applications that use OIDC. Options B and C a
 **Option A (implemented now)**
 
 * AmCAT and AnnoTinder trust one OIDC provider (`OIDC_HOST`), chosen by the hosting team. The provider must verify email addresses, support 2FA with a usable signal (configured with `OIDC_MFA_CLAIM`), and support step-up. See the [Authentication standard](./auth.md).
-* There is no opt-out from 2FA (`DISABLE_2FA_YOLO` is removed). Instead, teams without a suitable provider can use the lab's [Basic provider](./auth-install.md#basic-the-labs-basic-provider) (ZITADEL, with 2FA) for the Basic tier, and move to an Institutional provider for research data (see [Tiers](./auth.md#tiers)).
+* There is no opt-out from 2FA (`DISABLE_2FA_YOLO` is removed). Instead, teams without a suitable provider can use our [shared OIDC provider](./auth-install.md#option-1-our-shared-oidc-provider) (ZITADEL, with 2FA) for servers without sensitive data, and move to their own provider for research data (see [Choosing an OIDC provider](./auth.md#choosing-an-oidc-provider)).
 * Changing providers is supported with account linking or JIT re-claiming (see the [Migration guide](./auth-migration.md)).
 
 Main reasons:
 
 * It is the industry standard, and keeps 2FA, account recovery and phishing-resistance with providers that are managed by security teams.
 * It requires the least security-critical code in our products.
-* The Basic provider solves the main weakness of A (teams without a suitable provider would otherwise run without 2FA), and account linking solves migration.
+* The shared provider solves the main weakness of A (teams without a suitable provider would otherwise run without 2FA), and account linking solves migration.
 
 **Option B (planned)**
 
@@ -242,7 +242,7 @@ We prefer to adopt an existing, well-maintained service for the local broker ove
 **Revisit when**
 
 * A lightweight OIDC provider that supports upstream login with its own enforced 2FA reaches a stable release (e.g. Rauthy 1.0), or
-* teams report that they can't get a suitable Institutional provider, or
+* teams report that they can't get a suitable provider of their own, or
 * passkeys become the default login at the providers our users rely on.
 
 ## Sources

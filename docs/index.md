@@ -61,7 +61,7 @@ graph TD
 | **Data Storage** | **ElasticSearch**, **S3** | Internal Only | Backend storage for text and large files. |
 | **LabServices** | **Whisper**, **Ollama** | Authenticated | GPU-accelerated AI inference & transcription. |
 | ==TODO: server for the lab OIDC provider== | **Lab OIDC provider** (ZITADEL) | Lab members | Identity provider for lab services, with 2FA. |
-| ==TODO: separate VM or ZITADEL Cloud== | **Basic OIDC provider** (ZITADEL) | Public (self-service organizations) | [Basic tier](./auth.md#tiers) provider for other teams hosting AmCAT or AnnoTinder. Kept separate from the lab OIDC provider. |
+| ==TODO: separate VM or ZITADEL Cloud== | **Shared OIDC provider** (ZITADEL) | Public (self-service organizations) | [Shared provider](./auth-install.md#option-1-our-shared-oidc-provider) for other teams hosting AmCAT or AnnoTinder without sensitive data. Kept separate from the lab OIDC provider. |
 
 ---
 
