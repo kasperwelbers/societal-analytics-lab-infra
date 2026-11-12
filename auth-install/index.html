@@ -1,0 +1,931 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <link rel="prev" href="../auth/">
+      
+      
+        <link rel="next" href="../auth-migration/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.1">
+    
+    
+      
+        <title>Installation guide - Lab Infrastructure Registry</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.57a0d79d.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#installation-guide-authentication" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="Lab Infrastructure Registry" class="md-header__button md-logo" aria-label="Lab Infrastructure Registry" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Lab Infrastructure Registry
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Installation guide
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="Lab Infrastructure Registry" class="md-nav__button md-logo" aria-label="Lab Infrastructure Registry" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    Lab Infrastructure Registry
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../amcat/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AmCAT
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Authentication
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Authentication
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../auth/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Standard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation guide
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#option-1-our-shared-oidc-provider" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Option 1: our shared OIDC provider
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#option-2-your-own-oidc-provider" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Option 2: your own OIDC provider
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#checklist-for-your-own-provider" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Checklist for your own provider
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../auth-migration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Migration guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../auth-2fa/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2FA: where should it live?
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../lab-auth/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Lab authentication
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Policies
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Policies
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../policies/privacy/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Privacy statement
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../policies/aup/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Acceptable use policy
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../policies/privacy-template/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Privacy template for self-hosting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#option-1-our-shared-oidc-provider" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Option 1: our shared OIDC provider
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#option-2-your-own-oidc-provider" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Option 2: your own OIDC provider
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#checklist-for-your-own-provider" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Checklist for your own provider
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="installation-guide-authentication">Installation guide: authentication</h1>
+<p>This guide is for teams that host AmCAT or AnnoTinder themselves. It covers choosing and setting up an OIDC provider. For what our software does with the provider, see the <a href="../auth/">Authentication standard</a>.</p>
+<p>There are two options:</p>
+<ol>
+<li><strong>Our shared OIDC provider.</strong> Free, for servers without sensitive data, such as teaching and pilots.</li>
+<li><strong>Your own OIDC provider.</strong> Required for sensitive research data. Ideally your institution's identity provider, but there are other options.</li>
+</ol>
+<p>You can start with option 1 and <a href="../auth-migration/">migrate</a> to option 2 later.</p>
+<p>Whichever option you choose, your team is responsible for the personal data on your server. We provide a <a href="../policies/privacy-template/">privacy statement template</a> to get started.</p>
+<h2 id="option-1-our-shared-oidc-provider">Option 1: our shared OIDC provider</h2>
+<p>To make it easy to start, the Societal Analytics Lab offers a shared OIDC provider (<a href="https://zitadel.com">ZITADEL</a>) with 2FA. It is open to anyone hosting our software, and separate from the identity provider for the lab's own infrastructure (see <a href="../lab-auth/">Lab authentication</a>). You create your own organization there, and manage its users yourself. Other organizations at the shared provider can't see or manage your users.</p>
+<p><mark>TODO: URL of the shared provider (self-hosted or ZITADEL Cloud, to be decided).</mark></p>
+<p><strong>Setting up your organization</strong></p>
+<ol>
+<li>Register your organization at the shared provider's sign-up page (<code>&lt;shared-provider-url&gt;/ui/login/register/org</code>). The account you register with becomes the organization owner.</li>
+<li>In your organization's login settings, require a second factor for all users (passkey or authenticator app).</li>
+<li>Create a project with a web application for your server, using the authorization code flow, with the redirect URI of your server. <mark>TODO: redirect URI per app (AmCAT, AnnoTinder).</mark></li>
+<li>Configure your server with <code>OIDC_HOST</code>, <code>OIDC_CLIENT_ID</code> and <code>OIDC_CLIENT_SECRET</code> from the application, and <code>OIDC_MFA_CLAIM=amr:mfa</code> <mark>TODO: verify the exact <code>amr</code> value ZITADEL sends</mark>. See <a href="../auth/#configuration">Configuration</a>.</li>
+<li>Invite your users. They create an account in your organization and set up their second factor.</li>
+</ol>
+<p><strong>Terms</strong></p>
+<ul>
+<li><strong>No sensitive research data.</strong> Names and email addresses of users (e.g. students) are personal data too, so you are responsible for handling those according to your institution's rules.</li>
+<li><strong>Best-effort availability.</strong> If the shared provider is down, nobody can log in to your server. Keep this in mind for teaching and exams.</li>
+<li><strong>You handle account recovery.</strong> Your organization's owner can reset users' second factors. The lab does not provide a helpdesk.</li>
+<li><strong>The lab operates the provider.</strong> As the operator, the lab could in principle access every organization. This is one of the reasons the shared provider is not for sensitive data.</li>
+</ul>
+<div class="admonition warning">
+<p class="admonition-title">Is your server getting used for research data?</p>
+<p>If you start using sensitive research data, move to your own OIDC provider first (see the <a href="../auth-migration/">Migration guide</a>). The web client shows server admins a <strong>Shared OIDC provider: not for sensitive data</strong> label as a reminder.</p>
+</div>
+<h2 id="option-2-your-own-oidc-provider">Option 2: your own OIDC provider</h2>
+<p>The provider must meet three <a href="../auth/#oidc-provider-requirements">requirements</a>: it verifies email addresses, supports 2FA and signals it to our server, and supports step-up (<code>max_age</code> and <code>auth_time</code>). Which provider fits depends on your institution and on what you want to do.</p>
+<p><strong>Your institution's identity provider (recommended for research data)</strong></p>
+<p>The safest choice is a provider that is managed by a security team and has a helpdesk for account recovery. For most universities that means the institution's own identity provider. Talk to your IT department: they decide which providers may be used for research data, and they may already have one available.</p>
+<p><strong>SURF (Dutch institutions)</strong></p>
+<p>Dutch universities and research institutes are usually connected to SURF, which offers two relevant services. Both are arranged through your institution, not directly with SURF.</p>
+<ul>
+<li><strong>SURFconext</strong> is the standard login for Dutch institutions. Your institution's SURFconext contact connects your server as a service. 2FA is provided by SURFsecureID, which institutions procure separately, and is signalled with an <code>acr</code> value (<code>OIDC_MFA_CLAIM=acr:&lt;SURFsecureID LoA&gt;</code>).</li>
+<li><strong>SURF Research Access Management (SRAM)</strong> is designed for research collaborations, including members from other (also international) institutions via eduGAIN, and guests via eduID. SRAM makes sure every user logs in with 2FA: it uses the home institution's 2FA when available, and its own second factor otherwise. SRAM offers OIDC. <mark>TODO: verify which claim SRAM uses to signal 2FA.</mark></li>
+</ul>
+<p>SURF is only available to Dutch institutions. Institutions in other countries often have a comparable national research and education federation; ask your IT department.</p>
+<p><strong>ZITADEL Cloud free plan (small teams)</strong></p>
+<p>If your institution can't offer a provider, you can create your own <a href="https://zitadel.com">ZITADEL Cloud</a> instance. The free plan includes 2FA and passkeys, and lets you choose an EU data region, but is limited to 100 daily active users. We only recommend it if you don't expect many active users, or are able to move to a paid plan when you do. As with our shared provider, you handle account recovery yourself.</p>
+<p><strong>Other providers</strong></p>
+<table>
+<thead>
+<tr>
+<th>OIDC Provider</th>
+<th>2FA</th>
+<th>2FA signal (<code>OIDC_MFA_CLAIM</code>)</th>
+<th>GDPR Compliant</th>
+<th>Cost</th>
+<th>Ease of Setup</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>SURFconext</strong> (Dutch institutions)</td>
+<td>Via SURFsecureID (procured by the institution)</td>
+<td><code>acr:&lt;SURFsecureID LoA&gt;</code></td>
+<td><strong>Yes</strong></td>
+<td>Institutional</td>
+<td>Medium</td>
+<td>See <a href="#option-2-your-own-oidc-provider">SURF</a> above.</td>
+</tr>
+<tr>
+<td><strong>Microsoft Entra ID</strong></td>
+<td>Yes</td>
+<td><code>amr:mfa</code> (add <code>amr</code> as optional claim)</td>
+<td><strong>Yes</strong></td>
+<td>Paid (Institutional)</td>
+<td>Hard (Admin setup)</td>
+<td>Proper enterprise/institutional contracts and DPAs.</td>
+</tr>
+<tr>
+<td><strong>Google Workspace</strong></td>
+<td>Yes</td>
+<td><code>amr:mfa</code></td>
+<td><strong>Yes</strong></td>
+<td>Paid (Institutional)</td>
+<td>Hard (Admin setup)</td>
+<td>Google only includes <code>amr</code> when the information is available. Test before relying on it.</td>
+</tr>
+<tr>
+<td><strong>Auth0 paid plans</strong></td>
+<td>Yes (TOTP from Essentials, WebAuthn from Professional)</td>
+<td><code>amr:mfa</code></td>
+<td><strong>Yes</strong></td>
+<td>Paid</td>
+<td>Easy</td>
+<td>Includes enterprise agreements, SLAs, and DPA.</td>
+</tr>
+<tr>
+<td><strong>ZITADEL</strong> (Cloud or self-hosted)</td>
+<td>Yes</td>
+<td><code>amr:mfa</code> (verify)</td>
+<td><strong>Yes</strong> (EU region or hosting)</td>
+<td>Free plan (100 daily active users) / paid plans / hosting cost</td>
+<td>Easy (Cloud) / Medium (self-hosted)</td>
+<td>Organizations with their own admins.</td>
+</tr>
+<tr>
+<td><strong>Self-hosted Authentik</strong></td>
+<td>Yes</td>
+<td><code>amr:mfa</code></td>
+<td><strong>Yes</strong> (when hosted on-prem/EU cloud)</td>
+<td>Hosting cost / labor</td>
+<td>Medium</td>
+<td>MFA must be required in the authentication flow (Authentik can't be asked for MFA on demand).</td>
+</tr>
+<tr>
+<td><strong>Self-hosted Keycloak</strong></td>
+<td>Yes</td>
+<td><code>acr:&lt;value&gt;</code></td>
+<td><strong>Yes</strong> (when hosted on-prem/EU cloud)</td>
+<td>Hosting cost / labor</td>
+<td>Medium</td>
+<td>Map the acr value to a level of authentication that requires 2FA.</td>
+</tr>
+</tbody>
+</table>
+<p>A self-hosted provider is only as secure as its maintenance: someone has to keep it updated and handle account recovery.</p>
+<p>Not suitable:</p>
+<ul>
+<li><strong>Auth0 free plan.</strong> No step-up MFA factors.</li>
+<li><strong>Google consumer accounts (<code>@gmail.com</code>).</strong> No institutional agreements, and <code>amr</code> is not always present.</li>
+</ul>
+<p>The 2FA signal column was checked in November 2026; details and sources are in <a href="../auth-2fa/#provider-support-for-mfa-signals">Provider support for MFA signals</a>. Provider behaviour changes, so test the setup before going live.</p>
+<h2 id="checklist-for-your-own-provider">Checklist for your own provider</h2>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> The provider is approved by your institution for the data on your server.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> The provider returns <code>email_verified: true</code> for your users.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> 2FA is required (or can be requested) for your users, and <code>OIDC_MFA_CLAIM</code> matches the provider's signal.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Step-up works: performing a sensitive action (e.g. creating an API key) after more than <code>AUTH_STEP_UP_MAX_AGE</code> seconds asks for 2FA again.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> It is clear who handles account recovery for your users (a helpdesk, or your own admin).</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> The server admin page shows no <a href="../auth/#server-hardening-warnings">hardening warnings</a>.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> If you are moving from our shared provider or another provider: follow the <a href="../auth-migration/">Migration guide</a>.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.a5f9d56c.min.js"></script>
+      
+    
+  </body>
+</html>

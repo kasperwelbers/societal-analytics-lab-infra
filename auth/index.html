@@ -1,0 +1,1443 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <link rel="prev" href="../amcat/">
+      
+      
+        <link rel="next" href="../auth-install/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.1">
+    
+    
+      
+        <title>Standard - Lab Infrastructure Registry</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.57a0d79d.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#authentication-standard" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="Lab Infrastructure Registry" class="md-header__button md-logo" aria-label="Lab Infrastructure Registry" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Lab Infrastructure Registry
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Standard
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="Lab Infrastructure Registry" class="md-nav__button md-logo" aria-label="Lab Infrastructure Registry" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    Lab Infrastructure Registry
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../amcat/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AmCAT
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Authentication
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Authentication
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Standard
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Standard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#openid-connect-oidc" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        OpenID Connect (OIDC)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#choosing-an-oidc-provider" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Choosing an OIDC provider
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#oidc-provider-requirements" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        OIDC provider requirements
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Configuration
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#two-factor-authentication-2fa" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Two-factor authentication (2FA)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#api-keys" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        API keys
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#server-hardening-warnings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Server hardening warnings
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#development-mode" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Development mode
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#for-developers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        For developers
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#authorization" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Authorization
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Authorization">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#role-table" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Role table
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#identity-based-access-control-ibac" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Identity Based Access Control (IBAC)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jit-account-claiming" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        JIT account claiming
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#safeguards-against-email-reassignment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Safeguards against email reassignment
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#attribute-based-access-control-abac" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Attribute Based Access Control (ABAC)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../auth-install/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../auth-migration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Migration guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../auth-2fa/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2FA: where should it live?
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../lab-auth/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Lab authentication
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Policies
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Policies
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../policies/privacy/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Privacy statement
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../policies/aup/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Acceptable use policy
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../policies/privacy-template/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Privacy template for self-hosting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#openid-connect-oidc" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        OpenID Connect (OIDC)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#choosing-an-oidc-provider" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Choosing an OIDC provider
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#oidc-provider-requirements" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        OIDC provider requirements
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Configuration
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#two-factor-authentication-2fa" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Two-factor authentication (2FA)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#api-keys" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        API keys
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#server-hardening-warnings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Server hardening warnings
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#development-mode" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Development mode
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#for-developers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        For developers
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#authorization" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Authorization
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Authorization">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#role-table" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Role table
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#identity-based-access-control-ibac" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Identity Based Access Control (IBAC)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jit-account-claiming" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        JIT account claiming
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#safeguards-against-email-reassignment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Safeguards against email reassignment
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#attribute-based-access-control-abac" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Attribute Based Access Control (ABAC)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="authentication-standard">Authentication standard</h1>
+<p>All software developed by the Societal Analytics Lab (AmCAT, AnnoTinder) uses the same approach to authentication. This page is the standard: what our software does, and what it requires from the OIDC provider. For deployers, see also:</p>
+<ul>
+<li><a href="../auth-install/">Installation guide</a>: choosing and setting up an OIDC provider.</li>
+<li><a href="../auth-migration/">Migration guide</a>: moving to a different OIDC provider.</li>
+<li><a href="../auth-2fa/">Two-factor authentication: where should it live?</a>: why 2FA is handled by the OIDC provider, and what we could add later.</li>
+</ul>
+<h2 id="openid-connect-oidc">OpenID Connect (OIDC)</h2>
+<p>OIDC is an open standard for authentication that builds on top of the OAuth 2.0 protocol. It allows clients to verify the identity of users based on the authentication performed by an external identity provider (IdP).
+By using OIDC, our software does not handle user authentication directly, but delegates it to an external OIDC provider. 
+This is an industry standard, because it outsources the hard part of authentication to a dedicated provider, which is often better equipped to handle it than the application itself.</p>
+<p>Our software works with any OIDC provider that meets the <a href="#oidc-provider-requirements">provider requirements</a>. The person hosting our software chooses the provider, and is responsible for making sure it is suitable. The safest choice is a provider that is managed by a security team and has a helpdesk for account recovery. Talk to your institution's IT support circle.</p>
+<h2 id="choosing-an-oidc-provider">Choosing an OIDC provider</h2>
+<p>There are two options. Both require 2FA; they differ in who manages the provider, who handles account recovery, and which data is allowed. See the <a href="../auth-install/">Installation guide</a> for details.</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Option 1: our shared OIDC provider</th>
+<th>Option 2: your own OIDC provider</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>For</strong></td>
+<td>Servers without sensitive data, such as teaching and pilots</td>
+<td>Any server, required for sensitive research data</td>
+</tr>
+<tr>
+<td><strong>Provider</strong></td>
+<td>ZITADEL, run by the lab. Teams create their own organization and manage their own users.</td>
+<td>Ideally your institution's identity provider (see the <a href="../auth-install/#option-2-your-own-oidc-provider">Installation guide</a>)</td>
+</tr>
+<tr>
+<td><strong>Maintained by</strong></td>
+<td>The lab, with best effort</td>
+<td>A security team (recommended)</td>
+</tr>
+<tr>
+<td><strong>Account recovery</strong></td>
+<td>The admin of your own organization at our provider</td>
+<td>The provider's helpdesk (recommended)</td>
+</tr>
+<tr>
+<td><strong>Cost</strong></td>
+<td>Free</td>
+<td>Depends on the provider</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Why our shared provider is not for sensitive data</strong></p>
+<ul>
+<li><strong>No security team.</strong> Nobody ensures the provider is always up to date. If it is compromised, your data is at risk.</li>
+<li><strong>The lab could access your data.</strong> As the operator, the lab could in principle log in as any of its users. This will not fly with your institution's security team and data stewards.</li>
+<li><strong>No helpdesk.</strong> If a user loses their second factor, your own organization admin has to help them.</li>
+</ul>
+<p>Names and email addresses of users (e.g. students) are personal data too, so any server must be used according to your institution's rules. Moving from our shared provider to your own is a <a href="../auth-migration/">migration</a>.</p>
+<p>The server recognizes our shared provider by its issuer (<code>OIDC_HOST</code>). When it is used, the web client shows server admins a <strong>Shared OIDC provider: not for sensitive data</strong> label. This can't be turned off. For other providers, the person hosting the server is responsible for choosing a provider that fits the data.</p>
+<p>There is no option without 2FA. For development on a local machine there is a separate <a href="#development-mode">development mode</a>.</p>
+<h2 id="oidc-provider-requirements">OIDC provider requirements</h2>
+<p>All three requirements are strict: they can't be disabled.</p>
+<table>
+<thead>
+<tr>
+<th>Requirement</th>
+<th>What the provider must do</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Email verification</strong></td>
+<td>Return <code>"email_verified": true</code> in the ID token. Our software uses email addresses to assign roles (see <a href="#authorization">Authorization</a>).</td>
+</tr>
+<tr>
+<td><strong>2FA with a usable signal</strong></td>
+<td>Support 2FA, and signal in the ID token that it was used. Providers do this differently (<code>amr</code> containing <code>mfa</code>, or a specific <code>acr</code> value), so the claim is configured with <code>OIDC_MFA_CLAIM</code>. See <a href="../auth-2fa/#provider-support-for-mfa-signals">Provider support for MFA signals</a>.</td>
+</tr>
+<tr>
+<td><strong>Step-up</strong></td>
+<td>Honour the <code>max_age</code> parameter (re-authenticate if the last login is older than N seconds), and return <code>auth_time</code> in the ID token.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="configuration">Configuration</h2>
+<p><mark>Proposed names; to be aligned with the AmCAT and AnnoTinder code.</mark></p>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Required</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>OIDC_HOST</code></td>
+<td>yes</td>
+<td>Issuer URL of the trusted OIDC provider.</td>
+</tr>
+<tr>
+<td><code>OIDC_CLIENT_ID</code></td>
+<td>yes</td>
+<td>Client ID registered at the provider.</td>
+</tr>
+<tr>
+<td><code>OIDC_CLIENT_SECRET</code></td>
+<td>yes</td>
+<td>Client secret registered at the provider.</td>
+</tr>
+<tr>
+<td><code>OIDC_MFA_CLAIM</code></td>
+<td>no</td>
+<td>Which claim counts as 2FA: <code>amr:mfa</code> (default) or <code>acr:&lt;value&gt;</code>, e.g. <code>acr:http://test.surfconext.nl/assurance/loa2</code> for SURFconext.</td>
+</tr>
+<tr>
+<td><code>AUTH_STEP_UP_MAX_AGE</code></td>
+<td>no</td>
+<td>Maximum age in seconds of the last 2FA login for sensitive actions. Default: 600.</td>
+</tr>
+<tr>
+<td><code>OIDC_PREVIOUS_HOST</code>, <code>OIDC_PREVIOUS_CLIENT_ID</code>, <code>OIDC_PREVIOUS_CLIENT_SECRET</code>, <code>OIDC_PREVIOUS_MFA_CLAIM</code></td>
+<td>no</td>
+<td>The previous OIDC provider, only during a <a href="../auth-migration/#account-linking">migration</a>.</td>
+</tr>
+<tr>
+<td><code>OIDC_PREVIOUS_UNTIL</code></td>
+<td>no</td>
+<td>Date after which the previous provider is no longer accepted.</td>
+</tr>
+<tr>
+<td><code>AUTH_DEV_MODE</code></td>
+<td>no</td>
+<td>Enables <a href="#development-mode">development mode</a>. Refused unless the server only listens on localhost.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="two-factor-authentication-2fa">Two-factor authentication (2FA)</h2>
+<p>For sensitive actions (e.g. creating API keys, changing roles) our servers require a 2FA login that is at most <code>AUTH_STEP_UP_MAX_AGE</code> seconds old (step-up authentication).</p>
+<ol>
+<li>The server checks <code>OIDC_MFA_CLAIM</code> and <code>auth_time</code> in the ID token.</li>
+<li>If the claim is missing or too old, the server redirects the user to the OIDC provider with <code>max_age</code>.</li>
+<li>The server checks the new ID token itself, because providers do not always enforce what was requested.</li>
+</ol>
+<p>Account recovery (e.g. a lost phone) is the responsibility of the OIDC provider.</p>
+<h2 id="api-keys">API keys</h2>
+<p>Our software also supports direct API access via API keys. These are application-managed tokens that are decoupled from the OIDC provider.</p>
+<ul>
+<li>API keys can only be created and changed by the main web client, in a session that passed step-up authentication.</li>
+<li>API keys always have a limited scope.</li>
+</ul>
+<h2 id="server-hardening-warnings">Server hardening warnings</h2>
+<p>The web client shows server admins a list of warnings for things that make the server less secure:</p>
+<table>
+<thead>
+<tr>
+<th>Warning</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Shared OIDC provider</strong></td>
+<td>The server uses our shared OIDC provider, and must not hold sensitive data (see <a href="#choosing-an-oidc-provider">Choosing an OIDC provider</a>).</td>
+</tr>
+<tr>
+<td><strong>No 2FA signal</strong></td>
+<td>Recent logins did not contain the configured <code>OIDC_MFA_CLAIM</code>, so sensitive actions are blocked. Check the provider's 2FA settings and <code>OIDC_MFA_CLAIM</code>.</td>
+</tr>
+<tr>
+<td><strong>Migration not finished</strong></td>
+<td><code>OIDC_PREVIOUS_HOST</code> is still configured after <code>OIDC_PREVIOUS_UNTIL</code>.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="development-mode">Development mode</h2>
+<p><code>AUTH_DEV_MODE</code> lets developers run our software on their own machine without an OIDC provider, logged in as a local admin. The server refuses to start in development mode unless it only listens on localhost. Development mode is never used for servers that other people use.</p>
+<h2 id="for-developers">For developers</h2>
+<p>All software developed by the Societal Analytics Lab follows these rules, to ensure consistency and security across our software stack.</p>
+<table>
+<thead>
+<tr>
+<th>Rule</th>
+<th>Details</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Same origin</td>
+<td>The server and web client are always hosted on the same domain.</td>
+</tr>
+<tr>
+<td>Server-side OIDC flow</td>
+<td>The server initiates and completes the OIDC flow with the trusted provider (<code>OIDC_HOST</code>), and sets a signed, http-only session cookie.</td>
+</tr>
+<tr>
+<td>One session per application</td>
+<td>When AmCAT and AnnoTinder are hosted together, each is a separate OIDC client with its own session. The second login completes without user interaction, because the user is already signed in at the provider. Logging out is per application.</td>
+</tr>
+<tr>
+<td>Authorization on the server</td>
+<td>The server decides what users may do, not the OIDC provider (see <a href="#authorization">Authorization</a>).</td>
+</tr>
+<tr>
+<td>API keys for other clients</td>
+<td>Other clients (e.g. R or Python) can only access the backend via <a href="#api-keys">API keys</a>.</td>
+</tr>
+<tr>
+<td>Email verification</td>
+<td>The server checks the <code>email_verified</code> claim. This cannot be disabled.</td>
+</tr>
+<tr>
+<td>2FA and step-up</td>
+<td>The server checks <code>OIDC_MFA_CLAIM</code> and <code>auth_time</code> for sensitive actions, and performs step-up authentication if needed (see <a href="#two-factor-authentication-2fa">Two-factor authentication</a>). This cannot be disabled outside development mode.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="authorization">Authorization</h2>
+<p>Authorization is based on roles. A role can be given to a specific user (IBAC), to users with a certain attribute (ABAC), or both.</p>
+<h3 id="role-table">Role table</h3>
+<table>
+<thead>
+<tr>
+<th>Column</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>role</code></td>
+<td>What role a user has (e.g. READ, WRITE, ADMIN).</td>
+</tr>
+<tr>
+<td><code>context</code></td>
+<td>The context in which the role applies (e.g. project, server).</td>
+</tr>
+<tr>
+<td><code>user_id</code></td>
+<td>If not null, the role is linked to a specific user (see <a href="#identity-based-access-control-ibac">IBAC</a>).</td>
+</tr>
+<tr>
+<td><code>email_domain</code></td>
+<td>If not null, the user's verified email must have this domain (see <a href="#attribute-based-access-control-abac">ABAC</a>). Can be combined with <code>user_id</code> to require both.</td>
+</tr>
+<tr>
+<td><code>require_email</code></td>
+<td>If <code>user_id</code> and <code>email_domain</code> are null: whether any user gets the role (false), or only users with a verified email address (true).</td>
+</tr>
+<tr>
+<td><code>granted_at</code></td>
+<td>When the role was granted (created, updated, or restored).</td>
+</tr>
+</tbody>
+</table>
+<h3 id="identity-based-access-control-ibac">Identity Based Access Control (IBAC)</h3>
+<p>IBAC is the primary mode of authorization: roles are given to registered users.</p>
+<p><strong>The identity is <code>iss</code> + <code>sub</code>, not the email address.</strong> An email address is not a unique identifier, because it can change over time: users can change email addresses, and old email addresses can be reassigned. We <em>do</em> use the email address as a human readable way to assign roles (e.g. giving a colleague access to a project in AmCAT). This is safe, because the role is not assigned to the email address itself, but to the user (<code>iss</code> + <code>sub</code>) that <strong>currently</strong> owns it. Changing email addresses is the responsibility of the OIDC provider: when the email for an identity has changed, the server updates the user table.</p>
+<p>Any user that signs in is registered, optionally with a form that collects additional information. We use this for security logs and rate limiting, which is legitimate under GDPR. Email addresses add some accountability, especially when roles require an email domain.</p>
+<p><strong>User table</strong></p>
+<table>
+<thead>
+<tr>
+<th>Column</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>id</code></td>
+<td>Unique user ID.</td>
+</tr>
+<tr>
+<td><code>email</code></td>
+<td>Email address of the user, from the most recent login.</td>
+</tr>
+<tr>
+<td><code>has_mfa</code></td>
+<td>Whether the most recent login contained the 2FA signal (<code>OIDC_MFA_CLAIM</code>).</td>
+</tr>
+<tr>
+<td><code>registered_at</code></td>
+<td>When the user first signed in. <code>NULL</code> for shadow users until the account is claimed (see <a href="#jit-account-claiming">JIT account claiming</a>).</td>
+</tr>
+<tr>
+<td><code>last_login_at</code></td>
+<td>When the user last signed in.</td>
+</tr>
+<tr>
+<td><code>reactivated_at</code></td>
+<td>First login after 1 year of inactivity.</td>
+</tr>
+<tr>
+<td><code>...</code></td>
+<td>Optional user details (e.g. added on registration).</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Identities table</strong></p>
+<table>
+<thead>
+<tr>
+<th>Column</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>user_id</code></td>
+<td>The user this identity belongs to.</td>
+</tr>
+<tr>
+<td><code>iss</code></td>
+<td>Issuer of the OIDC provider.</td>
+</tr>
+<tr>
+<td><code>sub</code></td>
+<td>Unique subject identifier at the OIDC provider.</td>
+</tr>
+<tr>
+<td><code>linked_at</code></td>
+<td>When the identity was linked to the user.</td>
+</tr>
+<tr>
+<td><code>last_login_at</code></td>
+<td>When the user last signed in with this identity.</td>
+</tr>
+</tbody>
+</table>
+<p>Normally a user has one identity. A user can have more than one during a <a href="../auth-migration/#account-linking">migration</a> to a new OIDC provider.</p>
+<h3 id="jit-account-claiming">JIT account claiming</h3>
+<p>Just-In-Time (JIT) account claiming lets us give roles to an email address that is not yet registered. The role is given to a new <strong>shadow user</strong>, which only has an <code>id</code> and <code>email</code> (<code>registered_at</code> is <code>NULL</code>, and there is no identity yet). The current owner of the email address is invited to claim the account and role. This can be an actual invitation, or just happen automatically when they first sign in. Claiming adds an identity and sets <code>registered_at</code>.</p>
+<h3 id="safeguards-against-email-reassignment">Safeguards against email reassignment</h3>
+<p>Two safeguards prevent giving a role to a previous or future owner of an email address. A role is <strong>not</strong> given to a user if one of these conditions is true:</p>
+<p><strong>Dormant users.</strong> A role is disabled when:</p>
+<div class="highlight"><pre><span></span><code><span class="k">role</span><span class="p">.</span><span class="n">granted_at</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="k">user</span><span class="p">.</span><span class="n">reactivated_at</span><span class="w"> </span><span class="k">AND</span><span class="w"> </span><span class="k">NOT</span><span class="w"> </span><span class="k">user</span><span class="p">.</span><span class="n">has_mfa</span>
+</code></pre></div>
+<ul>
+<li><strong>Why:</strong> without 2FA, the OIDC provider only verifies <em>current</em> ownership of the email address. So after a year of inactivity, roles granted before reactivation are disabled. With 2FA required this should be rare, but it remains a safeguard for accounts claimed via email and providers that report 2FA inconsistently.</li>
+<li><strong>Restore:</strong> per role (e.g. an AmCAT project ADMIN refreshes <code>granted_at</code>), or by a server admin.</li>
+</ul>
+<p><strong>Expired invitations.</strong> A role is not given when:</p>
+<div class="highlight"><pre><span></span><code><span class="k">user</span><span class="p">.</span><span class="n">registered_at</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="k">role</span><span class="p">.</span><span class="n">granted_at</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="nb">INTERVAL</span><span class="w"> </span><span class="s1">'3 months'</span>
+</code></pre></div>
+<ul>
+<li><strong>Why:</strong> a role given to an unregistered email address must be claimed within 3 months, so that a future owner of the address can't claim it. Roles granted after registration are not affected, because then <code>granted_at</code> is later than <code>registered_at</code>.</li>
+<li><strong>Unclaimed invitations:</strong> a shadow user that is still unclaimed (<code>registered_at IS NULL</code>) has an expired invitation when <code>now() &gt; role.granted_at + INTERVAL '3 months'</code>.</li>
+<li><strong>Restore:</strong> remove the invitation, or restore it by updating <code>granted_at</code>.</li>
+</ul>
+<h3 id="attribute-based-access-control-abac">Attribute Based Access Control (ABAC)</h3>
+<p>ABAC is the secondary mode of authorization: roles are given based on user attributes from OIDC claims. We currently only use the email domain, because this keeps the role of the OIDC provider restricted to authentication and email verification. In the future we could include other attributes (e.g. eduPerson claims from institutional providers).</p>
+<p>IBAC and ABAC serve different purposes:</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>IBAC</th>
+<th>ABAC</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Based on</strong></td>
+<td>Identities, tied to specific users</td>
+<td>Attributes, properties of users that can change</td>
+</tr>
+<tr>
+<td><strong>Use</strong></td>
+<td>Users keep their roles when they change email addresses. Important for long-term projects where researchers change institutions.</td>
+<td>Give and take away access based on a user's current situation, such as their affiliation with an institution.</td>
+</tr>
+</tbody>
+</table>
+<p>Email domains are useful for:</p>
+<ul>
+<li><strong>Convenience:</strong> give access to anyone with an institutional email address, instead of giving everyone individual access. This should have limited privileges (never ADMIN).</li>
+<li><strong>Security:</strong> restrict access to a trusted institution. Combined with IBAC, access is restricted to a trusted person who also has a verified email address at that institution.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.a5f9d56c.min.js"></script>
+      
+    
+  </body>
+</html>

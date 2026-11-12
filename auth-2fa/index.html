@@ -1,0 +1,1411 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <link rel="prev" href="../auth-migration/">
+      
+      
+        <link rel="next" href="../lab-auth/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.1">
+    
+    
+      
+        <title>2FA: where should it live? - Lab Infrastructure Registry</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.57a0d79d.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#two-factor-authentication-where-should-it-live" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="Lab Infrastructure Registry" class="md-header__button md-logo" aria-label="Lab Infrastructure Registry" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Lab Infrastructure Registry
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              2FA: where should it live?
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="Lab Infrastructure Registry" class="md-nav__button md-logo" aria-label="Lab Infrastructure Registry" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    Lab Infrastructure Registry
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../amcat/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AmCAT
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Authentication
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Authentication
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../auth/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Standard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../auth-install/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../auth-migration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Migration guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2FA: where should it live?
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2FA: where should it live?
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#concepts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Concepts
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Concepts">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#authentication-factors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Authentication factors
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#second-factor-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Second factor types
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#oidc-claims" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        OIDC claims
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-up-and-freshness" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step-up and freshness
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#threats" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Threats
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#option-a-the-oidc-provider-handles-2fa" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Option A: the OIDC provider handles 2FA
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#option-b-our-own-second-factor-local-broker" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Option B: our own second factor (local broker)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Option B: our own second factor (local broker)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#existing-tools" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Existing tools
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#precedents" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Precedents
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#comparison" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Comparison
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#why-b-can-be-added-later" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why B can be added later
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#recommendation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Recommendation
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#provider-support-for-mfa-signals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Provider support for MFA signals
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sources" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sources
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../lab-auth/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Lab authentication
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Policies
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Policies
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../policies/privacy/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Privacy statement
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../policies/aup/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Acceptable use policy
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../policies/privacy-template/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Privacy template for self-hosting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#concepts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Concepts
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Concepts">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#authentication-factors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Authentication factors
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#second-factor-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Second factor types
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#oidc-claims" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        OIDC claims
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-up-and-freshness" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step-up and freshness
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#threats" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Threats
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#option-a-the-oidc-provider-handles-2fa" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Option A: the OIDC provider handles 2FA
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#option-b-our-own-second-factor-local-broker" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Option B: our own second factor (local broker)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Option B: our own second factor (local broker)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#existing-tools" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Existing tools
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#precedents" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Precedents
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#comparison" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Comparison
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#why-b-can-be-added-later" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why B can be added later
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#recommendation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Recommendation
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#provider-support-for-mfa-signals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Provider support for MFA signals
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sources" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sources
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="two-factor-authentication-where-should-it-live">Two-factor authentication: where should it live?</h1>
+<p>All our software requires a second factor (2FA, MFA) for sensitive actions (see the <a href="../auth/">Authentication standard</a>). This page discusses <strong>which component provides that second factor</strong>: the OIDC provider (option A), or a component of our own (option B). It explains the relevant concepts, lists the pros and cons of both options, and ends with a recommendation.</p>
+<p>This page is about AmCAT and AnnoTinder, including when other teams host them. The lab's own infrastructure is discussed in <a href="../lab-auth/">Lab authentication</a>.</p>
+<h2 id="concepts">Concepts</h2>
+<h3 id="authentication-factors">Authentication factors</h3>
+<p>A factor is a type of proof that you are who you claim to be: something you <strong>know</strong> (password), something you <strong>have</strong> (phone, security key, access to an inbox), or something you <strong>are</strong> (fingerprint, usually used to unlock a device). Two-factor authentication means that a login requires two <em>different</em> types of proof, so that stealing one is not enough.</p>
+<p>Two things are easy to overlook:</p>
+<ul>
+<li><strong>Email is a factor.</strong> Logging in via an email link, or via an account whose password can be reset by email, proves possession of the inbox. A login without 2FA is therefore usually one factor, no matter how many screens it has.</li>
+<li><strong>A factor that can be recovered by email is not a second factor.</strong> If a lost authenticator app can be replaced by clicking a link in your inbox, an attacker with access to the inbox can do the same. Real 2FA needs a recovery route that is stronger than email: recovery codes, a second registered device, or a person (admin, helpdesk) who verifies your identity. This is true for both options; they differ in <strong>who</strong> handles recovery.</li>
+</ul>
+<h3 id="second-factor-types">Second factor types</h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Passkeys / WebAuthn</strong> (device biometrics, security keys)</td>
+<td>Bound to the website's domain, so they can't be phished on a look-alike page. The strongest common option.</td>
+</tr>
+<tr>
+<td><strong>TOTP</strong> (authenticator apps, 6-digit codes)</td>
+<td>Widely supported, but can be phished: a fake login page can ask for the code and use it immediately.</td>
+</tr>
+<tr>
+<td><strong>SMS</strong></td>
+<td>Better than nothing, but vulnerable to SIM swapping.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="oidc-claims">OIDC claims</h3>
+<p>An OIDC provider returns an ID token with claims about the login. The ones that matter here:</p>
+<table>
+<thead>
+<tr>
+<th>Claim</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>iss</code> + <code>sub</code></td>
+<td>The provider (issuer) and the user at that provider. Together they are the user's identity.</td>
+</tr>
+<tr>
+<td><code>email</code> + <code>email_verified</code></td>
+<td>The email address, and whether the provider confirms the user owns it.</td>
+</tr>
+<tr>
+<td><code>auth_time</code></td>
+<td>When the user last actually authenticated (not when the token was issued). Used to check freshness.</td>
+</tr>
+<tr>
+<td><code>amr</code></td>
+<td>Authentication methods used, such as <code>pwd</code>, <code>otp</code>, <code>mfa</code>. Standardized names exist, but <strong>providers decide which values they send and when</strong>.</td>
+</tr>
+<tr>
+<td><code>acr</code></td>
+<td>The <em>level</em> of the login, e.g. a level-of-assurance URI. Institutional federations (including SURFconext) often signal 2FA through <code>acr</code> instead of <code>amr</code>.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="step-up-and-freshness">Step-up and freshness</h3>
+<p><strong>Step-up authentication</strong> means asking an already logged-in user for a fresh second factor before a sensitive action, such as creating an API key or changing roles. With an OIDC provider, the server sends the user back to the provider with <code>max_age</code> (re-authenticate if the last login is older than N seconds), and then checks <code>auth_time</code> and the 2FA claim in the new token itself. The server must check this itself, because providers don't always enforce what was requested. For instance, Keycloak had a vulnerability (CVE-2026-97176) where a token could be issued at a lower level than requested.</p>
+<h3 id="threats">Threats</h3>
+<table>
+<thead>
+<tr>
+<th>Threat</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>T1. Stolen password or inbox</strong></td>
+<td>The most common attack. Any real 2FA stops it.</td>
+</tr>
+<tr>
+<td><strong>T2. Email reassignment</strong></td>
+<td>Old email addresses get reassigned, especially institutional ones. Our <a href="../auth/#safeguards-against-email-reassignment">safeguards</a> exist for this.</td>
+</tr>
+<tr>
+<td><strong>T3. Compromised or misconfigured provider</strong></td>
+<td>A breached provider, a careless admin, or weak account recovery at the provider. The provider can then issue valid tokens for any user.</td>
+</tr>
+<tr>
+<td><strong>T4. Phishing</strong></td>
+<td>A fake login page captures credentials and one-time codes.</td>
+</tr>
+<tr>
+<td><strong>T5. Lockout</strong></td>
+<td>A user loses their second factor. Not an attack, but recovery procedures are a common attack surface themselves.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="option-a-the-oidc-provider-handles-2fa">Option A: the OIDC provider handles 2FA</h2>
+<p><strong>How it works</strong></p>
+<ul>
+<li>The OIDC provider requires 2FA, and signals it in the ID token. Which claim counts as 2FA is configured per deployment with <code>OIDC_MFA_CLAIM</code> (e.g. <code>amr</code> containing <code>mfa</code>, or a specific <code>acr</code> value).</li>
+<li>For sensitive actions, the server checks the claim and <code>auth_time</code>, and redirects to the provider with <code>max_age</code> if the login is too old.</li>
+<li>Teams without a suitable provider can use our <a href="../auth-install/#option-1-our-shared-oidc-provider">shared OIDC provider</a> (ZITADEL, with 2FA) for servers without sensitive data.</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>Pros</th>
+<th>Cons</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>The standard pattern.</strong> Auditors, university IT and other developers recognize it immediately.</td>
+<td><strong>The 2FA signal differs per provider.</strong> Each provider needs to be checked and configured (see <a href="#provider-support-for-mfa-signals">Provider support</a>).</td>
+</tr>
+<tr>
+<td><strong>No 2FA code in our software.</strong> Enrollment, factor storage, phishing-resistance and rate limiting are the provider's job.</td>
+<td><strong>Teams need a provider with 2FA.</strong> Free and simple providers often lack it. Our shared provider covers servers without sensitive data.</td>
+</tr>
+<tr>
+<td><strong>Recovery is handled by the provider.</strong> With an institutional provider, the institution's helpdesk handles lost factors.</td>
+<td><strong>The provider is a single point of trust (T3).</strong> A compromised or misconfigured provider can issue tokens that claim 2FA was used.</td>
+</tr>
+<tr>
+<td><strong>One login prompt.</strong> Users whose institution already requires 2FA are not asked again.</td>
+<td><strong>We can't see the quality of the 2FA.</strong> The token says 2FA was used, not whether it was a passkey or SMS, or how the factor can be recovered.</td>
+</tr>
+<tr>
+<td><strong>Works with our existing OIDC code.</strong></td>
+<td><strong>Changing providers needs a <a href="../auth-migration/">migration</a>.</strong> Account linking makes this manageable.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="option-b-our-own-second-factor-local-broker">Option B: our own second factor (local broker)</h2>
+<p><strong>How it works</strong></p>
+<ul>
+<li>Next to AmCAT or AnnoTinder, the server runs a small OIDC provider of its own (a <strong>local broker</strong>), e.g. at <code>domain.com/oidc</code>.</li>
+<li>The broker uses an upstream OIDC provider (e.g. Auth0, Google, an institutional provider) only to verify the user's email address: the first factor.</li>
+<li>The broker enforces its own second factor (passkeys, TOTP) that can't be reset by email, and sends the same 2FA signal (<code>amr</code>, <code>auth_time</code>) to the apps.</li>
+<li>For AmCAT and AnnoTinder the broker is just another OIDC provider: they use it as their <code>OIDC_HOST</code>.</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>Pros</th>
+<th>Cons</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Works with any upstream provider</strong> that verifies email, including free ones.</td>
+<td><strong>An extra component</strong> that every deployment runs, and that we either adopt or build and maintain.</td>
+</tr>
+<tr>
+<td><strong>The second factor is independent of the upstream provider (T1, T3).</strong> A compromised upstream provider or hijacked inbox is not enough for sensitive actions.</td>
+<td><strong>Every deployment handles recovery.</strong> Each server needs an admin who can verify users and reset factors.</td>
+</tr>
+<tr>
+<td><strong>We know the quality of the 2FA</strong> (e.g. phishing-resistant passkeys, T4).</td>
+<td><strong>Two login prompts</strong> for users whose institution already requires 2FA.</td>
+</tr>
+<tr>
+<td><strong>Changing the upstream provider is invisible to the apps.</strong> They only see the broker's <code>iss</code> and <code>sub</code>; the broker links the new upstream login to the existing identity.</td>
+<td><strong>Less familiar.</strong> It deviates from the common pattern, so it needs explaining to auditors and colleagues.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="existing-tools">Existing tools</h3>
+<p>Some OIDC providers can act as such a broker, for instance <a href="https://github.com/sebadob/rauthy">Rauthy</a> (upstream login providers, passkeys and TOTP, lightweight). At the time of writing Rauthy is pre-1.0, and its upstream provider support is described as beta.</p>
+<h3 id="precedents">Precedents</h3>
+<p>Option A is the common pattern, but option B also has precedents:</p>
+<ul>
+<li><strong>NIST SP 800-63C-4</strong> (US federal guidelines for federated login). At its highest assurance level (FAL3), the relying party must verify that the user controls an authenticator <em>in addition to</em> the provider's assertion. This can be a <strong>bound authenticator</strong> that the relying party manages itself, and the provider never sees. NIST presents this as extra protection against a compromised provider (T3).</li>
+<li><strong>GitLab</strong> (self-hosted). Users can sign in via external providers, and GitLab can enforce its own 2FA on top. Administrators can choose to skip GitLab's 2FA for specific providers they trust.</li>
+</ul>
+<h2 id="comparison">Comparison</h2>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>A: provider handles 2FA</th>
+<th>B: local broker</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Follows the common pattern</td>
+<td>Yes</td>
+<td>No</td>
+</tr>
+<tr>
+<td>Security-critical code we maintain</td>
+<td>None</td>
+<td>The broker (adopted or built)</td>
+</tr>
+<tr>
+<td>Provider requirements</td>
+<td>2FA and a usable 2FA signal</td>
+<td>Verified email only</td>
+</tr>
+<tr>
+<td>Cheapest setup with real 2FA</td>
+<td>Our shared provider, or a free plan with 2FA (e.g. ZITADEL Cloud)</td>
+<td>Any free provider plus the broker</td>
+</tr>
+<tr>
+<td>Stolen password or inbox (T1)</td>
+<td>Protected</td>
+<td>Protected</td>
+</tr>
+<tr>
+<td>Compromised or misconfigured provider (T3)</td>
+<td>Not protected</td>
+<td>Protected for sensitive actions</td>
+</tr>
+<tr>
+<td>Phishing (T4)</td>
+<td>Depends on the provider's factors</td>
+<td>Protected with passkeys</td>
+</tr>
+<tr>
+<td>Account recovery (T5)</td>
+<td>The provider (e.g. institution helpdesk)</td>
+<td>Each deployment's admin</td>
+</tr>
+<tr>
+<td>Changing providers</td>
+<td>Migration (account linking or re-claiming)</td>
+<td>Invisible to the apps</td>
+</tr>
+<tr>
+<td>Prompts for users with institutional 2FA</td>
+<td>One</td>
+<td>Two</td>
+</tr>
+</tbody>
+</table>
+<h2 id="why-b-can-be-added-later">Why B can be added later</h2>
+<p>Option B doesn't require changes to AmCAT or AnnoTinder. Both apps only talk OIDC to whatever <code>OIDC_HOST</code> points to, and check the same 2FA claim. A local broker is just another OIDC provider. So:</p>
+<ul>
+<li>We can build A now, and add B later as an extra deployment option.</li>
+<li>A and B can be used side by side: a deployment with a good institutional provider uses it directly (A), a deployment with a simple provider puts the broker in front of it (B).</li>
+<li>Account linking and the identities table, which we need for A anyway, also cover moving a deployment from A to B.</li>
+</ul>
+<h2 id="recommendation">Recommendation</h2>
+<p><strong>Start with option A, and consider option B later.</strong></p>
+<ul>
+<li>A is the standard approach, and keeps 2FA, account recovery and phishing-resistance with providers that are managed by security teams.</li>
+<li>A requires the least security-critical code in our products.</li>
+<li>A's main weakness, that teams without a suitable provider would have no 2FA, is covered by our shared provider for servers without sensitive data.</li>
+<li>B solves problems that A can't (provider compromise, providers without 2FA), but adds a component to maintain. Because B can be added without changing the apps, we don't need to decide on it now.</li>
+</ul>
+<p>We should reconsider B when:</p>
+<ul>
+<li>teams report that they can't get a suitable provider with 2FA,</li>
+<li>a lightweight OIDC provider that supports upstream login with its own enforced 2FA reaches a stable release (e.g. Rauthy 1.0), or</li>
+<li>passkeys become the default login at the providers our users rely on.</li>
+</ul>
+<h2 id="provider-support-for-mfa-signals">Provider support for MFA signals</h2>
+<p>Checked in November 2026. Provider behaviour changes, so re-check before relying on a row.</p>
+<table>
+<thead>
+<tr>
+<th>Provider</th>
+<th>MFA signal</th>
+<th>Step-up</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Google</strong> (consumer and Workspace)</td>
+<td><code>amr</code> (<code>mfa</code>, <code>hwk</code>, <code>swk</code>, <code>pwd</code>, ...)</td>
+<td><code>max_age</code></td>
+<td>Part of the Sign in with Google "security bundle". Google includes <code>amr</code> only when the information is available, so it may be absent even when requested.</td>
+</tr>
+<tr>
+<td><strong>Microsoft Entra ID</strong></td>
+<td><code>amr</code> (<code>mfa</code> only when MFA was completed)</td>
+<td>Conditional Access, <code>max_age</code></td>
+<td>Since 2026, <code>amr</code> can be added as an optional claim to v2.0 tokens. Configure per app.</td>
+</tr>
+<tr>
+<td><strong>Auth0</strong></td>
+<td><code>amr</code> contains <code>mfa</code></td>
+<td>Actions + <code>acr_values</code></td>
+<td>The free plan has no step-up MFA factors (TOTP from the Essentials plan, WebAuthn from Professional). <code>amr</code> can be missing on silent SSO renewal.</td>
+</tr>
+<tr>
+<td><strong>Authentik</strong></td>
+<td><code>amr</code> (<code>pwd</code>, <code>mfa</code>, passwordless WebAuthn)</td>
+<td><code>max_age</code>, <code>prompt=login</code></td>
+<td><code>acr</code> is a fixed value, so MFA can't be requested on demand. MFA must be part of the authentication flow.</td>
+</tr>
+<tr>
+<td><strong>Keycloak</strong></td>
+<td><code>acr</code> (levels of authentication mapped to flows)</td>
+<td><code>acr_values</code>, <code>max_age</code></td>
+<td>Always check the returned <code>acr</code> yourself (see CVE-2026-97176).</td>
+</tr>
+<tr>
+<td><strong>ZITADEL</strong></td>
+<td><code>amr</code> and <code>acr</code> in the ID token</td>
+<td><code>max_age</code> (to verify)</td>
+<td>The exact <code>amr</code> values need to be verified; one report mentions <code>amr</code> as a string instead of a list, so accept both.</td>
+</tr>
+<tr>
+<td><strong>SURFconext</strong> (Dutch institutions)</td>
+<td><code>acr</code> with a SURFsecureID LoA value</td>
+<td><code>acr_values</code></td>
+<td>2FA via SURFsecureID, which institutions procure separately.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="sources">Sources</h2>
+<ul>
+<li><a href="https://openid.net/specs/openid-connect-core-1_0.html">OpenID Connect Core 1.0</a> (<code>amr</code>, <code>acr</code>, <code>auth_time</code>, <code>max_age</code>)</li>
+<li><a href="https://www.rfc-editor.org/rfc/rfc8176.txt">RFC 8176: Authentication Method Reference Values</a></li>
+<li><a href="https://developers.google.com/identity/siwg/security-bundle">Google: Sign in with Google security bundle</a></li>
+<li><a href="https://entradiff.merill.net/changes/2026-08-12/optional-claims-02/">Microsoft Entra: optional claims (<code>amr</code> for v2.0)</a></li>
+<li><a href="https://auth0.com/docs/secure/multi-factor-authentication/step-up-authentication/configure-step-up-authentication-for-web-apps">Auth0: step-up authentication for web apps</a>, <a href="https://auth0.com/blog/seven-architectural-readiness-checks-before-production-launch">Auth0 MFA factors per plan</a></li>
+<li><a href="https://github.com/goauthentik/authentik/blob/main/authentik/providers/oauth2/id_token.py">Authentik source: ID token <code>amr</code></a></li>
+<li><a href="https://skycloak.io/blog/keycloak-step-up-authentication-guide/">Keycloak step-up authentication</a>, <a href="https://skycloak.io/blog/cve-2026-97176-keycloak-loa-acr-cookie-bypass/">CVE-2026-97176</a></li>
+<li><a href="https://zitadel.com/docs">ZITADEL documentation</a></li>
+<li><a href="https://wiki.surfnet.nl/display/surfconextdev/Requesting+SURFsecureID+in+authentication+requests">SURFconext: requesting SURFsecureID</a></li>
+<li><a href="https://pages.nist.gov/800-63-4/sp800-63c/fal">NIST SP 800-63C-4: federation assurance levels</a>, <a href="https://pages.nist.gov/800-217/federation">NIST SP 800-217: RP-managed bound authenticators</a></li>
+<li><a href="https://docs.gitlab.com/integration/omniauth/">GitLab: OmniAuth settings (<code>allow_bypass_two_factor</code>)</a></li>
+<li><a href="https://github.com/sebadob/rauthy">Rauthy</a></li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.a5f9d56c.min.js"></script>
+      
+    
+  </body>
+</html>
