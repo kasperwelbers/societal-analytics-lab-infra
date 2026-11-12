@@ -26,8 +26,8 @@ graph TD
     %% Physical Server 1
     subgraph LabServices [Physical Server 1: LabServices]
         ProxyLab(Rev Proxy + AuthWall)
-        ProxyLab -->|port xxxx| Whisper
-        ProxyLab -->|port xxxx| Ollama
+        ProxyLab --> Whisper
+        ProxyLab --> Ollama
     end
 
     %% Physical Server 2
@@ -44,8 +44,8 @@ graph TD
 
     %% Storage Routing (Internal via Proxy)
     AmCAT -->|HTTPS + 🔑| ProxyStorage
-    ProxyStorage -->|port xxxx| ES
-    ProxyStorage -->|port xxxx| S3
+    ProxyStorage --> ES
+    ProxyStorage --> S3
 
     %% Clickable Links
     click AmCAT "./amcat" "View AmCAT Technical Docs"
@@ -57,7 +57,7 @@ graph TD
 
 | Physical Server | Hosted Services | Access Level | Primary Purpose |
 | :--- | :--- | :--- | :--- |
-| **SciCloud** | **[AmCAT](./amcat.md)** | Public / Authentiated | Web Application & API for storing, managing and sharing data |
+| **SciCloud** | **[AmCAT](./amcat.md)** | Public / Authenticated | Web Application & API for storing, managing and sharing data |
 | **Data Storage** | **ElasticSearch**, **S3** | Internal Only | Backend storage for text and large files. |
 | **LabServices** | **Whisper**, **Ollama** | Authenticated | GPU-accelerated AI inference & transcription. |
 
