@@ -2,7 +2,20 @@ site_name: Lab Infrastructure Registry
 theme:
   name: material
 
+nav:
+  - Home: index.md
+  - AmCAT: amcat.md
+  - Authentication:
+      - Standard: auth.md
+      - Installation guide: auth-install.md
+      - Migration guide: auth-migration.md
+      - 2FA decision record: auth-2fa.md
+
 markdown_extensions:
+  - admonition
+  - pymdownx.mark
+  - pymdownx.tasklist:
+      custom_checkbox: true
   - pymdownx.superfences:
       custom_fences:
         - name: mermaid
