@@ -13,7 +13,7 @@ graph TD
     
     %% Authentication
     subgraph Auth [Cloud or physical server 2]
-        IdP{OIDC Provider - Authentik}
+        IdP{Lab OIDC Provider - ZITADEL}
     end
     User -.->|OIDC Handshake| IdP
     IdP -.->|JWT w/ 2FA Claim| User
@@ -25,7 +25,7 @@ graph TD
     
     %% Physical Server 1
     subgraph LabServices [Physical Server 1: LabServices]
-        ProxyLab(Rev Proxy + AuthWall)
+        ProxyLab(Caddy + oauth2-proxy AuthWall)
         ProxyLab --> Whisper
         ProxyLab --> Ollama
     end
@@ -60,11 +60,13 @@ graph TD
 | **SciCloud** | **[AmCAT](./amcat.md)** | Public / Authenticated | Web Application & API for storing, managing and sharing data |
 | **Data Storage** | **ElasticSearch**, **S3** | Internal Only | Backend storage for text and large files. |
 | **LabServices** | **Whisper**, **Ollama** | Authenticated | GPU-accelerated AI inference & transcription. |
+| ==TODO: server for the lab OIDC provider== | **Lab OIDC provider** (ZITADEL) | Lab members | Identity provider for lab services, with 2FA. |
+| ==TODO: separate VM or ZITADEL Cloud== | **Basic OIDC provider** (ZITADEL) | Public (self-service organizations) | [Basic tier](./auth.md#tiers) provider for other teams hosting AmCAT or AnnoTinder. Kept separate from the lab OIDC provider. |
 
 ---
 
 ## 🔐 Security Considerations
 * **Edge Security:** No service is exposed via plain HTTP. All traffic is TLS-encrypted.
-* **Identity:** We use a "Zero Trust" approach where the Caddy/Nginx proxy validates OIDC tokens before traffic reaches the service.
-* **2FA:** Multi-factor authentication is required for all researcher logins via the central Identity Provider.
+* **Identity:** We use a "Zero Trust" approach: services without their own OIDC login sit behind Caddy with oauth2-proxy (forward auth), which checks the OIDC session before traffic reaches the service. Our own software (AmCAT, AnnoTinder) follows the [Authentication standard](./auth.md).
+* **2FA:** Multi-factor authentication is required for all researcher logins via the lab OIDC provider (ZITADEL).
 * **Resilience:** All servers perform daily off-site backups to the University NAS.

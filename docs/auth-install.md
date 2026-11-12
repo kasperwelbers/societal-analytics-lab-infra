@@ -1,34 +1,37 @@
 # Installation guide: authentication
 
-This guide is for teams that host AmCAT or AnnoTinder themselves. It covers choosing an OIDC provider, from a first pilot to a production server. For what our software does with the provider, see the [Authentication standard](./auth.md).
+This guide is for teams that host AmCAT or AnnoTinder themselves. It covers choosing an OIDC provider for the two [tiers](./auth.md#tiers). For what our software does with the provider, see the [Authentication standard](./auth.md).
 
 In short:
 
-1. **Pilot.** Request access to the lab's pilot OIDC provider and try our software. No sensitive data.
-2. **Production.** Together with your institution's IT department, choose an OIDC provider that meets our [requirements](./auth.md#oidc-provider-requirements), and [migrate](./auth-migration.md) your pilot users to it.
+1. **Basic.** For trying out our software, teaching, and other uses without sensitive data. If you don't have a suitable OIDC provider, create an organization at the lab's Basic provider.
+2. **Institutional.** For research data. Together with your institution's IT department, choose an OIDC provider that meets our [requirements](./auth.md#oidc-provider-requirements). If you started in the Basic tier, [migrate](./auth-migration.md) your users.
 
-## Pilot: the lab pilot provider
+## Basic: the lab's Basic provider
 
-To make it easy to start, the Societal Analytics Lab hosts a pilot OIDC provider (Authentik) with 2FA. You don't need to set up or configure an OIDC provider yourself.
+To make it easy to start, the Societal Analytics Lab offers a Basic OIDC provider ([ZITADEL](https://zitadel.com)) with 2FA. You create your own organization there, and manage its users yourself. Other organizations at the Basic provider can't see or manage your users.
 
-**How to get access**
+==TODO: URL of the lab's Basic provider (self-hosted or ZITADEL Cloud, to be decided).==
 
-==TODO: request procedure and pilot provider URL.==
+**Setting up your organization**
 
-* Request access for your server. We register your server as a client and send you the `OIDC_HOST`, `OIDC_CLIENT_ID` and `OIDC_CLIENT_SECRET` values.
-* Your users create an account at the pilot provider and set up a second factor (passkey or authenticator app).
+1. Register your organization at the Basic provider's sign-up page (`<basic-provider-url>/ui/login/register/org`). The account you register with becomes the organization owner.
+2. In your organization's login settings, require a second factor for all users (passkey or authenticator app).
+3. Create a project with a web application for your server, using the authorization code flow, with the redirect URI of your server. ==TODO: redirect URI per app (AmCAT, AnnoTinder).==
+4. Configure your server with `OIDC_HOST`, `OIDC_CLIENT_ID` and `OIDC_CLIENT_SECRET` from the application, `OIDC_MFA_CLAIM=amr:mfa` ==TODO: verify the exact `amr` value ZITADEL sends==, and `AUTH_TIER=basic`. See [Configuration](./auth.md#configuration).
+5. Invite your users. They create an account in your organization and set up their second factor.
 
-**Pilot terms**
+**Basic terms**
 
-* **No sensitive or personal research data.** A pilot server is for trying out our software.
-* **No availability guarantee.** If the pilot provider is down, nobody can log in to your server.
-* **Limited account recovery.** Users get recovery codes when they set up 2FA. If they lose both their second factor and their recovery codes, they create a new account and are invited again by a project admin.
-* **Pilots are temporary.** The web client shows server admins a **PILOT** label and a [hardening warning](./auth.md#server-hardening-warnings) until the server uses its own provider.
+* **No sensitive research data.** Names and email addresses of users (e.g. students) are personal data too, so you are responsible for handling those according to your institution's rules.
+* **Best-effort availability.** If the Basic provider is down, nobody can log in to your server. Keep this in mind for teaching and exams.
+* **You handle account recovery.** Your organization's owner can reset users' second factors. The lab does not provide a helpdesk.
+* **The lab operates the provider.** As the operator, the lab could in principle access every organization. This is one of the reasons the Basic tier is not for sensitive data.
 
-!!! warning "Is your pilot becoming a production server?"
-    If you start using real research data, or more people depend on the server, it is time to move to a production provider. Don't wait until the pilot provider becomes a bottleneck.
+!!! warning "Is your Basic server getting used for research data?"
+    If you start using sensitive research data, move to an Institutional provider first (see the [Migration guide](./auth-migration.md)). The web client shows server admins a **BASIC: not for sensitive data** label as a reminder.
 
-## Production: choosing an OIDC provider
+## Institutional: choosing an OIDC provider
 
 The safest choice is an OIDC provider that is managed by a security team and has a helpdesk for account recovery. For most universities that means the institution's own identity provider. Talk to your IT department: they decide which providers may be used for research data, and they may already have one available.
 
@@ -42,15 +45,16 @@ The provider must meet three [requirements](./auth.md#oidc-provider-requirements
 | **Auth0 paid plans** | Yes (TOTP from Essentials, WebAuthn from Professional) | `amr:mfa` | **Yes** | Paid | Easy | Includes enterprise agreements, SLAs, and DPA. |
 | **Self-hosted Authentik** | Yes | `amr:mfa` | **Yes** (when hosted on-prem/EU cloud) | Hosting cost / labor | Medium | MFA must be required in the authentication flow (Authentik can't be asked for MFA on demand). |
 | **Self-hosted Keycloak** | Yes | `acr:<value>` | **Yes** (when hosted on-prem/EU cloud) | Hosting cost / labor | Medium | Map the acr value to a level of authentication that requires 2FA. |
+| **ZITADEL** (self-hosted or Cloud) | Yes | `amr:mfa` (verify) | **Yes** (EU hosting or region) | Free (self-hosted) / paid plans (Cloud) | Medium | Supports isolated organizations with their own admins. The lab uses it for its Basic provider; for the Institutional tier it must be managed by your institution. |
 
-Not suitable for production:
+Not suitable for the Institutional tier:
 
 * **Auth0 free plan.** No step-up MFA factors.
 * **Google consumer accounts (`@gmail.com`).** No institutional agreements, and `amr` is not always present.
 
 The 2FA signal column was checked in November 2026; details and sources are in [Provider support for MFA signals](./auth-2fa.md#provider-support-for-mfa-signals). Provider behaviour changes, so test the setup before going live.
 
-## Production checklist
+## Institutional checklist
 
 * [ ] The provider is approved by your institution for the data on your server.
 * [ ] The provider returns `email_verified: true` for your users.
@@ -58,4 +62,5 @@ The 2FA signal column was checked in November 2026; details and sources are in [
 * [ ] Step-up works: performing a sensitive action (e.g. creating an API key) after more than `AUTH_STEP_UP_MAX_AGE` seconds asks for 2FA again.
 * [ ] It is clear who handles account recovery for your users (usually the provider's helpdesk).
 * [ ] The server admin page shows no [hardening warnings](./auth.md#server-hardening-warnings).
-* [ ] If you are moving from a pilot or another provider: follow the [Migration guide](./auth-migration.md).
+* [ ] `AUTH_TIER=institutional` is set.
+* [ ] If you are moving from the Basic tier or another provider: follow the [Migration guide](./auth-migration.md).

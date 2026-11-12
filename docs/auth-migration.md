@@ -1,6 +1,6 @@
 # Migration guide: changing OIDC providers
 
-This guide is for teams that move their AmCAT or AnnoTinder server to a different OIDC provider, for instance from the lab's [pilot provider](./auth-install.md#pilot-the-lab-pilot-provider) to their institution's provider. The person hosting the server is responsible for the migration.
+This guide is for teams that move their AmCAT or AnnoTinder server to a different OIDC provider, for instance from the lab's [Basic provider](./auth-install.md#basic-the-labs-basic-provider) to their institution's provider (Basic to Institutional tier). The person hosting the server is responsible for the migration.
 
 ## Why migration needs care
 
@@ -14,7 +14,7 @@ There are two strategies:
 | **Relies on email** | No | Yes |
 | **Both providers needed** | Yes, during a transition period | No |
 | **Effort for users** | One extra login during the transition period | None |
-| **Best for** | Production to production, and pilot to production while the pilot provider is still available | Pilot servers without important data, or when the old provider is no longer available |
+| **Best for** | Institutional to Institutional, and Basic to Institutional while the Basic provider is still available | Basic servers without important data, or when the old provider is no longer available |
 
 ## Account linking
 
@@ -22,7 +22,7 @@ Account linking is the industry standard way to migrate. A user can have multipl
 
 **Steps**
 
-1. Register your server at the new provider, and check it against the [production checklist](./auth-install.md#production-checklist).
+1. Register your server at the new provider, and check it against the [Institutional checklist](./auth-install.md#institutional-checklist).
 2. Move the current provider settings to the `OIDC_PREVIOUS_*` variables, set the new provider in the `OIDC_*` variables, and choose an end date in `OIDC_PREVIOUS_UNTIL` (e.g. three months ahead). See [Configuration](./auth.md#configuration).
 3. Users can now log in with either provider. Users who log in with the old provider are asked to link their new login: they sign in at the new provider, and the server adds the new identity to their account.
 4. Remind users before the end date. Server admins can see which users have not linked yet.
@@ -34,7 +34,7 @@ With JIT re-claiming, the server forgets the old identities, and users re-claim 
 
 **Steps**
 
-1. Register your server at the new provider, and check it against the [production checklist](./auth-install.md#production-checklist).
+1. Register your server at the new provider, and check it against the [Institutional checklist](./auth-install.md#institutional-checklist).
 2. Set the new provider in the `OIDC_*` variables.
 3. ==TODO: admin command that removes all identities, turning existing users into shadow users that can be claimed by email.==
 4. Users log in with the new provider. If their verified email address matches an existing user, they claim that account.
@@ -43,7 +43,7 @@ With JIT re-claiming, the server forgets the old identities, and users re-claim 
 
 Re-claiming relies on email ownership. Someone who controls a user's email address at the new provider (for instance after an address was reassigned) can claim that user's account and roles. Our safeguards limit this: email verification is required, roles of dormant users are disabled, and unclaimed accounts expire after 3 months. But the risk is not eliminated, so prefer account linking for servers with important data.
 
-For a pilot server without sensitive data this is usually acceptable. It is also the fallback for users who missed the account linking transition period.
+For a Basic server without sensitive data this is usually acceptable. It is also the fallback for users who missed the account linking transition period.
 
 ## Upstream federation does not keep identities
 
