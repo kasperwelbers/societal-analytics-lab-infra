@@ -23,7 +23,7 @@ SRAM is SURF's service for research collaborations. We register our services, cr
     * No identity provider to maintain, and account recovery goes through the user's institution, eduID or SURF.
 * **Weaknesses and open questions**
     * Depends on the VU: we may need to request a collaboration, and service registrations are reviewed.
-    * Each service needs a privacy policy and an acceptable use policy (AUP) URL.
+    * Each service needs a privacy policy and an acceptable use policy (AUP) URL. Drafts: [privacy statement](./policies/privacy.md) and [AUP](./policies/aup.md).
     * Less control: we can't reset a member's 2FA ourselves.
     * ==To test:== does SRAM's ID token include `email_verified`, a 2FA signal (`amr`/`acr`), and `auth_time`, and does it honour `max_age`? If SRAM enforces 2FA but doesn't signal it, our standard needs a way to handle that.
 

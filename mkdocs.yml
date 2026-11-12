@@ -11,6 +11,10 @@ nav:
       - Migration guide: auth-migration.md
       - "2FA: where should it live?": auth-2fa.md
   - Lab authentication: lab-auth.md
+  - Policies:
+      - Privacy statement: policies/privacy.md
+      - Acceptable use policy: policies/aup.md
+      - Privacy template for self-hosting: policies/privacy-template.md
 
 markdown_extensions:
   - admonition

@@ -9,6 +9,8 @@ There are two options:
 
 You can start with option 1 and [migrate](./auth-migration.md) to option 2 later.
 
+Whichever option you choose, your team is responsible for the personal data on your server. We provide a [privacy statement template](./policies/privacy-template.md) to get started.
+
 ## Option 1: our shared OIDC provider
 
 To make it easy to start, the Societal Analytics Lab offers a shared OIDC provider ([ZITADEL](https://zitadel.com)) with 2FA. It is open to anyone hosting our software, and separate from the identity provider for the lab's own infrastructure (see [Lab authentication](./lab-auth.md)). You create your own organization there, and manage its users yourself. Other organizations at the shared provider can't see or manage your users.
