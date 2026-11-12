@@ -30,7 +30,7 @@ graph TD
 Browser session authentication is managed by an OIDC provider capable of handling enterprise and institutional security requirements. 
 The OIDC provider only does authentication: letting users securely prove to AmCAT that they own an email address.
 
-For University hosted AmCAT servers we recommend locally hosting Authentik, which offers MFA and synchronizes with LDAP.
+For University hosted AmCAT servers we recommend the institution's own identity provider.
 See the [Authentication standard](./auth.md) for the requirements, and the [Installation guide](./auth-install.md) for choosing a provider.
 
 ```mermaid
