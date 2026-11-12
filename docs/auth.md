@@ -163,10 +163,24 @@ Just-In-Time (JIT) account claiming lets us give roles to an email address that 
 
 Two safeguards prevent giving a role to a previous or future owner of an email address. A role is **not** given to a user if one of these conditions is true:
 
-| Safeguard | Condition | Why | How to restore |
-| --- | --- | --- | --- |
-| **Dormant users** | `role.granted_at < user.reactivated_at AND NOT user.has_mfa` | Without 2FA, the OIDC provider only verifies *current* ownership of the email address. So after a year of inactivity, roles granted before reactivation are disabled. With 2FA required this should be rare, but it remains a safeguard for accounts claimed via email and providers that report 2FA inconsistently. | Per role (e.g. an AmCAT project ADMIN refreshes `granted_at`), or by a server admin. |
-| **Expired invitation** | `user.registered_at > role.granted_at + INTERVAL '3 months'` | A role given to an unregistered email must be claimed within 3 months, so that a future owner of the address can't claim it. Roles granted after registration are not affected, because then `granted_at` is later than `registered_at`. A still unclaimed shadow user (`registered_at IS NULL`) with `now() > role.granted_at + INTERVAL '3 months'` has an expired invitation. | Remove the invitation, or restore it by updating `granted_at`. |
+**Dormant users.** A role is disabled when:
+
+```sql
+role.granted_at < user.reactivated_at AND NOT user.has_mfa
+```
+
+* **Why:** without 2FA, the OIDC provider only verifies *current* ownership of the email address. So after a year of inactivity, roles granted before reactivation are disabled. With 2FA required this should be rare, but it remains a safeguard for accounts claimed via email and providers that report 2FA inconsistently.
+* **Restore:** per role (e.g. an AmCAT project ADMIN refreshes `granted_at`), or by a server admin.
+
+**Expired invitations.** A role is not given when:
+
+```sql
+user.registered_at > role.granted_at + INTERVAL '3 months'
+```
+
+* **Why:** a role given to an unregistered email address must be claimed within 3 months, so that a future owner of the address can't claim it. Roles granted after registration are not affected, because then `granted_at` is later than `registered_at`.
+* **Unclaimed invitations:** a shadow user that is still unclaimed (`registered_at IS NULL`) has an expired invitation when `now() > role.granted_at + INTERVAL '3 months'`.
+* **Restore:** remove the invitation, or restore it by updating `granted_at`.
 
 ### Attribute Based Access Control (ABAC)
 
