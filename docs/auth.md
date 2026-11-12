@@ -18,12 +18,21 @@ Our software works with any OIDC provider that meets the [provider requirements]
 
 There are two options. Both require 2FA; they differ in who manages the provider, who handles account recovery, and which data is allowed. See the [Installation guide](./auth-install.md) for details.
 
-* **Option 1: our shared OIDC provider.** Free, for servers without sensitive data, such as teaching and pilots. Teams create their own organization at our provider (ZITADEL) and manage their own users. We keep it running with best effort, but it is not suitable for sensitive data because:
-    * We do not have a security team that ensures the provider is always up to date. If the provider is compromised, your data is at risk.
-    * As the operator of the provider, the lab could in principle log in as any of its users, so we could access your data. This will not fly with your institution's security team and data stewards.
-    * We do not have a helpdesk. Account recovery (e.g. a user who set up 2FA and lost the key) is handled by the admin of your own organization at our provider.
-    * Names and email addresses of users (e.g. students) are still personal data, so the server must be used according to your institution's rules.
-* **Option 2: your own OIDC provider.** Required for sensitive research data. The safest choice is a provider that is managed by a security team, with a helpdesk for account recovery and agreements with your institution, such as your institution's own identity provider. Moving from our shared provider to your own is a [migration](./auth-migration.md).
+| | Option 1: our shared OIDC provider | Option 2: your own OIDC provider |
+| --- | --- | --- |
+| **For** | Servers without sensitive data, such as teaching and pilots | Any server, required for sensitive research data |
+| **Provider** | ZITADEL, run by the lab. Teams create their own organization and manage their own users. | Ideally your institution's identity provider (see the [Installation guide](./auth-install.md#option-2-your-own-oidc-provider)) |
+| **Maintained by** | The lab, with best effort | A security team (recommended) |
+| **Account recovery** | The admin of your own organization at our provider | The provider's helpdesk (recommended) |
+| **Cost** | Free | Depends on the provider |
+
+**Why our shared provider is not for sensitive data**
+
+* **No security team.** Nobody ensures the provider is always up to date. If it is compromised, your data is at risk.
+* **The lab could access your data.** As the operator, the lab could in principle log in as any of its users. This will not fly with your institution's security team and data stewards.
+* **No helpdesk.** If a user loses their second factor, your own organization admin has to help them.
+
+Names and email addresses of users (e.g. students) are personal data too, so any server must be used according to your institution's rules. Moving from our shared provider to your own is a [migration](./auth-migration.md).
 
 The server recognizes our shared provider by its issuer (`OIDC_HOST`). When it is used, the web client shows server admins a **Shared OIDC provider: not for sensitive data** label. This can't be turned off. For other providers, the person hosting the server is responsible for choosing a provider that fits the data.
 
@@ -31,9 +40,13 @@ There is no option without 2FA. For development on a local machine there is a se
 
 ## OIDC provider requirements
 
-* **Email verification (strict).** Our software uses email addresses to assign roles (see [Authorization](#authorization)). The OIDC provider must assert email ownership by returning `"email_verified": true` in the ID token. This cannot be disabled.
-* **2FA with a usable signal (strict).** The OIDC provider must support multi-factor authentication (MFA, 2FA) and tell our server when it was used, through a claim in the ID token. Providers do this in different ways (`amr` containing `mfa`, or a specific `acr` value), so the claim is configured per deployment with `OIDC_MFA_CLAIM`. See [Provider support for MFA signals](./auth-2fa.md#provider-support-for-mfa-signals).
-* **Step-up (strict).** The OIDC provider must honour the `max_age` parameter (re-authenticate if the last login is older than N seconds) and return `auth_time` in the ID token.
+All three requirements are strict: they can't be disabled.
+
+| Requirement | What the provider must do |
+| --- | --- |
+| **Email verification** | Return `"email_verified": true` in the ID token. Our software uses email addresses to assign roles (see [Authorization](#authorization)). |
+| **2FA with a usable signal** | Support 2FA, and signal in the ID token that it was used. Providers do this differently (`amr` containing `mfa`, or a specific `acr` value), so the claim is configured with `OIDC_MFA_CLAIM`. See [Provider support for MFA signals](./auth-2fa.md#provider-support-for-mfa-signals). |
+| **Step-up** | Honour the `max_age` parameter (re-authenticate if the last login is older than N seconds), and return `auth_time` in the ID token. |
 
 ## Configuration
 
@@ -52,9 +65,13 @@ There is no option without 2FA. For development on a local machine there is a se
 
 ## Two-factor authentication (2FA)
 
-* For sensitive actions (e.g., creating API keys, changing roles) our servers require a 2FA login that is at most `AUTH_STEP_UP_MAX_AGE` seconds old (step-up authentication).
-* The server checks the configured `OIDC_MFA_CLAIM` and `auth_time` in the ID token. If the claim is missing or too old, the server redirects the user to the OIDC provider with `max_age`, and checks the new ID token itself (providers do not always enforce what was requested).
-* Account recovery (e.g., a lost phone) is the responsibility of the OIDC provider.
+For sensitive actions (e.g. creating API keys, changing roles) our servers require a 2FA login that is at most `AUTH_STEP_UP_MAX_AGE` seconds old (step-up authentication).
+
+1. The server checks `OIDC_MFA_CLAIM` and `auth_time` in the ID token.
+2. If the claim is missing or too old, the server redirects the user to the OIDC provider with `max_age`.
+3. The server checks the new ID token itself, because providers do not always enforce what was requested.
+
+Account recovery (e.g. a lost phone) is the responsibility of the OIDC provider.
 
 ## API keys
 
@@ -67,9 +84,11 @@ Our software also supports direct API access via API keys. These are application
 
 The web client shows server admins a list of warnings for things that make the server less secure:
 
-* **Shared OIDC provider.** The server uses our shared OIDC provider, and must not hold sensitive data (see [Choosing an OIDC provider](#choosing-an-oidc-provider)).
-* **No 2FA signal.** Recent logins did not contain the configured `OIDC_MFA_CLAIM`, so sensitive actions are blocked. Check the provider's 2FA settings and `OIDC_MFA_CLAIM`.
-* **Migration not finished.** `OIDC_PREVIOUS_HOST` is still configured after `OIDC_PREVIOUS_UNTIL`.
+| Warning | Meaning |
+| --- | --- |
+| **Shared OIDC provider** | The server uses our shared OIDC provider, and must not hold sensitive data (see [Choosing an OIDC provider](#choosing-an-oidc-provider)). |
+| **No 2FA signal** | Recent logins did not contain the configured `OIDC_MFA_CLAIM`, so sensitive actions are blocked. Check the provider's 2FA settings and `OIDC_MFA_CLAIM`. |
+| **Migration not finished** | `OIDC_PREVIOUS_HOST` is still configured after `OIDC_PREVIOUS_UNTIL`. |
 
 ## Development mode
 
@@ -77,54 +96,90 @@ The web client shows server admins a list of warnings for things that make the s
 
 ## For developers
 
-All software developed by the Societal Analytics Lab needs to follow the following authentication standard. This is to ensure consistency and security across our software stack.
+All software developed by the Societal Analytics Lab follows these rules, to ensure consistency and security across our software stack.
 
-* The server and web client are always hosted on the same domain (same origin). 
-* The trusted OIDC provider (`OIDC_HOST`) is used to authenticate the web client. The OIDC flow is initiated and completed by the server, which sets a signed, http-only session cookie.
-* When AmCAT and AnnoTinder are hosted together, each is a separate OIDC client with its own session. Because the user is already signed in at the OIDC provider, the second login completes without user interaction. Logging out is per application.
-* Authorization is handled by the server (not the OIDC provider).
-* Other clients (e.g., R or Python clients) can only access the backend via API keys.
-* The server checks the `email_verified` claim. This cannot be disabled.
-* The server checks `OIDC_MFA_CLAIM` and `auth_time` for sensitive actions, and performs step-up authentication if needed (see [Two-factor authentication](#two-factor-authentication-2fa)). This cannot be disabled outside development mode.
+| Rule | Details |
+| --- | --- |
+| Same origin | The server and web client are always hosted on the same domain. |
+| Server-side OIDC flow | The server initiates and completes the OIDC flow with the trusted provider (`OIDC_HOST`), and sets a signed, http-only session cookie. |
+| One session per application | When AmCAT and AnnoTinder are hosted together, each is a separate OIDC client with its own session. The second login completes without user interaction, because the user is already signed in at the provider. Logging out is per application. |
+| Authorization on the server | The server decides what users may do, not the OIDC provider (see [Authorization](#authorization)). |
+| API keys for other clients | Other clients (e.g. R or Python) can only access the backend via [API keys](#api-keys). |
+| Email verification | The server checks the `email_verified` claim. This cannot be disabled. |
+| 2FA and step-up | The server checks `OIDC_MFA_CLAIM` and `auth_time` for sensitive actions, and performs step-up authentication if needed (see [Two-factor authentication](#two-factor-authentication-2fa)). This cannot be disabled outside development mode. |
 
 ## Authorization
 
-* Authorization is handled based on a `role table`, that has the columns:
-  * `role`: what role a user has (e.g. READ, WRITE, ADMIN)
-  * `context`: the context in which the role applies (e.g. project, server)
-  * `user_id`: if not null, the role is linked to a specific user. (see IBAC)
-  * `email_domain`: if not null, the email in the OIDC claim must have this domain. Can be used together with user_id to require both identity and domain (see ABAC)
-  * `require_email`: if user_id and email_domain are null, should any user get the role (false) or only users that have a verified email address (true). 
-  * `granted_at`: timestamp of when the role was granted (created, updated, or restored) 
-* Primary mode of authorization: **Identity Based Access Control (IBAC)**. 
-  * Assign roles to registered users, stored in the `user table`:
-    * `id`: unique user ID
-    * `email`: email address of the user (from the most recent login)
-    * `has_mfa`: whether the user's most recent login contained the 2FA signal (`OIDC_MFA_CLAIM`)
-    * `registered_at`: timestamp of when the user first signed in. `NULL` for shadow users (see JIT account claiming) until the account is claimed.
-    * `last_login_at`: timestamp of last login
-    * `reactivated_at`: timestamp of first login after 1 year of inactivity
-    * `...`: optional user details (e.g. added on registration)
-  * A user's login identities are stored in the `identities table`:
-    * `user_id`: the user this identity belongs to
-    * `iss`: issuer of the OIDC provider
-    * `sub`: unique subject identifier of the OIDC provider
-    * `linked_at`: timestamp of when the identity was linked to the user
-    * `last_login_at`: timestamp of the last login with this identity
-  * Normally a user has one identity. A user can have more than one during a [migration](./auth-migration.md#account-linking) to a new OIDC provider.
-  * Any user that signs in is registered, optionally with a form that collects additional information. We use this for security logs and rate limiting, which is legitimate under GDPR. Email addresses add some level of accountability, especially when roles enforce email domains. 
-  * The identity is determined by the combination of `iss` and `sub`, NOT BY THE EMAIL ADDRESS. An email address is not a unique identifier, because it can change over time. Users can change email addresses, and their old email addresses can be reassigned. 
-  * Changing email addresses is the responsibility of the OIDC provider. When the server authenticates a user and sees that the `email` for an identity (`iss + sub`) has changed, it updates the user table.
-  * We DO use the email address as a human readable identifier for assigning roles to users (e.g. giving a colleague access to a project in AmCAT). This is safe, because the role is not assigned to the email address itself, but to the user (`iss + sub`) that **currently** owns the email address.
-  * We support **Just-In-Time (JIT) account claiming**, which allows roles to be given to an email address that is not yet registered. The role is created for a new **shadow user** that only has an `id` and `email` (`registered_at` is `NULL`, and there is no identity yet), and the current owner of this email address is invited to claim this user account and role. This can be an actual invitation or just happen automatically on next sign in or registration. Claiming adds an identity and sets `registered_at`.
-  * Two safeguards are needed to prevent giving a role to a previous or future owner of an email address. A role is NOT given to an account if one of the following conditions is true:
-    * **Dormant users**: `role.granted_at < user.reactivated_at AND NOT user.has_mfa`. If a user did not use 2FA, the OIDC provider only verifies current ownership of the email address. So after a period of inactivity we disable roles assigned before reactivation. Since our provider requirements include 2FA this should be rare, but it remains a safeguard for accounts claimed via email (JIT) and providers that report 2FA inconsistently. Access can be restored per role (e.g. AmCAT project ADMIN refreshes `granted_at`) or by a server admin.
-    * **Shadow account role expired**: `user.registered_at > role.granted_at + INTERVAL '3 months'`. When an unregistered email is given a role, it needs to be claimed within 3 months, to prevent unclaimed roles being claimed by future owners of the email address. Roles granted after registration are not affected, because then `granted_at` is later than `registered_at`. A shadow user that is still unclaimed (`registered_at IS NULL`) with `now() > role.granted_at + INTERVAL '3 months'` has an expired invitation. Expired invitations can either be removed, or be restored by updating the `granted_at` timestamp. 
-* Secondary mode of authorization: **Attribute Based Access Control (ABAC)**. 
-  * We also allow assigning roles based on user attributes from OIDC claims. We currently only use the email claim, because this keeps the role of the OIDC provider restricted to authentication and email verification. As mentioned in IBAC, emails are not identities, but attributes. These are not just alternatives for authorization, but serve different purposes.
-    * Identities (IBAC) are tied to specific users. This lets them keep their roles when they change email addresses, which is important for long-term projects and collaborations where researchers may change institutions.
-    * Attributes (ABAC) are properties of users that can change. This allows us to give and take away access based on their current situation, such as their affiliation to an institution. This check can also be added on top of IBAC, to require both identity and attribute for a role.
-  * We could decide to include custom attributes in the future (e.g. if a server uses an OIDC provider that provides eduPerson claims).
-  * Email domains can be a useful attribute for convenience and security. 
-    * Convenience: it's convenient to give access to anyone that has an institutional email address, rather than giving them all individual access. Note that this should have limited privileges (never ADMIN access).
-    * Security: setting an email domain requirement can be used to restrict access to a specific, trusted institution. This can also be done in addition to IBAC, so that access is restricted to a trusted person that also has a verified email address with a specific domain.
+Authorization is based on roles. A role can be given to a specific user (IBAC), to users with a certain attribute (ABAC), or both.
+
+### Role table
+
+| Column | Description |
+| --- | --- |
+| `role` | What role a user has (e.g. READ, WRITE, ADMIN). |
+| `context` | The context in which the role applies (e.g. project, server). |
+| `user_id` | If not null, the role is linked to a specific user (see [IBAC](#identity-based-access-control-ibac)). |
+| `email_domain` | If not null, the user's verified email must have this domain (see [ABAC](#attribute-based-access-control-abac)). Can be combined with `user_id` to require both. |
+| `require_email` | If `user_id` and `email_domain` are null: whether any user gets the role (false), or only users with a verified email address (true). |
+| `granted_at` | When the role was granted (created, updated, or restored). |
+
+### Identity Based Access Control (IBAC)
+
+IBAC is the primary mode of authorization: roles are given to registered users.
+
+**The identity is `iss` + `sub`, not the email address.** An email address is not a unique identifier, because it can change over time: users can change email addresses, and old email addresses can be reassigned. We *do* use the email address as a human readable way to assign roles (e.g. giving a colleague access to a project in AmCAT). This is safe, because the role is not assigned to the email address itself, but to the user (`iss` + `sub`) that **currently** owns it. Changing email addresses is the responsibility of the OIDC provider: when the email for an identity has changed, the server updates the user table.
+
+Any user that signs in is registered, optionally with a form that collects additional information. We use this for security logs and rate limiting, which is legitimate under GDPR. Email addresses add some accountability, especially when roles require an email domain.
+
+**User table**
+
+| Column | Description |
+| --- | --- |
+| `id` | Unique user ID. |
+| `email` | Email address of the user, from the most recent login. |
+| `has_mfa` | Whether the most recent login contained the 2FA signal (`OIDC_MFA_CLAIM`). |
+| `registered_at` | When the user first signed in. `NULL` for shadow users until the account is claimed (see [JIT account claiming](#jit-account-claiming)). |
+| `last_login_at` | When the user last signed in. |
+| `reactivated_at` | First login after 1 year of inactivity. |
+| `...` | Optional user details (e.g. added on registration). |
+
+**Identities table**
+
+| Column | Description |
+| --- | --- |
+| `user_id` | The user this identity belongs to. |
+| `iss` | Issuer of the OIDC provider. |
+| `sub` | Unique subject identifier at the OIDC provider. |
+| `linked_at` | When the identity was linked to the user. |
+| `last_login_at` | When the user last signed in with this identity. |
+
+Normally a user has one identity. A user can have more than one during a [migration](./auth-migration.md#account-linking) to a new OIDC provider.
+
+### JIT account claiming
+
+Just-In-Time (JIT) account claiming lets us give roles to an email address that is not yet registered. The role is given to a new **shadow user**, which only has an `id` and `email` (`registered_at` is `NULL`, and there is no identity yet). The current owner of the email address is invited to claim the account and role. This can be an actual invitation, or just happen automatically when they first sign in. Claiming adds an identity and sets `registered_at`.
+
+### Safeguards against email reassignment
+
+Two safeguards prevent giving a role to a previous or future owner of an email address. A role is **not** given to a user if one of these conditions is true:
+
+| Safeguard | Condition | Why | How to restore |
+| --- | --- | --- | --- |
+| **Dormant users** | `role.granted_at < user.reactivated_at AND NOT user.has_mfa` | Without 2FA, the OIDC provider only verifies *current* ownership of the email address. So after a year of inactivity, roles granted before reactivation are disabled. With 2FA required this should be rare, but it remains a safeguard for accounts claimed via email and providers that report 2FA inconsistently. | Per role (e.g. an AmCAT project ADMIN refreshes `granted_at`), or by a server admin. |
+| **Expired invitation** | `user.registered_at > role.granted_at + INTERVAL '3 months'` | A role given to an unregistered email must be claimed within 3 months, so that a future owner of the address can't claim it. Roles granted after registration are not affected, because then `granted_at` is later than `registered_at`. A still unclaimed shadow user (`registered_at IS NULL`) with `now() > role.granted_at + INTERVAL '3 months'` has an expired invitation. | Remove the invitation, or restore it by updating `granted_at`. |
+
+### Attribute Based Access Control (ABAC)
+
+ABAC is the secondary mode of authorization: roles are given based on user attributes from OIDC claims. We currently only use the email domain, because this keeps the role of the OIDC provider restricted to authentication and email verification. In the future we could include other attributes (e.g. eduPerson claims from institutional providers).
+
+IBAC and ABAC serve different purposes:
+
+| | IBAC | ABAC |
+| --- | --- | --- |
+| **Based on** | Identities, tied to specific users | Attributes, properties of users that can change |
+| **Use** | Users keep their roles when they change email addresses. Important for long-term projects where researchers change institutions. | Give and take away access based on a user's current situation, such as their affiliation with an institution. |
+
+Email domains are useful for:
+
+* **Convenience:** give access to anyone with an institutional email address, instead of giving everyone individual access. This should have limited privileges (never ADMIN).
+* **Security:** restrict access to a trusted institution. Combined with IBAC, access is restricted to a trusted person who also has a verified email address at that institution.

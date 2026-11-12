@@ -4,7 +4,7 @@ This guide is for teams that move their AmCAT or AnnoTinder server to a differen
 
 ## Why migration needs care
 
-The OIDC provider is the source of truth for the identity of a user. Our software identifies users by the combination of `iss` (the provider) and `sub` (the user at that provider), not by email address (see [IBAC](./auth.md#authorization)). A new provider means a new `iss` and new `sub` values, so without a migration the server will not recognize existing users, and all their roles are lost.
+The OIDC provider is the source of truth for the identity of a user. Our software identifies users by the combination of `iss` (the provider) and `sub` (the user at that provider), not by email address (see [IBAC](./auth.md#identity-based-access-control-ibac)). A new provider means a new `iss` and new `sub` values, so without a migration the server will not recognize existing users, and all their roles are lost.
 
 There are two strategies:
 
@@ -18,7 +18,7 @@ There are two strategies:
 
 ## Account linking
 
-Account linking is the industry standard way to migrate. A user can have multiple login identities (see the `identities table` in [IBAC](./auth.md#authorization)), so a user can add their new login to their existing account. Because the user is authenticated at both providers when linking, email plays no role.
+Account linking is the industry standard way to migrate. A user can have multiple login identities (see the identities table in [IBAC](./auth.md#identity-based-access-control-ibac)), so a user can add their new login to their existing account. Because the user is authenticated at both providers when linking, email plays no role.
 
 **Steps**
 
@@ -30,7 +30,7 @@ Account linking is the industry standard way to migrate. A user can have multipl
 
 ## JIT re-claiming
 
-With JIT re-claiming, the server forgets the old identities, and users re-claim their account based on their verified email address, using the same [JIT account claiming](./auth.md#authorization) mechanism we use for invitations.
+With JIT re-claiming, the server forgets the old identities, and users re-claim their account based on their verified email address, using the same [JIT account claiming](./auth.md#jit-account-claiming) mechanism we use for invitations.
 
 **Steps**
 
