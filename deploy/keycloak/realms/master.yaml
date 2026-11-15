@@ -13,10 +13,30 @@ realm: master
 
 # --- Login -------------------------------------------------------------------------------
 registrationAllowed: false
+registrationEmailAsUsername: true   # new admins log in with their email address
+loginWithEmailAllowed: true
+duplicateEmailsAllowed: false
 verifyEmail: false                  # no email server in this realm: verification would lock admins out
 resetPasswordAllowed: false
 rememberMe: false
 passwordPolicy: "length(10) and upperCase(1) and digits(1) and notUsername(undefined) and notEmail(undefined)"
+
+# --- Changing the email address -----------------------------------------------------------
+# New admins have their email address as username; existing usernames (e.g. temp-admin, or a
+# recovery admin created with bootstrap-admin) keep working. Admins change an email address in
+# the admin console (Users), which takes effect directly: this realm has no email server to
+# confirm a new address.
+# "Update email" stays off here: together with email as username, it makes accounts without
+# an email address (temp-admin, recovery admins) "not fully set up", so that admin-cli.sh can
+# no longer log in with them (tested).
+requiredActions:
+  - alias: UPDATE_EMAIL
+    name: Update Email
+    providerId: UPDATE_EMAIL
+    enabled: false
+    defaultAction: false
+    priority: 70
+    config: {}
 
 # --- Timeouts and sessions (seconds) ------------------------------------------------------
 accessCodeLifespanUserAction: 900   # "Login action timeout": time for e.g. setting up 2FA

@@ -17,11 +17,27 @@ enabled: true
 registrationAllowed: true
 registrationEmailAsUsername: true
 loginWithEmailAllowed: true
+# Needed for the "Update email" button in the account console when the email address is the
+# username. The email field itself stays read-only: it only changes through "Update email".
+editUsernameAllowed: true
 duplicateEmailsAllowed: false
 verifyEmail: true
 resetPasswordAllowed: true
 rememberMe: false
 passwordPolicy: "length(10) and upperCase(1) and digits(1) and notUsername(undefined) and notEmail(undefined)"
+
+# --- Changing the email address -----------------------------------------------------------
+# The email address is the username. With "Update email", users change it in the account
+# console, and it only changes after they confirm the new address with a link sent to it.
+# (Off by default: users would then edit the address directly, without confirming it first.)
+requiredActions:
+  - alias: UPDATE_EMAIL
+    name: Update Email
+    providerId: UPDATE_EMAIL
+    enabled: true
+    defaultAction: false
+    priority: 70
+    config: {}
 
 # --- Timeouts and sessions (seconds) ------------------------------------------------------
 accessCodeLifespanUserAction: 900   # "Login action timeout": time for e.g. setting up 2FA

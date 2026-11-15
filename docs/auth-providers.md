@@ -102,11 +102,11 @@ To be done on a test machine, before migrating anything. Mark items as done, and
 **Consent (use cases 3 and 7)**
 
 - [x] A new user logging in to a client with consent required sees a consent screen.
-- [ ] The consent is remembered: a second login to the same client shows no consent screen.
+- [x] The consent is remembered: a second login to the same client shows no consent screen.
 - [ ] AmCAT and AnnoTinder sharing one client on host A: one consent covers both.
 - [ ] A client on host B asks for consent again.
-- [ ] A silent login (`prompt=none`) for a user who did not consent returns an error, not a token.
-- [ ] Users can see and revoke their consents in the account console.
+- [x] A silent login (`prompt=none`) for a user who did not consent returns an error (`interaction_required`), not a token.
+- [x] Users can see and revoke their consents in the account console (**Applications → Remove access**); the next login asks for consent again.
 
 **Client registration (use cases 2 and 6)**
 
@@ -120,9 +120,9 @@ Instead of DCR, apps are registered through our own [app registration site](./ap
 
 **Users and 2FA**
 
-- [ ] Self-registration with required email verification.
-- [ ] `amr` for password, password plus TOTP (both tested: `pwd`, and `pwd` + `mfa`), and passkey logins.
-- [ ] Step-up: `max_age=600` triggers a new login, and `auth_time` is updated.
+- [x] Self-registration with required email verification.
+- [x] `amr` for password, password plus TOTP, and password plus passkey or security key: `pwd`, and `pwd` + `mfa`. (Passkey login without a password is not enabled, see the findings.)
+- [x] Step-up: `max_age` triggers a new login, and `auth_time` is updated (tested with `max_age=5`).
 - [ ] Requesting 2FA with `acr_values`: a user without a second factor is asked to set one up. Our server checks the returned `acr`.
 - [ ] Users can't add login methods (e.g. link other accounts) unless we allow it.
 
@@ -133,7 +133,7 @@ Instead of DCR, apps are registered through our own [app registration site](./ap
 
 **Isolation (use cases 1 and 4)**
 
-- [ ] A second realm with a delegated realm admin. That admin can't see or change anything in other realms.
+- [x] A second realm with a delegated realm admin. That admin can't see or change anything in other realms (tested, see [step 4 of the runbook](./keycloak-deploy.md#exceptions-for-specific-realms)).
 - [ ] A user signed in to one realm is not signed in to another realm.
 
 **Migration (use case 5)**
@@ -161,9 +161,12 @@ Tested with Keycloak 26.8 (locally, with the realm configuration of the runbook)
 * **Client policies** can enforce consent, PKCE and redirect URI rules for changes made by a specific role. The redirect URI rule can only allow `http://localhost` by allowing `http://` in general (our site checks the rest). An empty post logout redirect URI attribute is refused.
 * **Client updates** keep attributes that are left out; clearing one needs an empty value. Searching clients by attribute is disabled by default.
 * **Emails:** Keycloak sends the verification email on the first visit to the "verify your email" page (not on the registration form itself), and the password reset email when "forgot password" is submitted. Both only when `client_id` in the URL is the app of the login, which makes a limit per app in the proxy possible. Resending a verification email right away sends nothing (Keycloak throttles it). With email verification on, Keycloak 26.8 lets new users choose their password only after verifying their email.
+* **Email address as username, and changing it:** the required action **Update email** is off by default; without it, users edit their address directly and it is only verified afterwards. With it, the address (and the username) changes only after the new address is confirmed, and the user keeps the same `sub`, also when they log in with an external provider. The account console only shows the **Update email** button when **Edit username** is allowed; the email field stays read-only, and a direct change through the account API is ignored. Changing to an address of another account is refused ("Username already exists"). In a realm without an email server, **Update email** together with email as username makes accounts without an email address (the bootstrap admin) unable to log in with the admin CLI ("Account is not fully set up").
+* **Passkeys:** a passkey or security key works as a second factor after the password (`amr`: `pwd` + `mfa`), and is offered as such in the account console. Logging in with only a passkey (no password) is not enabled: the login page doesn't offer it, and a passwordless passkey registered through a direct link is not used.
+* **Re-login (`max_age`)** shows the username as text and asks only for the password.
 * **keycloak-config-cli** substitutes variables inside comments too, skips unchanged files unless its cache is turned off, and deletes things it doesn't manage unless set to `no-delete`.
 
-==TODO: real Google and GitHub logins, passkeys, and the remaining items above.==
+==TODO: real Google and GitHub logins, and the remaining items above.==
 
 ## Learning resources
 

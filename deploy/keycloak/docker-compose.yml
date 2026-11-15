@@ -113,15 +113,16 @@ services:
       # settings are reset (by default, unchanged files are skipped)
       IMPORT_CACHE_ENABLED: "false"
       # Never delete things that are not in realms/: external login providers, flows, client
-      # scopes, roles and clients added in the admin console (or by the app registration site)
-      # stay. Something removed from a realm file must then also be deleted in the admin
-      # console (see the runbook).
+      # scopes, roles, clients and required actions added in the admin console (or by the app
+      # registration site) stay. Something removed from a realm file must then also be deleted
+      # in the admin console (see the runbook).
       IMPORT_MANAGED_IDENTITYPROVIDER: no-delete
       IMPORT_MANAGED_IDENTITYPROVIDERMAPPER: no-delete
       IMPORT_MANAGED_AUTHENTICATIONFLOW: no-delete
       IMPORT_MANAGED_CLIENTSCOPE: no-delete
       IMPORT_MANAGED_ROLE: no-delete
       IMPORT_MANAGED_CLIENT: no-delete
+      IMPORT_MANAGED_REQUIREDACTION: no-delete
       # Values used in realms/*.yaml as $(env:NAME)
       KC_HOSTNAME: ${KC_HOSTNAME}
       SMTP_HOST: ${SMTP_HOST:-}
