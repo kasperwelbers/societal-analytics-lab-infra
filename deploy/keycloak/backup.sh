@@ -16,8 +16,10 @@ mkdir -p "$BACKUP_DIR"
 timestamp="$(date +%Y%m%d-%H%M%S)"
 target="$BACKUP_DIR/keycloak-$timestamp.dump"
 
-# Custom format: compressed, and restorable with pg_restore
-docker compose exec -T postgres pg_dump -U keycloak -d keycloak --format=custom > "$target.partial"
+# Custom format: compressed, and restorable with pg_restore.
+# jgroups_ping is Keycloak's register of running instances: restoring old entries makes a
+# new instance believe another one is running, so only its structure is backed up.
+docker compose exec -T postgres pg_dump -U keycloak -d keycloak --format=custom --exclude-table-data=jgroups_ping > "$target.partial"
 mv "$target.partial" "$target"
 
 find "$BACKUP_DIR" -name 'keycloak-*.dump' -type f -mtime +"$KEEP_DAYS" -delete

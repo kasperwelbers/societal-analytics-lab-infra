@@ -9,9 +9,15 @@ This runbook sets up Keycloak on a single VM, with PostgreSQL and Caddy (TLS via
 
 | Component | Role |
 | --- | --- |
-| **Caddy** | TLS certificates via Let's Encrypt. Forwards only the paths that need to be public to Keycloak. |
-| **Keycloak** | An optimized image (built from the official image), started with `start --optimized`. |
+| **Caddy** | Public TLS certificates via Let's Encrypt. Forwards only the paths that need to be public to Keycloak, over a second TLS connection (re-encrypt). |
+| **Keycloak** | An optimized image (built from the official image), started with `start --optimized`. Only accepts HTTPS, with an internal certificate that only Caddy trusts. |
+| **tls-init** | A one-off service that creates the internal certificate on the first start (and does nothing on later starts). |
 | **PostgreSQL** | The database, only reachable by Keycloak. |
+
+Two TLS connections:
+
+* **Browser to Caddy:** the public certificates from Let's Encrypt, which Caddy renews automatically.
+* **Caddy to Keycloak:** an internal certificate, valid for 10 years, which is never shown to browsers. Caddy trusts exactly this certificate. This is the *re-encrypt* setup preferred in the [reverse proxy guide](https://www.keycloak.org/server/reverseproxy), so that traffic between Caddy and Keycloak is encrypted too.
 
 Two hostnames:
 
@@ -21,7 +27,9 @@ Two hostnames:
 | File | Contents |
 | --- | --- |
 | `docker-compose.yml` | The three services, pinned versions, memory limits, health checks, and two networks (the database network has no internet access) |
-| `Dockerfile` | The optimized Keycloak image (`kc.sh build` with PostgreSQL, health endpoints and a local cache for a single server) |
+| `Dockerfile` | The optimized Keycloak image (`kc.sh build` with PostgreSQL and health endpoints) |
+| `internal-tls.sh` | Creates the internal certificate (run by the tls-init service) |
+| `admin-cli.sh` | Runs Keycloak's admin command-line tool (`kcadm.sh`) inside the container, over the internal TLS connection |
 | `Caddyfile` | The public and admin hostnames |
 | `.env.example` | All settings. Copied to `.env`, which holds the secrets and is never committed. |
 | `backup.sh` | A database dump, for a daily cron job |
@@ -82,23 +90,19 @@ Create `.env`, readable only by you:
 cp .env.example .env && chmod 600 .env
 ```
 
-Generate the two secrets, and paste them into `.env` (`POSTGRES_PASSWORD` and `KC_BOOTSTRAP_ADMIN_PASSWORD`):
+Generate three secrets with the command below (run it once per secret), and paste them into `.env`: `POSTGRES_PASSWORD`, `INTERNAL_TLS_KEYSTORE_PASSWORD` and `KC_BOOTSTRAP_ADMIN_PASSWORD`.
 
 ```bash
 openssl rand -hex 32
 ```
 
-```bash
-openssl rand -hex 24
-```
-
-Fill in the other values in `.env`: both hostnames (without `https://`), `ADMIN_ALLOWED_IPS` (ranges separated by spaces), and `ACME_EMAIL` (for Let's Encrypt expiry notices). Store both secrets in your password manager as well.
+Fill in the other values in `.env`: both hostnames (without `https://`), `ADMIN_ALLOWED_IPS` (ranges separated by spaces), and `ACME_EMAIL` (for Let's Encrypt expiry notices). Store the secrets in your password manager as well.
 
 ```bash
 nano .env
 ```
 
-Build and start:
+Build and start. The first time, this builds the Keycloak image, and the tls-init service creates the internal certificate:
 
 ```bash
 docker compose up -d --build
@@ -120,17 +124,19 @@ docker compose logs caddy | grep -i certificate
 
 **Required.** By default, the login pages of the `master` realm (used by the admin console) are served on the public hostname, where Caddy blocks them. Without this step, the admin console stays stuck on a loading spinner. Set the `master` realm's frontend URL to the admin hostname, with Keycloak's command-line tool inside the container.
 
-Log in as the temporary admin (you are prompted for the `KC_BOOTSTRAP_ADMIN_PASSWORD` from `.env`):
+The commands use `admin-cli.sh`, which runs Keycloak's admin tool (`kcadm.sh`) inside the container. Log in as the temporary admin (you are prompted for the `KC_BOOTSTRAP_ADMIN_PASSWORD` from `.env`):
 
 ```bash
-docker compose exec keycloak /opt/keycloak/bin/kcadm.sh config credentials --server http://localhost:8080 --realm master --user temp-admin --config /tmp/kcadm.config
+./admin-cli.sh login
 ```
 
 Set the frontend URL (use your real admin hostname):
 
 ```bash
-docker compose exec keycloak /opt/keycloak/bin/kcadm.sh update realms/master -s attributes.frontendUrl=https://auth-admin.example.org --config /tmp/kcadm.config
+./admin-cli.sh update realms/master -s attributes.frontendUrl=https://auth-admin.example.org
 ```
+
+This changes the issuer of the `master` realm, so the login of the admin tool is no longer valid afterwards. For further `admin-cli.sh` commands, run `./admin-cli.sh login` again.
 
 ## 4. Checks
 
@@ -194,7 +200,8 @@ echo '15 3 * * * root /opt/societal-analytics-lab-infra/deploy/keycloak/backup.s
 ```
 
 * **The dumps are sensitive:** they contain user data, password hashes, client secrets and the realm signing keys. The backup folder is only readable by root.
-* **Keycloak has no master key:** the database dump (plus `.env`) is all you need to restore.
+* **Keycloak has no master key:** the database dump (plus `.env`) is all you need to restore. The internal certificate is not part of the backup: on a new VM, tls-init creates a new one.
+* **Keycloak's register of running instances** (the `jgroups_ping` table) is left out of the dump. Restoring old entries would make Keycloak believe another instance is running.
 * ==TODO: encryption and an off-site copy, once the lab's backup strategy is decided. Until then, the dumps are on the same VM, so they don't protect against losing the VM.==
 
 **Restore** (tested; this replaces the current database):
@@ -235,6 +242,22 @@ docker compose logs -f keycloak
 
 A warning about deprecated features (`identity-brokering-api:v1`, `twitter-broker:v1`) being enabled by default is expected.
 
+**The internal certificate** is valid for 10 years. Check its expiry date (shown in the output of tls-init):
+
+```bash
+docker compose logs tls-init
+```
+
+To replace it (e.g. before it expires), create a new one, and restart Keycloak and Caddy so that both use it:
+
+```bash
+docker compose run --rm tls-init renew
+```
+
+```bash
+docker compose restart keycloak caddy
+```
+
 **Upgrading Keycloak.** Keycloak has quarterly feature releases and frequent patch releases; follow the [Keycloak blog](https://www.keycloak.org/blog) for releases and security announcements.
 
 1. Read the release notes and the [upgrading guide](https://www.keycloak.org/docs/latest/upgrading/) for the new version.
@@ -271,15 +294,17 @@ Log in to the admin console as `recovery-admin`, fix the problem (e.g. delete th
 | No certificate, or browser warnings | The DNS record doesn't point to the VM yet, or port 80 is blocked. Check `docker compose logs caddy`. |
 | Admin console stays on a loading spinner | Step 3 (frontend URL of the `master` realm) was skipped or has a typo. |
 | Admin hostname returns 403 while on the VPN | Your IP address is not in `ADMIN_ALLOWED_IPS`. Check `curl -4 https://ifconfig.me` on your device. After changing `.env`, run `docker compose up -d caddy`. |
+| Requests through Caddy return 502 Bad Gateway | Keycloak is still starting, or Caddy doesn't trust Keycloak's internal certificate (e.g. after `tls-init renew` without restarting Caddy). Run `docker compose restart caddy`, and check `docker compose logs caddy`. |
 | Requests through Caddy return 403 Forbidden | `KC_PROXY_HEADERS` is not set to `xforwarded`, so Keycloak's origin checks fail (see the reverse proxy guide). |
 
 ## Why it is set up this way
 
 * **Optimized image:** recommended in [Running Keycloak in a container](https://www.keycloak.org/server/containers). Build options are baked in, so starts are faster and predictable.
-* **TLS at Caddy, `KC_PROXY_HEADERS=xforwarded`:** Caddy overwrites the `X-Forwarded-*` headers, and Keycloak is only reachable through the internal network ([reverse proxy guide](https://www.keycloak.org/server/reverseproxy)).
+* **Re-encrypt, `KC_PROXY_HEADERS=xforwarded`:** the [reverse proxy guide](https://www.keycloak.org/server/reverseproxy) prefers re-encrypt over edge termination (plain HTTP between proxy and Keycloak). Caddy still terminates the public TLS connection, so it can filter paths and IP addresses; Keycloak only accepts HTTPS. Caddy overwrites the `X-Forwarded-*` headers, and Keycloak is only reachable through the internal network. Passthrough (Keycloak handling the public certificate) would make the path and IP filtering impossible.
+* **The internal certificate is self-signed and long-lived:** it is only trusted by Caddy (and the admin tool), never by browsers, and its key never leaves the VM.
 * **Only `/realms/`, `/resources/` and `/.well-known/` are public:** the exposed paths recommended in the [reverse proxy guide](https://www.keycloak.org/server/reverseproxy#_exposed_path_recommendations). `/admin/` and `/realms/master/` are internal only.
+* **The health endpoint on plain HTTP** (`KC_HTTP_MANAGEMENT_SCHEME=http`): the management port (9000) is only used by the container's health check, and is not exposed (see the [management interface guide](https://www.keycloak.org/server/management-interface)).
 * **A separate admin hostname** (`KC_HOSTNAME_ADMIN`), see the [hostname guide](https://www.keycloak.org/server/hostname). The `hostname-admin` option alone doesn't block the admin API on the public hostname; Caddy does that.
-* **`KC_CACHE=local`:** a single server needs no clustering. Without it, a restored database can make Keycloak believe another instance is running.
 * **PostgreSQL 18:** the version Keycloak 26.8 is tested with.
 * **Temporary bootstrap admin, replaced by a permanent admin with 2FA:** see [Bootstrapping and recovering an admin account](https://www.keycloak.org/server/bootstrap-admin-recovery).
 

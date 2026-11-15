@@ -6,6 +6,17 @@
 	email {$ACME_EMAIL}
 }
 
+# Re-encrypt: connect to Keycloak over TLS, trusting only the internal certificate
+# created by the tls-init service (see internal-tls.sh)
+(keycloak) {
+	reverse_proxy https://keycloak:8443 {
+		transport http {
+			tls_trust_pool file /internal-tls/tls.crt
+			tls_server_name keycloak
+		}
+	}
+}
+
 # Public hostname: logins, OIDC endpoints, static resources
 {$KC_HOSTNAME} {
 	@public {
@@ -14,7 +25,7 @@
 		not path /realms/master /realms/master/*
 	}
 	handle @public {
-		reverse_proxy keycloak:8080
+		import keycloak
 	}
 	# Everything else, including /admin/, is not exposed
 	handle {
@@ -26,7 +37,7 @@
 {$KC_HOSTNAME_ADMIN} {
 	@allowed remote_ip {$ADMIN_ALLOWED_IPS}
 	handle @allowed {
-		reverse_proxy keycloak:8080
+		import keycloak
 	}
 	handle {
 		respond 403

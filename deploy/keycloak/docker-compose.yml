@@ -22,8 +22,12 @@ services:
       # Public URL, and a separate URL for the admin console
       KC_HOSTNAME: https://${KC_HOSTNAME:?set KC_HOSTNAME in .env}
       KC_HOSTNAME_ADMIN: https://${KC_HOSTNAME_ADMIN:?set KC_HOSTNAME_ADMIN in .env}
-      # TLS ends at Caddy; Caddy talks plain HTTP to Keycloak on the internal network
-      KC_HTTP_ENABLED: "true"
+      # Re-encrypt: Caddy terminates the public TLS connection, and connects to Keycloak over
+      # TLS with an internal certificate (created by tls-init). Plain HTTP is disabled.
+      KC_HTTPS_KEY_STORE_FILE: /opt/keycloak/conf/internal-tls/keystore.p12
+      KC_HTTPS_KEY_STORE_PASSWORD: ${INTERNAL_TLS_KEYSTORE_PASSWORD:?set INTERNAL_TLS_KEYSTORE_PASSWORD in .env}
+      # The management interface (health checks, port 9000) stays on plain HTTP; it is not exposed
+      KC_HTTP_MANAGEMENT_SCHEME: http
       KC_PROXY_HEADERS: xforwarded
       # Deprecated option that is only useful behind a load balancer (see the reverse proxy guide)
       KC_SPI_STICKY_SESSION_ENCODER__INFINISPAN__SHOULD_ATTACH_ROUTE: "false"
@@ -45,12 +49,28 @@ services:
       timeout: 5s
       retries: 10
       start_period: 60s
+    volumes:
+      - internal-tls:/opt/keycloak/conf/internal-tls:ro
     depends_on:
       postgres:
         condition: service_healthy
+      tls-init:
+        condition: service_completed_successfully
     networks:
       - db
       - web
+
+  # Creates the internal certificate for Caddy -> Keycloak on the first start (see internal-tls.sh)
+  tls-init:
+    image: lab-keycloak
+    entrypoint: ["bash", "/internal-tls.sh"]
+    restart: "no"
+    environment:
+      INTERNAL_TLS_KEYSTORE_PASSWORD: ${INTERNAL_TLS_KEYSTORE_PASSWORD:?set INTERNAL_TLS_KEYSTORE_PASSWORD in .env}
+    volumes:
+      - ./internal-tls.sh:/internal-tls.sh:ro
+      - internal-tls:/opt/keycloak/conf/internal-tls
+    network_mode: none
 
   postgres:
     # Keycloak 26.8 is tested with PostgreSQL 18
@@ -88,6 +108,8 @@ services:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy-data:/data
       - caddy-config:/config
+      # Only tls.crt is used: the certificate Caddy trusts for its connection to Keycloak
+      - internal-tls:/internal-tls:ro
     depends_on:
       - keycloak
     networks:
@@ -102,5 +124,6 @@ networks:
 
 volumes:
   postgres-data:
+  internal-tls:
   caddy-data:
   caddy-config:

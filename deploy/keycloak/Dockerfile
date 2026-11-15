@@ -13,12 +13,13 @@ FROM ${KEYCLOAK_IMAGE} AS builder
 
 ENV KC_DB=postgres
 ENV KC_HEALTH_ENABLED=true
-# A single server: no clustering between Keycloak instances
-ENV KC_CACHE=local
 
 WORKDIR /opt/keycloak
 RUN /opt/keycloak/bin/kc.sh build
 
 FROM ${KEYCLOAK_IMAGE}
 COPY --from=builder /opt/keycloak/ /opt/keycloak/
+# Mount point for the internal TLS certificate (owned by the Keycloak user, so the
+# volume mounted here is writable by the tls-init service)
+RUN mkdir -p /opt/keycloak/conf/internal-tls
 ENTRYPOINT ["/opt/keycloak/bin/kc.sh"]

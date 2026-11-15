@@ -11,4 +11,4 @@ cp .env.example .env && chmod 600 .env   # then fill in .env
 docker compose up -d --build
 ```
 
-Then continue with step 3 of the runbook (pointing the admin realm to the admin hostname).
+Then continue with step 3 of the runbook (pointing the admin realm to the admin hostname with `./admin-cli.sh`).
