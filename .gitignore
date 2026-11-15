@@ -1,5 +1,6 @@
 venv
 env
 
-# Secrets of deployments
+# Secrets and local settings of deployments
 .env
+admin-access.caddy

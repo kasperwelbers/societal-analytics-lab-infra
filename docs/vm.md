@@ -218,4 +218,4 @@ Persistence is a property of images, and determines what happens to them when an
 **What "Instantiate as persistent" does:** it first makes a copy of the template with persistent copies of its images, and then creates an instance from that copy. If the instance is ever terminated, you can recover it: go to **Templates → VMs**, find the template with the same name as the instance, and use **Instantiate** (not *Instantiate as persistent*).
 
 !!! warning "Persistence is not a backup"
-    A persistent image survives a terminated VM, but not a broken disk, a deleted image, or a mistake on the VM itself. Servers with data still need backups (for instance, see Backups in the [Keycloak deployment](./keycloak-deploy.md#7-backups)).
+    A persistent image survives a terminated VM, but not a broken disk, a deleted image, or a mistake on the VM itself. Servers with data still need backups (for instance, see Backups in the [Keycloak deployment](./keycloak-deploy.md#8-backups)).

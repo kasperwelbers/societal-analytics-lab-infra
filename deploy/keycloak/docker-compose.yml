@@ -106,10 +106,11 @@ services:
     environment:
       KC_HOSTNAME: ${KC_HOSTNAME}
       KC_HOSTNAME_ADMIN: ${KC_HOSTNAME_ADMIN}
-      ADMIN_ALLOWED_IPS: ${ADMIN_ALLOWED_IPS:?set ADMIN_ALLOWED_IPS in .env}
       ACME_EMAIL: ${ACME_EMAIL:?set ACME_EMAIL in .env}
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      # Local restrictions of the admin hostname (copy admin-access.example.caddy first)
+      - ./admin-access.caddy:/etc/caddy/admin-access.caddy:ro
       - caddy-data:/data
       - caddy-config:/config
       # Only tls.crt is used: the certificate Caddy trusts for its connection to Keycloak

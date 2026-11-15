@@ -33,13 +33,12 @@
 	}
 }
 
-# Admin hostname: admin console and the admin realm, only from allowed IP ranges
+# Admin hostname: the admin consoles and the admin API.
+# Optional restrictions (IP ranges, exceptions per realm) are set in admin-access.caddy,
+# a local file that is not in the repository (copied from admin-access.example.caddy).
 {$KC_HOSTNAME_ADMIN} {
-	@allowed remote_ip {$ADMIN_ALLOWED_IPS}
-	handle @allowed {
-		import keycloak
-	}
+	import admin-access.caddy
 	handle {
-		respond 403
+		import keycloak
 	}
 }

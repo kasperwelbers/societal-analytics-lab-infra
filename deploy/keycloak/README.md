@@ -8,6 +8,7 @@ The files are owned by a `keycloak` system user, and Docker is run with `sudo` f
 
 ```bash
 sudo -u keycloak cp .env.example .env && sudo -u keycloak chmod 600 .env   # then: sudo -u keycloak nano .env
+sudo -u keycloak cp admin-access.example.caddy admin-access.caddy          # optional restrictions, see step 4
 sudo docker compose up -d --build
 ```
 

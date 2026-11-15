@@ -1,0 +1,38 @@
+# Restrictions of the admin hostname (optional, recommended).
+#
+# Copy this file to admin-access.caddy (not in the repository), and edit that copy:
+#   sudo -u keycloak cp admin-access.example.caddy admin-access.caddy
+# Apply changes with:
+#   sudo docker compose restart caddy
+# See "Restricting admin access" in docs/keycloak-deploy.md.
+#
+# As long as all rules below are commented out, the admin consoles of all realms are
+# reachable from anywhere, behind Keycloak's login (and 2FA).
+#
+# Rules are checked from top to bottom, and the first matching rule wins. So exceptions
+# for specific realms go above the general restriction.
+
+
+# --- Exception for one realm (optional; one block per realm) ------------------------
+# The admin console of realm "example-realm" is also reachable from the range below.
+# Remove the remote_ip line to make it reachable from anywhere.
+# The paths are what a realm's admin console needs (its console, its admin API, general server
+# information and scripts/styles). The master realm and other realms stay restricted: their
+# paths are not part of this rule.
+#
+# @realm_example_realm {
+# 	path /admin/example-realm/* /admin/realms/example-realm /admin/realms/example-realm/* /admin/serverinfo /resources/*
+# 	remote_ip 203.0.113.0/24
+# }
+# handle @realm_example_realm {
+# 	import keycloak
+# }
+
+
+# --- Restriction: everything else on the admin hostname only from these ranges -------
+# Ranges in CIDR notation, separated by spaces (e.g. the university network and its VPN).
+#
+# @not_allowed not remote_ip 192.0.2.0/24 198.51.100.0/24
+# handle @not_allowed {
+# 	respond 403
+# }

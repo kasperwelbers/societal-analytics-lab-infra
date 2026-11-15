@@ -22,7 +22,7 @@ Two TLS connections:
 Two hostnames:
 
 * **`auth.example.org`** (public): logins, OIDC endpoints and static resources (`/realms/`, `/resources/`, `/.well-known/`). Everything else returns 404, including the admin console and the admin realm (`master`).
-* **`auth-admin.example.org`** (admin): the admin console and the `master` realm, only reachable from the IP ranges in `ADMIN_ALLOWED_IPS` (e.g. the university network and its VPN).
+* **`auth-admin.example.org`** (admin): the admin consoles of all realms, the admin API, and the logins of the administrative `master` realm. Without further settings it is reachable from anywhere, behind Keycloak's login and 2FA. Restricting it to IP ranges is recommended (see [step 4](#4-restrict-admin-access-recommended)).
 
 | File | Contents |
 | --- | --- |
@@ -30,7 +30,8 @@ Two hostnames:
 | `Dockerfile` | The optimized Keycloak image (`kc.sh build` with PostgreSQL and health endpoints) |
 | `internal-tls.sh` | Creates the internal certificate (run by the tls-init service) |
 | `admin-cli.sh` | Runs Keycloak's admin command-line tool (`kcadm.sh`) inside the container, over the internal TLS connection |
-| `Caddyfile` | The public and admin hostnames |
+| `Caddyfile` | The public and admin hostnames. The admin hostname reads the local restrictions from `admin-access.caddy`. |
+| `admin-access.example.caddy` | Template for restricting the admin hostname. Copied to `admin-access.caddy`, a local file that is never committed. |
 | `.env.example` | All settings. Copied to `.env`, which holds the secrets and is never committed. |
 | `backup.sh` | A database dump, for a daily cron job |
 
@@ -57,20 +58,6 @@ Only a header line, without any rows below it, means the ports are free. This do
 ```bash
 sudo docker compose version
 ```
-
-**Admin IP ranges.** Find the ranges that may reach the admin console. Run this **on your own device** (not on the VM), connected to the VPN:
-
-```bash
-curl -4 https://ifconfig.me
-```
-
-Then look up the range that address belongs to (the `whois` port is blocked on some networks; this uses HTTPS):
-
-```bash
-curl -s https://rdap.db.ripe.net/ip/<your IP> | grep -E '"(name|startAddress|endAddress)"'
-```
-
-Check that `name` belongs to your institution, and write the range in CIDR notation (e.g. `startAddress 192.0.2.0` to `endAddress 192.0.2.255` is `192.0.2.0/24`). Repeat on campus without VPN if you also want access from there. Note that a whole institutional range includes everyone on that network: it is an extra layer, the admin console still requires an admin account with 2FA.
 
 ## 2. Installation
 
@@ -155,10 +142,16 @@ Generate three secrets with the command below (run it once per secret), and past
 openssl rand -hex 32
 ```
 
-Fill in the other values in `.env`: both hostnames (without `https://`), `ADMIN_ALLOWED_IPS` (ranges separated by spaces), and `ACME_EMAIL` (for Let's Encrypt expiry notices). Store the secrets in your password manager as well.
+Fill in the other values in `.env`: both hostnames (without `https://`), and `ACME_EMAIL` (for Let's Encrypt expiry notices). Store the secrets in your password manager as well.
 
 ```bash
 sudo -u keycloak nano .env
+```
+
+Create the local file for restricting the admin hostname. Unchanged, it adds no restrictions; [step 4](#4-restrict-admin-access-recommended) explains how to use it. This file must exist: without it, Caddy doesn't start.
+
+```bash
+sudo -u keycloak cp admin-access.example.caddy admin-access.caddy
 ```
 
 ### Build and start
@@ -199,9 +192,82 @@ sudo ./admin-cli.sh update realms/master -s attributes.frontendUrl=https://auth-
 
 This changes the issuer of the `master` realm, so the login of the admin tool is no longer valid afterwards. For further `admin-cli.sh` commands, run `sudo ./admin-cli.sh login` again.
 
-## 4. Checks
+## 4. Restrict admin access (recommended)
 
-From your own device, **connected to the VPN**:
+Keycloak recommends not exposing the administration interfaces to the public internet, and in particular restricting the administrative `master` realm to internal access (see [Configuring Keycloak for production](https://www.keycloak.org/server/configuration-production) and the [exposed path recommendations](https://www.keycloak.org/server/reverseproxy#_exposed_path_recommendations)). With this step, everything on the admin hostname (the admin consoles, the admin API and the `master` realm) is only reachable from the IP ranges you choose, e.g. the university network and its VPN. The public hostname, where users log in, is not affected.
+
+**How it works.** The admin hostname reads the rules in `admin-access.caddy`, from top to bottom; the first rule that matches a request decides. Requests that match no rule go to Keycloak. The file is local to the VM: it is not in the repository, so `git pull` never changes it.
+
+### Find your IP ranges
+
+Run this **on your own device** (not on the VM), connected to the VPN:
+
+```bash
+curl -4 https://ifconfig.me
+```
+
+Then look up the range that address belongs to (the `whois` port is blocked on some networks; this uses HTTPS):
+
+```bash
+curl -s https://rdap.db.ripe.net/ip/<your IP> | grep -E '"(name|startAddress|endAddress)"'
+```
+
+Check that `name` belongs to your institution, and write the range in CIDR notation, with zeros in the free part: `startAddress 192.0.2.0` to `endAddress 192.0.2.255` is `192.0.2.0/24`, and `192.0.0.0` to `192.0.255.255` is `192.0.0.0/16`. Repeat on campus without VPN if you also want access from there. A whole institutional range includes everyone on that network: it is an extra layer, admin accounts still need 2FA.
+
+### Restrict the admin hostname
+
+Edit the file:
+
+```bash
+sudo -u keycloak nano admin-access.caddy
+```
+
+At the bottom, remove the `#` in front of the restriction, and put your ranges after `remote_ip`, separated by spaces:
+
+```
+@not_allowed not remote_ip 192.0.2.0/24 198.51.100.0/24
+handle @not_allowed {
+	respond 403
+}
+```
+
+Apply it:
+
+```bash
+sudo docker compose restart caddy
+```
+
+Check, from your own device. On the VPN this shows the `master` realm's issuer; **without the VPN** (e.g. on a phone hotspot) it should return `403`:
+
+```bash
+curl -s -o /dev/null -w '%{http_code}\n' https://auth-admin.example.org/realms/master/.well-known/openid-configuration
+```
+
+### Exceptions for specific realms
+
+A realm can have admins who are not on your network, e.g. a research group outside the university that manages its own realm (see [Isolated OIDC providers](./auth-providers.md#use-cases)). For such a realm, add an exception **above** the restriction, in the same file. It makes the admin console of that realm, and only that realm, reachable from another range (or from anywhere, without the `remote_ip` line):
+
+```
+@realm_research_group {
+	path /admin/research-group/* /admin/realms/research-group /admin/realms/research-group/* /admin/serverinfo /resources/*
+	remote_ip 203.0.113.0/24
+}
+handle @realm_research_group {
+	import keycloak
+}
+```
+
+* Replace `research-group` with the name of the realm (four times), and use a unique name after `@` for each exception (letters, digits and underscores).
+* The paths are what a realm's admin console needs: its console, the admin API for that realm, general server information (`/admin/serverinfo`, behind login), and scripts and styles (`/resources/`).
+* The `master` realm and the other realms stay restricted: their paths are not part of the exception. Admins of the realm can only manage their own realm.
+* Admins of such a realm have an account **in that realm** with the role `realm-admin` of the client `realm-management` (in that realm: **Users → the user → Role mapping → Assign role → filter by clients**). They use the console at `https://auth-admin.example.org/admin/<realm>/console/`. Make 2FA required for them in that realm.
+* Apply it with `sudo docker compose restart caddy`.
+
+Tested: with the restriction and an exception, the realm's admin console works from the exception range, while the `master` realm, the console of another realm, and the admin API of other realms are refused (by Caddy, and by Keycloak for the realm admin's own token).
+
+## 5. Checks
+
+From your own device (on an allowed network, if you restricted admin access in step 4):
 
 ```bash
 curl -s https://auth-admin.example.org/realms/master/.well-known/openid-configuration | grep -o '"issuer":"[^"]*"'
@@ -217,17 +283,11 @@ curl -s -o /dev/null -w '%{http_code}\n' https://auth.example.org/admin/
 curl -s -o /dev/null -w '%{http_code}\n' https://auth.example.org/realms/master/.well-known/openid-configuration
 ```
 
-**Disconnect from the VPN**, and check that the admin hostname is refused (`403`):
-
-```bash
-curl -s -o /dev/null -w '%{http_code}\n' https://auth-admin.example.org/admin/
-```
-
-## 5. Permanent admin account
+## 6. Permanent admin account
 
 Following [Bootstrapping and recovering an admin account](https://www.keycloak.org/server/bootstrap-admin-recovery): the bootstrap account is temporary, and must be replaced by a permanent admin with 2FA. The `master` realm is for administrators only; users never go in `master`.
 
-1. On the VPN, open `https://auth-admin.example.org/admin/` and log in as `temp-admin`. A yellow banner says you are using a temporary admin account.
+1. Open `https://auth-admin.example.org/admin/` (from an allowed network, if you restricted admin access) and log in as `temp-admin`. A yellow banner says you are using a temporary admin account.
 2. In the `master` realm, go to **Users → Add user**. Fill in a username and your email address, turn on **Email verified**, and under **Required user actions** choose **Configure OTP**. Click **Create**.
 3. On the **Credentials** tab, click **Set password**, and turn off **Temporary**.
 4. On the **Role mapping** tab, click **Assign role**, filter by realm roles, and assign **admin**.
@@ -237,7 +297,7 @@ Following [Bootstrapping and recovering an admin account](https://www.keycloak.o
 
 By default, Keycloak asks for the second factor of every user who has one configured, so the permanent admin always needs their authenticator app.
 
-## 6. First realm
+## 7. First realm
 
 Create the realm for the shared pool of users. Everything after these basics follows the [test checklist](./auth-providers.md#keycloak-test-checklist).
 
@@ -246,7 +306,7 @@ Create the realm for the shared pool of users. Everything after these basics fol
 3. **Realm settings → Email:** the sender address and SMTP server. For Scaleway Transactional Email: host `smtp.tem.scaleway.com`, port `465`, **Enable SSL**, username your Scaleway project ID, password an API secret key. Click **Test connection**.
 4. **Realm settings → Sessions:** **SSO Session Idle** and **SSO Session Max** to 30 minutes. Applications keep their own sessions; this only determines how long users stay signed in at Keycloak.
 
-## 7. Backups
+## 8. Backups
 
 `backup.sh` writes a compressed database dump (`pg_dump --format=custom`) to `/var/backups/keycloak`, and removes dumps older than 14 days. Run it once by hand:
 
@@ -261,7 +321,7 @@ echo '15 3 * * * root /opt/keycloak/societal-analytics-lab-infra/deploy/keycloak
 ```
 
 * **The dumps are sensitive:** they contain user data, password hashes, client secrets and the realm signing keys. The backup folder is only readable by root.
-* **Keycloak has no master key:** the database dump (plus `.env`) is all you need to restore. The internal certificate is not part of the backup: on a new VM, tls-init creates a new one.
+* **Keycloak has no master key:** the database dump (plus `.env` and `admin-access.caddy`) is all you need to restore. The internal certificate is not part of the backup: on a new VM, tls-init creates a new one.
 * **Keycloak's register of running instances** (the `jgroups_ping` table) is left out of the dump. Restoring old entries would make Keycloak believe another instance is running.
 * ==TODO: encryption and an off-site copy, once the lab's backup strategy is decided. Until then, the dumps are on the same VM, so they don't protect against losing the VM.==
 
@@ -293,7 +353,7 @@ sudo docker compose start keycloak
 
 Do a restore test after setting up the backups, e.g. on a test machine.
 
-## 8. Maintenance
+## 9. Maintenance
 
 **Logs:**
 
@@ -357,7 +417,9 @@ Log in to the admin console as `recovery-admin`, fix the problem (e.g. delete th
 | `sudo: ... is not in the sudoers file` while logged in as `keycloak` | Docker commands are run from your own admin account, not as `keycloak`. |
 | No certificate, or browser warnings | The DNS record doesn't point to the VM yet, or port 80 is blocked. Check `sudo docker compose logs caddy`. |
 | Admin console stays on a loading spinner | Step 3 (frontend URL of the `master` realm) was skipped or has a typo. |
-| Admin hostname returns 403 while on the VPN | Your IP address is not in `ADMIN_ALLOWED_IPS`. Check `curl -4 https://ifconfig.me` on your device. After changing `.env`, run `sudo docker compose up -d caddy`. |
+| Admin hostname returns 403 while on the VPN | Your IP address is not in the ranges in `admin-access.caddy`. Check `curl -4 https://ifconfig.me` on your device. After changing the file, run `sudo docker compose restart caddy`. |
+| Caddy doesn't start: `Could not import /etc/caddy/admin-access.caddy: is a directory` | `admin-access.caddy` didn't exist when Caddy started, so Docker created an empty folder with that name. Remove it and create the file: `sudo rmdir admin-access.caddy && sudo -u keycloak cp admin-access.example.caddy admin-access.caddy && sudo docker compose up -d caddy`. |
+| The admin console of a realm with an exception stays on "Loading", or shows a permission error | The exception is missing `/resources/*` or `/admin/serverinfo`, or the realm name in the paths is misspelled (see step 4). |
 | Requests through Caddy return 502 Bad Gateway | Keycloak is still starting, or Caddy doesn't trust Keycloak's internal certificate (e.g. after `tls-init renew` without restarting Caddy). Run `sudo docker compose restart caddy`, and check `sudo docker compose logs caddy`. |
 | Requests through Caddy return 403 Forbidden | `KC_PROXY_HEADERS` is not set to `xforwarded`, so Keycloak's origin checks fail (see the reverse proxy guide). |
 | `WARN ... configured to build using Bake, but buildx isn't installed` | Harmless: Compose falls back to the classic build. To remove the warning, install the buildx plugin (`sudo apt install docker-buildx-plugin`, with Docker from Docker's own repository). |
@@ -370,6 +432,8 @@ Log in to the admin console as `recovery-admin`, fix the problem (e.g. delete th
 * **Only `/realms/`, `/resources/` and `/.well-known/` are public:** the exposed paths recommended in the [reverse proxy guide](https://www.keycloak.org/server/reverseproxy#_exposed_path_recommendations). `/admin/` and `/realms/master/` are internal only.
 * **The health endpoint on plain HTTP** (`KC_HTTP_MANAGEMENT_SCHEME=http`): the management port (9000) is only used by the container's health check, and is not exposed (see the [management interface guide](https://www.keycloak.org/server/management-interface)).
 * **A separate admin hostname** (`KC_HOSTNAME_ADMIN`), see the [hostname guide](https://www.keycloak.org/server/hostname). The `hostname-admin` option alone doesn't block the admin API on the public hostname; Caddy does that.
+* **IP restriction of the admin hostname in a local file:** restricting the administration interfaces, and the `master` realm in particular, follows Keycloak's recommendations. The ranges and exceptions are specific to each installation, so they live in `admin-access.caddy` on the VM instead of in the repository.
+* **Exceptions for specific realms:** not a Keycloak recommendation, but a deliberate choice to let admins outside our network manage their own realm. It makes that realm's admin console reachable for them, behind its own login and 2FA, and keeps the `master` realm restricted.
 * **PostgreSQL 18:** the version Keycloak 26.8 is tested with.
 * **Temporary bootstrap admin, replaced by a permanent admin with 2FA:** see [Bootstrapping and recovering an admin account](https://www.keycloak.org/server/bootstrap-admin-recovery).
 
