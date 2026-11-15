@@ -155,7 +155,7 @@ These rules apply to programs running **on the VM itself** (e.g. `apt`, `git`, `
 3. **Check which ports are published,** after every change:
 
     ```bash
-    docker ps --format '{{.Names}}\t{{.Ports}}'
+    sudo docker ps --format '{{.Names}}\t{{.Ports}}'
     ```
 
     Anything with `0.0.0.0:` or `[::]:` in front of the port is reachable from the internet.
@@ -190,11 +190,13 @@ sudo dpkg-reconfigure -plow unattended-upgrades
 
 Some updates (e.g. a new kernel) need a reboot. Ubuntu shows `*** System restart required ***` when you log in; reboot at a convenient moment. Services started with `restart: unless-stopped` in Docker Compose come back by themselves.
 
-**Docker.** Install Docker Engine with the compose plugin, following the [official instructions for Ubuntu](https://docs.docker.com/engine/install/ubuntu/). To run `docker` without `sudo`, add your user to the `docker` group (`sudo usermod -aG docker username`, then log in again). Note that membership of the `docker` group is effectively root access.
+**Docker.** Install Docker Engine with the compose plugin, following the [official instructions for Ubuntu](https://docs.docker.com/engine/install/ubuntu/).
 
 ```bash
-docker compose version
+sudo docker compose version
 ```
+
+Run Docker with `sudo`, and don't add users to the `docker` group: membership of the `docker` group is effectively root access (anyone who can run Docker can mount the whole disk into a container), without the logging that `sudo` gives. The [Keycloak deployment](./keycloak-deploy.md#users-and-permissions) shows how to combine this with a system user that owns the files.
 
 ## Persistence
 

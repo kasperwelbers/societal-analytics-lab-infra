@@ -52,10 +52,10 @@ sudo ss -tlnp '( sport = :80 or sport = :443 )'
 
 Only a header line, without any rows below it, means the ports are free. This doesn't show whether they are reachable from outside: that shows in step 2, when Caddy obtains its certificates.
 
-**Docker.** Docker Engine with the compose plugin ([installation](https://docs.docker.com/engine/install/)). The commands below assume your user may run `docker` (member of the `docker` group); otherwise prefix them with `sudo`.
+**Docker.** Docker Engine with the compose plugin ([installation](https://docs.docker.com/engine/install/)). This runbook runs Docker with `sudo` (see [Users and permissions](#users-and-permissions)).
 
 ```bash
-docker compose version
+sudo docker compose version
 ```
 
 **Admin IP ranges.** Find the ranges that may reach the admin console. Run this **on your own device** (not on the VM), connected to the VPN:
@@ -74,24 +74,79 @@ Check that `name` belongs to your institution, and write the range in CIDR notat
 
 ## 2. Installation
 
-Get the files onto the VM:
+### Users and permissions
+
+The deployment uses two accounts:
+
+| Account | Role | Rights |
+| --- | --- | --- |
+| **`keycloak`** (system user) | Owns the files in `/opt/keycloak`, including `.env` with the secrets | No login shell, no `sudo`, not in the `docker` group |
+| **Your own admin account** (your personal account on the VM) | Runs the commands in this runbook | `sudo`, and **member of the `keycloak` group** |
+
+How commands are run:
+
+* **File operations** (cloning, editing `.env`, `git pull`) run **as `keycloak`**, with `sudo -u keycloak ...`, so that the files stay owned by `keycloak`.
+* **Docker commands** (`docker compose ...`, `./admin-cli.sh`, `backup.sh`) run **from your own account with `sudo`**, from the deployment folder `/opt/keycloak/societal-analytics-lab-infra/deploy/keycloak`. Docker reads `.env` as root, so your account doesn't need to be able to read it.
+
+!!! warning "Required: your admin account must be in the `keycloak` group"
+    `/opt/keycloak` is only accessible to the `keycloak` user and group (`chmod 750`). The Docker commands are run from the deployment folder inside it, so your admin account must be a member of the `keycloak` group, otherwise `cd` into the folder fails with `Permission denied`. Group membership gives access to the folder and the deployment files, but not to `.env`, which stays readable only by `keycloak` (`chmod 600`).
+
+Why not simpler:
+
+* **Don't add `keycloak` (or anyone) to the `docker` group.** Membership of the `docker` group is effectively root access: anyone who can run Docker can mount the whole disk into a container. Running Docker with `sudo` keeps that power with administrators, and `sudo` logs who did what.
+* **Don't give `keycloak` `sudo` rights.** That would turn the service account into an admin account.
+* The containers don't run as the `keycloak` host user: Keycloak runs as its own user inside its container. The host user only owns the files.
+
+### System user and folder
+
+Create the `keycloak` system user and group, with `/opt/keycloak` as its home folder:
 
 ```bash
-sudo git clone https://github.com/kasperwelbers/societal-analytics-lab-infra.git /opt/societal-analytics-lab-infra
+sudo groupadd --system keycloak
 ```
 
 ```bash
-sudo chown -R "$USER" /opt/societal-analytics-lab-infra
+sudo useradd --system -g keycloak --shell /usr/sbin/nologin --home-dir /opt/keycloak keycloak
 ```
 
 ```bash
-cd /opt/societal-analytics-lab-infra/deploy/keycloak
+sudo mkdir /opt/keycloak && sudo chown keycloak:keycloak /opt/keycloak && sudo chmod 750 /opt/keycloak
 ```
 
-Create `.env`, readable only by you:
+Add your own admin account to the `keycloak` group:
 
 ```bash
-cp .env.example .env && chmod 600 .env
+sudo usermod -aG keycloak "$USER"
+```
+
+**Log out and log in again**, so that the group membership takes effect. Then check that `keycloak` is listed in your groups, and that you can open the folder:
+
+```bash
+id
+```
+
+```bash
+ls /opt/keycloak
+```
+
+### Files and settings
+
+Get the files onto the VM, as `keycloak`:
+
+```bash
+sudo -u keycloak git clone https://github.com/kasperwelbers/societal-analytics-lab-infra.git /opt/keycloak/societal-analytics-lab-infra
+```
+
+Go to the deployment folder. All further commands in this runbook are run from here:
+
+```bash
+cd /opt/keycloak/societal-analytics-lab-infra/deploy/keycloak
+```
+
+Create `.env`, readable only by `keycloak`:
+
+```bash
+sudo -u keycloak cp .env.example .env && sudo -u keycloak chmod 600 .env
 ```
 
 Generate three secrets with the command below (run it once per secret), and paste them into `.env`: `POSTGRES_PASSWORD`, `INTERNAL_TLS_KEYSTORE_PASSWORD` and `KC_BOOTSTRAP_ADMIN_PASSWORD`.
@@ -103,25 +158,27 @@ openssl rand -hex 32
 Fill in the other values in `.env`: both hostnames (without `https://`), `ADMIN_ALLOWED_IPS` (ranges separated by spaces), and `ACME_EMAIL` (for Let's Encrypt expiry notices). Store the secrets in your password manager as well.
 
 ```bash
-nano .env
+sudo -u keycloak nano .env
 ```
 
-Build and start. The first time, this builds the Keycloak image, and the tls-init service creates the internal certificate:
+### Build and start
+
+From your own account, in the deployment folder. The first time, this builds the Keycloak image, and the tls-init service creates the internal certificate:
 
 ```bash
-docker compose up -d --build
+sudo docker compose up -d --build
 ```
 
 Wait until Keycloak is `healthy` (about a minute):
 
 ```bash
-docker compose ps
+sudo docker compose ps
 ```
 
 Check that Caddy obtained both certificates (look for `certificate obtained successfully`):
 
 ```bash
-docker compose logs caddy | grep -i certificate
+sudo docker compose logs caddy | grep -i certificate
 ```
 
 ## 3. Point the admin realm to the admin hostname
@@ -131,16 +188,16 @@ docker compose logs caddy | grep -i certificate
 The commands use `admin-cli.sh`, which runs Keycloak's admin tool (`kcadm.sh`) inside the container. Log in as the temporary admin (you are prompted for the `KC_BOOTSTRAP_ADMIN_PASSWORD` from `.env`):
 
 ```bash
-./admin-cli.sh login
+sudo ./admin-cli.sh login
 ```
 
 Set the frontend URL (use your real admin hostname):
 
 ```bash
-./admin-cli.sh update realms/master -s attributes.frontendUrl=https://auth-admin.example.org
+sudo ./admin-cli.sh update realms/master -s attributes.frontendUrl=https://auth-admin.example.org
 ```
 
-This changes the issuer of the `master` realm, so the login of the admin tool is no longer valid afterwards. For further `admin-cli.sh` commands, run `./admin-cli.sh login` again.
+This changes the issuer of the `master` realm, so the login of the admin tool is no longer valid afterwards. For further `admin-cli.sh` commands, run `sudo ./admin-cli.sh login` again.
 
 ## 4. Checks
 
@@ -194,13 +251,13 @@ Create the realm for the shared pool of users. Everything after these basics fol
 `backup.sh` writes a compressed database dump (`pg_dump --format=custom`) to `/var/backups/keycloak`, and removes dumps older than 14 days. Run it once by hand:
 
 ```bash
-sudo /opt/societal-analytics-lab-infra/deploy/keycloak/backup.sh
+sudo /opt/keycloak/societal-analytics-lab-infra/deploy/keycloak/backup.sh
 ```
 
 Schedule it daily (03:15):
 
 ```bash
-echo '15 3 * * * root /opt/societal-analytics-lab-infra/deploy/keycloak/backup.sh >> /var/log/keycloak-backup.log 2>&1' | sudo tee /etc/cron.d/keycloak-backup
+echo '15 3 * * * root /opt/keycloak/societal-analytics-lab-infra/deploy/keycloak/backup.sh >> /var/log/keycloak-backup.log 2>&1' | sudo tee /etc/cron.d/keycloak-backup
 ```
 
 * **The dumps are sensitive:** they contain user data, password hashes, client secrets and the realm signing keys. The backup folder is only readable by root.
@@ -211,27 +268,27 @@ echo '15 3 * * * root /opt/societal-analytics-lab-infra/deploy/keycloak/backup.s
 **Restore** (tested; this replaces the current database):
 
 ```bash
-cd /opt/societal-analytics-lab-infra/deploy/keycloak
+cd /opt/keycloak/societal-analytics-lab-infra/deploy/keycloak
 ```
 
 ```bash
-docker compose stop keycloak
+sudo docker compose stop keycloak
 ```
 
 ```bash
-docker compose exec -T postgres dropdb -U keycloak keycloak
+sudo docker compose exec -T postgres dropdb -U keycloak keycloak
 ```
 
 ```bash
-docker compose exec -T postgres createdb -U keycloak keycloak
+sudo docker compose exec -T postgres createdb -U keycloak keycloak
 ```
 
 ```bash
-sudo cat /var/backups/keycloak/<dump file> | docker compose exec -T postgres pg_restore -U keycloak -d keycloak --no-owner
+sudo cat /var/backups/keycloak/<dump file> | sudo docker compose exec -T postgres pg_restore -U keycloak -d keycloak --no-owner
 ```
 
 ```bash
-docker compose start keycloak
+sudo docker compose start keycloak
 ```
 
 Do a restore test after setting up the backups, e.g. on a test machine.
@@ -241,7 +298,7 @@ Do a restore test after setting up the backups, e.g. on a test machine.
 **Logs:**
 
 ```bash
-docker compose logs -f keycloak
+sudo docker compose logs -f keycloak
 ```
 
 A warning about deprecated features (`identity-brokering-api:v1`, `twitter-broker:v1`) being enabled by default is expected.
@@ -249,44 +306,44 @@ A warning about deprecated features (`identity-brokering-api:v1`, `twitter-broke
 **The internal certificate** is valid for 10 years. Check its expiry date (shown in the output of tls-init):
 
 ```bash
-docker compose logs tls-init
+sudo docker compose logs tls-init
 ```
 
 To replace it (e.g. before it expires), create a new one, and restart Keycloak and Caddy so that both use it:
 
 ```bash
-docker compose run --rm tls-init renew
+sudo docker compose run --rm tls-init renew
 ```
 
 ```bash
-docker compose restart keycloak caddy
+sudo docker compose restart keycloak caddy
 ```
 
 **Upgrading Keycloak.** Keycloak has quarterly feature releases and frequent patch releases; follow the [Keycloak blog](https://www.keycloak.org/blog) for releases and security announcements.
 
 1. Read the release notes and the [upgrading guide](https://www.keycloak.org/docs/latest/upgrading/) for the new version.
 2. Make a backup with `backup.sh`.
-3. Change the version in `docker-compose.yml` (`KEYCLOAK_IMAGE`, the only place where it is set).
+3. Change the version in `docker-compose.yml` (`KEYCLOAK_IMAGE`, the only place where it is set). Preferably make the change in the repository, and get it onto the VM with `sudo -u keycloak git pull`.
 4. Rebuild and restart. Keycloak migrates the database on start.
 
 ```bash
-docker compose build --pull && docker compose up -d
+sudo docker compose build --pull && sudo docker compose up -d
 ```
 
-**PostgreSQL and Caddy:** change the image tag in `docker-compose.yml`, and run `docker compose up -d`. Minor PostgreSQL versions (e.g. 18.7 to 18.8) need nothing else. A new major version (e.g. 18 to 19) needs a dump and restore; check that Keycloak supports it first.
+**PostgreSQL and Caddy:** change the image tag in `docker-compose.yml`, and run `sudo docker compose up -d`. Minor PostgreSQL versions (e.g. 18.7 to 18.8) need nothing else. A new major version (e.g. 18 to 19) needs a dump and restore; check that Keycloak supports it first.
 
 **Recovering admin access** (e.g. a lost authenticator app, or no admin left), following the [recovery guide](https://www.keycloak.org/server/bootstrap-admin-recovery). This requires access to the VM, which is the break-glass route. Stop Keycloak and create a temporary admin (you are prompted for a password):
 
 ```bash
-docker compose stop keycloak
+sudo docker compose stop keycloak
 ```
 
 ```bash
-docker compose run --rm keycloak bootstrap-admin user --optimized --username recovery-admin
+sudo docker compose run --rm keycloak bootstrap-admin user --optimized --username recovery-admin
 ```
 
 ```bash
-docker compose start keycloak
+sudo docker compose start keycloak
 ```
 
 Log in to the admin console as `recovery-admin`, fix the problem (e.g. delete the lost OTP credential on the admin's **Credentials** tab), and delete `recovery-admin` again.
@@ -295,10 +352,13 @@ Log in to the admin console as `recovery-admin`, fix the problem (e.g. delete th
 
 | Problem | Likely cause |
 | --- | --- |
-| No certificate, or browser warnings | The DNS record doesn't point to the VM yet, or port 80 is blocked. Check `docker compose logs caddy`. |
+| `cd /opt/keycloak/...` gives `Permission denied` | Your account is not in the `keycloak` group yet, or you haven't logged in again since adding it. Check with `id`. |
+| `permission denied while trying to connect to the Docker daemon socket` | The command was run without `sudo` (see [Users and permissions](#users-and-permissions)). |
+| `sudo: ... is not in the sudoers file` while logged in as `keycloak` | Docker commands are run from your own admin account, not as `keycloak`. |
+| No certificate, or browser warnings | The DNS record doesn't point to the VM yet, or port 80 is blocked. Check `sudo docker compose logs caddy`. |
 | Admin console stays on a loading spinner | Step 3 (frontend URL of the `master` realm) was skipped or has a typo. |
-| Admin hostname returns 403 while on the VPN | Your IP address is not in `ADMIN_ALLOWED_IPS`. Check `curl -4 https://ifconfig.me` on your device. After changing `.env`, run `docker compose up -d caddy`. |
-| Requests through Caddy return 502 Bad Gateway | Keycloak is still starting, or Caddy doesn't trust Keycloak's internal certificate (e.g. after `tls-init renew` without restarting Caddy). Run `docker compose restart caddy`, and check `docker compose logs caddy`. |
+| Admin hostname returns 403 while on the VPN | Your IP address is not in `ADMIN_ALLOWED_IPS`. Check `curl -4 https://ifconfig.me` on your device. After changing `.env`, run `sudo docker compose up -d caddy`. |
+| Requests through Caddy return 502 Bad Gateway | Keycloak is still starting, or Caddy doesn't trust Keycloak's internal certificate (e.g. after `tls-init renew` without restarting Caddy). Run `sudo docker compose restart caddy`, and check `sudo docker compose logs caddy`. |
 | Requests through Caddy return 403 Forbidden | `KC_PROXY_HEADERS` is not set to `xforwarded`, so Keycloak's origin checks fail (see the reverse proxy guide). |
 
 ## Why it is set up this way
