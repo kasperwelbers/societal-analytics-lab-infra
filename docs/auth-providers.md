@@ -96,12 +96,12 @@ To be done on a test machine, before migrating anything. Mark items as done, and
 
 **Basics**
 
-- [ ] Run Keycloak locally with `start-dev`, create a realm and a confidential client (authorization code flow with PKCE).
+- [x] Run Keycloak locally with `start-dev`, create a realm and a confidential client (authorization code flow with PKCE).
 - [ ] Log in to a test application, and check the ID token: `email_verified`, `auth_time`, `amr`.
 
 **Consent (use cases 3 and 7)**
 
-- [ ] A new user logging in to a client with consent required sees a consent screen.
+- [x] A new user logging in to a client with consent required sees a consent screen.
 - [ ] The consent is remembered: a second login to the same client shows no consent screen.
 - [ ] AmCAT and AnnoTinder sharing one client on host A: one consent covers both.
 - [ ] A client on host B asks for consent again.
@@ -116,10 +116,12 @@ To be done on a test machine, before migrating anything. Mark items as done, and
 - [ ] Trusted hosts or redirect URI restrictions work as expected.
 - [ ] ==To verify:== whether a policy exists that keeps new clients disabled until an admin enables them.
 
+Instead of DCR, apps are registered through our own [app registration site](./app-registration.md), which uses the admin API with narrow rights. A client policy in Keycloak enforces consent, PKCE and safe redirect URIs for every app it registers or changes (tested). The DCR items above are therefore no longer needed.
+
 **Users and 2FA**
 
 - [ ] Self-registration with required email verification.
-- [ ] `amr` for password, password plus TOTP, and passkey logins.
+- [ ] `amr` for password, password plus TOTP (both tested: `pwd`, and `pwd` + `mfa`), and passkey logins.
 - [ ] Step-up: `max_age=600` triggers a new login, and `auth_time` is updated.
 - [ ] Requesting 2FA with `acr_values`: a user without a second factor is asked to set one up. Our server checks the returned `acr`.
 - [ ] Users can't add login methods (e.g. link other accounts) unless we allow it.
@@ -140,15 +142,27 @@ To be done on a test machine, before migrating anything. Mark items as done, and
 
 **Operations**
 
-- [ ] Production setup with `start`, PostgreSQL and our reverse proxy (hostname and proxy headers): see the [Keycloak deployment](./keycloak-deploy.md) runbook.
-- [ ] Configuration as code (realm export or keycloak-config-cli).
+- [x] Production setup with `start`, PostgreSQL and our reverse proxy (hostname and proxy headers): see the [Keycloak deployment](./keycloak-deploy.md) runbook.
+- [x] Configuration as code with keycloak-config-cli (see [step 7 of the runbook](./keycloak-deploy.md#7-configuration-as-code)).
 - [ ] Upgrade from one 26.x release to the next.
-- [ ] Backups of the database, and a restore test.
+- [x] Backups of the database, and a restore test.
 - [ ] oauth2-proxy in front of a service without its own login (the AuthWall).
 
 **Findings**
 
-==TODO: add findings while testing.==
+Tested with Keycloak 26.8 (locally, with the realm configuration of the runbook):
+
+* **2FA flows:** mandatory 2FA (with OTP setup for users without a second factor) and optional 2FA both work with Keycloak's built-in conditions, also after Google or GitHub (post login flows). A post login flow in which nothing runs counts as failed: the optional flow needs an "Allow access" step.
+* **Copying a flow** in the admin console keeps the old flow name in "Condition - sub-flow executed". The copy then silently skips (or repeats) the 2FA step. Hence `check-realms.py`.
+* **`amr`** needs a reference value (`pwd`, `mfa`) on each authenticator. Right after setting up OTP during a login, `amr` contains only `pwd` (the OTP was set up, not used). After Google or GitHub, `amr` has no `pwd`.
+* **Account linking** in a realm without self-registration: a Google or GitHub login for an unknown email is refused; for an existing account, the user confirms by email first.
+* **The admin API** refuses tokens of a service account without the default client scope `kc-admin-api` (401), and checks the roles in the token: with `fullScopeAllowed` off, a service account loses its admin roles.
+* **Delegating clients to their owners** works with fine-grained admin permissions (v2): a user sees and edits only their own client in the admin console. But managing those permissions requires `manage-realm`, which is too much for an automated registration site.
+* **Client policies** can enforce consent, PKCE and redirect URI rules for changes made by a specific role. The redirect URI rule can only allow `http://localhost` by allowing `http://` in general (our site checks the rest). An empty post logout redirect URI attribute is refused.
+* **Client updates** keep attributes that are left out; clearing one needs an empty value. Searching clients by attribute is disabled by default.
+* **keycloak-config-cli** substitutes variables inside comments too, skips unchanged files unless its cache is turned off, and deletes things it doesn't manage unless set to `no-delete`.
+
+==TODO: real Google and GitHub logins, passkeys, and the remaining items above.==
 
 ## Learning resources
 

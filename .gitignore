@@ -4,3 +4,5 @@ env
 # Secrets and local settings of deployments
 .env
 admin-access.caddy
+vault/
+node_modules/

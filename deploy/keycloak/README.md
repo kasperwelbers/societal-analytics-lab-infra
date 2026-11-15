@@ -13,3 +13,9 @@ sudo docker compose up -d --build
 ```
 
 Then continue with step 3 of the runbook (pointing the admin realm to the admin hostname with `sudo ./admin-cli.sh`).
+
+| Folder or file | |
+| --- | --- |
+| `realms/` | Realm configuration (`master`, `lab`, `idp`), applied with `sudo docker compose run --rm keycloak-config` (runbook step 7). Check changes with `python3 check-realms.py`. |
+| `vault/` | Local folder with secrets that Keycloak reads at runtime (never committed, runbook step 7). |
+| `app-registration/` | The app registration site ([docs/app-registration.md](../../docs/app-registration.md)). |

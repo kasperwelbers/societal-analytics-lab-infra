@@ -19,6 +19,24 @@
 
 # Public hostname: logins, OIDC endpoints, static resources
 {$KC_HOSTNAME} {
+	# Limit the requests that make Keycloak send an email (registration, email verification,
+	# forgot password, linking an external account), per client IP address. Many people can
+	# share one address (e.g. a campus network), so raise the limit for teaching sessions.
+	rate_limit {
+		zone keycloak_email {
+			match {
+				expression `({method} == "POST" && {path}.matches("^/realms/[^/]+/login-actions/(registration|reset-credentials|first-broker-login)$")) || ({path}.matches("^/realms/[^/]+/login-actions/required-action$") && {query.execution} == "VERIFY_EMAIL")`
+			}
+			key {remote_host}
+			ipv6_prefix 64
+			window {$EMAIL_RATE_LIMIT_WINDOW:10m}
+			events {$EMAIL_RATE_LIMIT_EVENTS:30}
+		}
+	}
+	handle_errors 429 {
+		respond "Too many attempts from your network. Please wait a few minutes and try again." 429
+	}
+
 	@public {
 		path /realms/* /resources/* /.well-known/*
 		# The admin realm (master) is only reachable via the admin hostname
@@ -41,4 +59,9 @@
 	handle {
 		import keycloak
 	}
+}
+
+# App registration site
+{$APPS_HOSTNAME} {
+	reverse_proxy app-registration:3000
 }

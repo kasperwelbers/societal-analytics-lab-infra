@@ -1,0 +1,308 @@
+# Realm "lab": login for the lab's own infrastructure.
+#
+# Applied with keycloak-config-cli: see "Configuration as code" in docs/keycloak-deploy.md.
+# - Values written as "dollar, (env:NAME)" come from .env, substituted by keycloak-config-cli.
+#   (Not written literally here: keycloak-config-cli also substitutes inside comments.)
+# - Values written as "dollar, {vault.name}" are secrets that Keycloak reads from the vault
+#   folder at runtime; they are never stored in the database.
+#
+# Only what is defined here is managed. Settings that are not in this file can still be
+# changed in the admin console; settings that are in this file are reset on the next apply.
+
+realm: lab
+enabled: true
+
+# --- Login and registration ---------------------------------------------------------------
+registrationAllowed: false          # invitation only; Google/GitHub can only link existing accounts
+registrationEmailAsUsername: true
+loginWithEmailAllowed: true
+duplicateEmailsAllowed: false
+verifyEmail: true
+resetPasswordAllowed: true
+rememberMe: false
+passwordPolicy: "length(10) and upperCase(1) and digits(1) and notUsername(undefined) and notEmail(undefined)"
+
+# --- Timeouts and sessions (seconds) ------------------------------------------------------
+accessCodeLifespanUserAction: 900   # "Login action timeout": time for e.g. setting up 2FA
+ssoSessionIdleTimeout: 1800
+ssoSessionMaxLifespan: 1800
+
+# --- Security defenses and events ---------------------------------------------------------
+bruteForceProtected: true
+eventsEnabled: true
+eventsExpiration: 7776000           # 90 days
+adminEventsEnabled: true
+adminEventsDetailsEnabled: false
+
+# --- Email --------------------------------------------------------------------------------
+smtpServer:
+  host: "$(env:SMTP_HOST)"
+  port: "$(env:SMTP_PORT)"
+  ssl: "$(env:SMTP_SSL)"
+  starttls: "false"
+  auth: "true"
+  user: "$(env:SMTP_USER)"
+  password: "${vault.smtpPassword}"
+  from: "$(env:SMTP_FROM)"
+  fromDisplayName: "$(env:SMTP_FROM_NAME)"
+
+# --- Flows --------------------------------------------------------------------------------
+browserFlow: browser-2fa-required
+
+# --- The amr claim (2FA signal for our software, see the Authentication standard) ---------
+clientScopes:
+  - name: amr
+    description: "Authentication methods (amr claim): 'mfa' when a second factor was used"
+    protocol: openid-connect
+    attributes:
+      include.in.token.scope: "false"
+      display.on.consent.screen: "false"
+    protocolMappers:
+      - name: amr
+        protocol: openid-connect
+        protocolMapper: oidc-amr-mapper
+        consentRequired: false
+        config:
+          id.token.claim: "true"
+          access.token.claim: "true"
+          introspection.token.claim: "true"
+defaultDefaultClientScopes:
+  - role_list
+  - saml_organization
+  - AuthnContextClassRef
+  - profile
+  - email
+  - roles
+  - web-origins
+  - acr
+  - basic
+  - amr
+
+# --- External login providers -------------------------------------------------------------
+identityProviders:
+  - alias: google
+    providerId: google
+    enabled: true
+    trustEmail: true
+    storeToken: false
+    addReadTokenRoleOnCreate: false
+    linkOnly: false
+    hideOnLogin: false
+    firstBrokerLoginFlowAlias: first-broker-login-existing-users
+    postBrokerLoginFlowAlias: post-login-2fa-required
+    config:
+      clientId: "$(env:LAB_GOOGLE_CLIENT_ID)"
+      clientSecret: "${vault.googleClientSecret}"
+      syncMode: IMPORT
+      pkceEnabled: "true"
+      pkceMethod: S256
+  - alias: github
+    providerId: github
+    enabled: true
+    trustEmail: false
+    storeToken: false
+    addReadTokenRoleOnCreate: false
+    linkOnly: false
+    hideOnLogin: false
+    firstBrokerLoginFlowAlias: first-broker-login-existing-users
+    postBrokerLoginFlowAlias: post-login-2fa-required
+    config:
+      clientId: "$(env:LAB_GITHUB_CLIENT_ID)"
+      clientSecret: "${vault.githubClientSecret}"
+      syncMode: IMPORT
+
+# --- Authentication flows -----------------------------------------------------------------
+# Mandatory 2FA: users with a second factor (OTP, passkey/security key, recovery codes) use
+# it; users without one must set up OTP. Pattern from the Keycloak docs: "Conditional 2FA
+# sub-flow with OTP default". Each execution that counts as authentication method has an
+# amr reference value ("pwd" or "mfa") valid for the session lifetime.
+authenticationFlows:
+  - alias: browser-2fa-required
+    description: "Browser login with mandatory 2FA"
+    providerId: basic-flow
+    topLevel: true
+    builtIn: false
+    authenticationExecutions:
+      - authenticator: auth-cookie
+        requirement: ALTERNATIVE
+        priority: 10
+        authenticatorFlow: false
+      - authenticator: identity-provider-redirector
+        requirement: ALTERNATIVE
+        priority: 20
+        authenticatorFlow: false
+      - flowAlias: browser-2fa-required-forms
+        requirement: ALTERNATIVE
+        priority: 30
+        authenticatorFlow: true
+  - alias: browser-2fa-required-forms
+    description: "Password, then 2FA"
+    providerId: basic-flow
+    topLevel: false
+    builtIn: false
+    authenticationExecutions:
+      - authenticator: auth-username-password-form
+        authenticatorConfig: browser-2fa-required-amr-pwd
+        requirement: REQUIRED
+        priority: 10
+        authenticatorFlow: false
+      - flowAlias: browser-2fa-required-2fa
+        requirement: CONDITIONAL
+        priority: 20
+        authenticatorFlow: true
+      - flowAlias: browser-2fa-required-setup-otp
+        requirement: CONDITIONAL
+        priority: 30
+        authenticatorFlow: true
+  - alias: browser-2fa-required-2fa
+    description: "Second factor, for users who have one"
+    providerId: basic-flow
+    topLevel: false
+    builtIn: false
+    authenticationExecutions:
+      - authenticator: conditional-user-configured
+        requirement: REQUIRED
+        priority: 10
+        authenticatorFlow: false
+      - authenticator: conditional-credential
+        authenticatorConfig: browser-2fa-required-skip-after-passkey
+        requirement: REQUIRED
+        priority: 20
+        authenticatorFlow: false
+      - authenticator: auth-otp-form
+        authenticatorConfig: browser-2fa-required-amr-otp
+        requirement: ALTERNATIVE
+        priority: 30
+        authenticatorFlow: false
+      - authenticator: webauthn-authenticator
+        authenticatorConfig: browser-2fa-required-amr-webauthn
+        requirement: ALTERNATIVE
+        priority: 40
+        authenticatorFlow: false
+      - authenticator: auth-recovery-authn-code-form
+        authenticatorConfig: browser-2fa-required-amr-recovery
+        requirement: ALTERNATIVE
+        priority: 50
+        authenticatorFlow: false
+  - alias: browser-2fa-required-setup-otp
+    description: "Users without a second factor must set up OTP"
+    providerId: basic-flow
+    topLevel: false
+    builtIn: false
+    authenticationExecutions:
+      - authenticator: conditional-sub-flow-executed
+        authenticatorConfig: browser-2fa-required-if-no-2fa
+        requirement: REQUIRED
+        priority: 10
+        authenticatorFlow: false
+      - authenticator: auth-otp-form
+        authenticatorConfig: browser-2fa-required-amr-otp-setup
+        requirement: REQUIRED
+        priority: 20
+        authenticatorFlow: false
+
+  # After a login with Google or GitHub (which replaces only the password): the same
+  # mandatory second factor.
+  - alias: post-login-2fa-required
+    description: "Mandatory 2FA after login with an external provider"
+    providerId: basic-flow
+    topLevel: true
+    builtIn: false
+    authenticationExecutions:
+      - flowAlias: post-login-2fa-required-2fa
+        requirement: CONDITIONAL
+        priority: 10
+        authenticatorFlow: true
+      - flowAlias: post-login-2fa-required-setup-otp
+        requirement: CONDITIONAL
+        priority: 20
+        authenticatorFlow: true
+  - alias: post-login-2fa-required-2fa
+    description: "Second factor, for users who have one"
+    providerId: basic-flow
+    topLevel: false
+    builtIn: false
+    authenticationExecutions:
+      - authenticator: conditional-user-configured
+        requirement: REQUIRED
+        priority: 10
+        authenticatorFlow: false
+      - authenticator: auth-otp-form
+        authenticatorConfig: post-login-2fa-required-amr-otp
+        requirement: ALTERNATIVE
+        priority: 20
+        authenticatorFlow: false
+      - authenticator: webauthn-authenticator
+        authenticatorConfig: post-login-2fa-required-amr-webauthn
+        requirement: ALTERNATIVE
+        priority: 30
+        authenticatorFlow: false
+      - authenticator: auth-recovery-authn-code-form
+        authenticatorConfig: post-login-2fa-required-amr-recovery
+        requirement: ALTERNATIVE
+        priority: 40
+        authenticatorFlow: false
+  - alias: post-login-2fa-required-setup-otp
+    description: "Users without a second factor must set up OTP"
+    providerId: basic-flow
+    topLevel: false
+    builtIn: false
+    authenticationExecutions:
+      - authenticator: conditional-sub-flow-executed
+        authenticatorConfig: post-login-2fa-required-if-no-2fa
+        requirement: REQUIRED
+        priority: 10
+        authenticatorFlow: false
+      - authenticator: auth-otp-form
+        authenticatorConfig: post-login-2fa-required-amr-otp-setup
+        requirement: REQUIRED
+        priority: 20
+        authenticatorFlow: false
+
+  # First login with Google or GitHub: only for people who already have a lab account (same
+  # email address). The external account is linked after confirmation and verification
+  # (automatic for providers with "trust email", by email for the others). No new accounts.
+  - alias: first-broker-login-existing-users
+    description: "Link an external login to an existing account; never create accounts"
+    providerId: basic-flow
+    topLevel: true
+    builtIn: false
+    authenticationExecutions:
+      - authenticator: idp-detect-existing-broker-user
+        requirement: REQUIRED
+        priority: 10
+        authenticatorFlow: false
+      - authenticator: idp-confirm-link
+        requirement: REQUIRED
+        priority: 20
+        authenticatorFlow: false
+      - authenticator: idp-email-verification
+        requirement: REQUIRED
+        priority: 30
+        authenticatorFlow: false
+
+authenticatorConfig:
+  - alias: browser-2fa-required-amr-pwd
+    config: { default.reference.value: pwd, default.reference.maxAge: "1800" }
+  - alias: browser-2fa-required-skip-after-passkey
+    config: { credentials: webauthn-passwordless }
+  - alias: browser-2fa-required-amr-otp
+    config: { default.reference.value: mfa, default.reference.maxAge: "1800" }
+  - alias: browser-2fa-required-amr-webauthn
+    config: { default.reference.value: mfa, default.reference.maxAge: "1800" }
+  - alias: browser-2fa-required-amr-recovery
+    config: { default.reference.value: mfa, default.reference.maxAge: "1800" }
+  - alias: browser-2fa-required-if-no-2fa
+    config: { flow_to_check: browser-2fa-required-2fa, check_result: not-executed }
+  - alias: browser-2fa-required-amr-otp-setup
+    config: { default.reference.value: mfa, default.reference.maxAge: "1800" }
+  - alias: post-login-2fa-required-amr-otp
+    config: { default.reference.value: mfa, default.reference.maxAge: "1800" }
+  - alias: post-login-2fa-required-amr-webauthn
+    config: { default.reference.value: mfa, default.reference.maxAge: "1800" }
+  - alias: post-login-2fa-required-amr-recovery
+    config: { default.reference.value: mfa, default.reference.maxAge: "1800" }
+  - alias: post-login-2fa-required-if-no-2fa
+    config: { flow_to_check: post-login-2fa-required-2fa, check_result: not-executed }
+  - alias: post-login-2fa-required-amr-otp-setup
+    config: { default.reference.value: mfa, default.reference.maxAge: "1800" }

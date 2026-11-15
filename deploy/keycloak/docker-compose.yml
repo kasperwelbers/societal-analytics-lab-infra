@@ -31,6 +31,8 @@ services:
       # The management interface (health checks, port 9000) stays on plain HTTP; it is not exposed
       KC_HTTP_MANAGEMENT_SCHEME: http
       KC_PROXY_HEADERS: xforwarded
+      # Secrets referenced as ${vault.<name>} in the realm configuration (see realms/)
+      KC_VAULT_DIR: /opt/keycloak/vault
       # Deprecated option that is only useful behind a load balancer (see the reverse proxy guide)
       KC_SPI_STICKY_SESSION_ENCODER__INFINISPAN__SHOULD_ATTACH_ROUTE: "false"
       # Temporary admin, only created on the very first start (when the master realm doesn't exist yet)
@@ -53,6 +55,7 @@ services:
       start_period: 60s
     volumes:
       - internal-tls:/opt/keycloak/conf/internal-tls:ro
+      - ./vault:/opt/keycloak/vault:ro
     depends_on:
       postgres:
         condition: service_healthy
@@ -76,6 +79,102 @@ services:
       - internal-tls:/opt/keycloak/conf/internal-tls
     network_mode: none
 
+  # Applies the realm configuration in realms/ (configuration as code). Not started by "up":
+  #   sudo docker compose run --rm keycloak-config
+  keycloak-config:
+    image: adorsys/keycloak-config-cli:6.5.1-26.5.5
+    profiles: ["config"]
+    restart: "no"
+    # Stop with a clear message if a value is missing in .env (checked here, so that other
+    # docker compose commands keep working while these values are not filled in yet)
+    entrypoint:
+      - /bin/sh
+      - -c
+      - >-
+        missing="";
+        for name in KEYCLOAK_CLIENTSECRET KC_HOSTNAME APPS_HOSTNAME APP_REGISTRATION_CLIENT_SECRET
+        SMTP_HOST SMTP_USER SMTP_FROM LAB_GOOGLE_CLIENT_ID LAB_GITHUB_CLIENT_ID IDP_GOOGLE_CLIENT_ID
+        IDP_GITHUB_CLIENT_ID; do [ -n "$$(printenv $$name)" ] || missing="$$missing $$name"; done;
+        if [ -n "$$missing" ]; then echo "Missing in .env:$$missing" >&2; exit 1; fi;
+        exec java $$JAVA_OPTS -jar /app/keycloak-config-cli.jar
+    environment:
+      KEYCLOAK_URL: https://keycloak:8443
+      KEYCLOAK_GRANTTYPE: client_credentials
+      KEYCLOAK_CLIENTID: keycloak-config
+      KEYCLOAK_CLIENTSECRET: ${KEYCLOAK_CONFIG_SECRET:-}
+      KEYCLOAK_AVAILABILITYCHECK_ENABLED: "true"
+      KEYCLOAK_AVAILABILITYCHECK_TIMEOUT: 120s
+      # Trust Keycloak's internal certificate (created by tls-init)
+      KEYCLOAK_TLS_TRUSTSTOREPATH: /internal-tls/truststore.p12
+      KEYCLOAK_TLS_TRUSTSTOREPASSWORD: truststore
+      IMPORT_FILES_LOCATIONS: /config/*.yaml
+      IMPORT_VARSUBSTITUTION_ENABLED: "true"
+      # Apply every file on every run, so changes made in the admin console to managed
+      # settings are reset (by default, unchanged files are skipped)
+      IMPORT_CACHE_ENABLED: "false"
+      # Never delete things that are not in realms/: external login providers, flows, client
+      # scopes, roles and clients added in the admin console (or by the app registration site)
+      # stay. Something removed from a realm file must then also be deleted in the admin
+      # console (see the runbook).
+      IMPORT_MANAGED_IDENTITYPROVIDER: no-delete
+      IMPORT_MANAGED_IDENTITYPROVIDERMAPPER: no-delete
+      IMPORT_MANAGED_AUTHENTICATIONFLOW: no-delete
+      IMPORT_MANAGED_CLIENTSCOPE: no-delete
+      IMPORT_MANAGED_ROLE: no-delete
+      IMPORT_MANAGED_CLIENT: no-delete
+      # Values used in realms/*.yaml as $(env:NAME)
+      KC_HOSTNAME: ${KC_HOSTNAME}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-465}
+      SMTP_SSL: ${SMTP_SSL:-true}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_FROM: ${SMTP_FROM:-}
+      SMTP_FROM_NAME: ${SMTP_FROM_NAME:-Societal Analytics Lab}
+      LAB_GOOGLE_CLIENT_ID: ${LAB_GOOGLE_CLIENT_ID:-}
+      LAB_GITHUB_CLIENT_ID: ${LAB_GITHUB_CLIENT_ID:-}
+      IDP_GOOGLE_CLIENT_ID: ${IDP_GOOGLE_CLIENT_ID:-}
+      IDP_GITHUB_CLIENT_ID: ${IDP_GITHUB_CLIENT_ID:-}
+      APPS_HOSTNAME: ${APPS_HOSTNAME:-}
+      APP_REGISTRATION_CLIENT_SECRET: ${APP_REGISTRATION_CLIENT_SECRET:-}
+    volumes:
+      - ./realms:/config:ro
+      - internal-tls:/internal-tls:ro
+    depends_on:
+      keycloak:
+        condition: service_healthy
+    networks:
+      - web
+
+  # Site where users register apps (OIDC clients) in the idp realm (see docs/app-registration.md)
+  app-registration:
+    build: ./app-registration
+    image: lab-app-registration
+    pull_policy: never
+    restart: unless-stopped
+    environment:
+      PUBLIC_URL: https://${APPS_HOSTNAME}
+      OIDC_ISSUER: https://${KC_HOSTNAME}/realms/idp
+      KEYCLOAK_INTERNAL_URL: https://keycloak:8443
+      OIDC_CLIENT_ID: app-registration
+      OIDC_CLIENT_SECRET: ${APP_REGISTRATION_CLIENT_SECRET:-}
+      SESSION_SECRET: ${APP_REGISTRATION_SESSION_SECRET:-}
+      MAX_APPS_PER_USER: ${MAX_APPS_PER_USER:-3}
+      EMAIL_LIMIT_PER_DAY: ${EMAIL_LIMIT_PER_DAY:-100}
+      CONTACT_EMAIL: ${CONTACT_EMAIL:-}
+      # Trust Keycloak's internal certificate (created by tls-init)
+      NODE_EXTRA_CA_CERTS: /internal-tls/tls.crt
+    volumes:
+      - internal-tls:/internal-tls:ro
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    mem_limit: 256m
+    depends_on:
+      keycloak:
+        condition: service_healthy
+    networks:
+      - web
+
   postgres:
     # Keycloak 26.8 is tested with PostgreSQL 18
     image: postgres:18.7-alpine
@@ -97,7 +196,12 @@ services:
       - db
 
   caddy:
-    image: caddy:2.11.9-alpine
+    # Caddy with the rate limit module (see Caddy.Dockerfile)
+    build:
+      context: .
+      dockerfile: Caddy.Dockerfile
+    image: lab-caddy
+    pull_policy: never
     restart: unless-stopped
     ports:
       - "80:80"
@@ -106,7 +210,10 @@ services:
     environment:
       KC_HOSTNAME: ${KC_HOSTNAME}
       KC_HOSTNAME_ADMIN: ${KC_HOSTNAME_ADMIN}
+      APPS_HOSTNAME: ${APPS_HOSTNAME:?set APPS_HOSTNAME in .env}
       ACME_EMAIL: ${ACME_EMAIL:?set ACME_EMAIL in .env}
+      EMAIL_RATE_LIMIT_EVENTS: ${EMAIL_RATE_LIMIT_EVENTS:-30}
+      EMAIL_RATE_LIMIT_WINDOW: ${EMAIL_RATE_LIMIT_WINDOW:-10m}
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       # Local restrictions of the admin hostname (copy admin-access.example.caddy first)

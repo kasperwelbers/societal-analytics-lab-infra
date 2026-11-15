@@ -3,43 +3,51 @@
 This runbook sets up Keycloak on a single VM, with PostgreSQL and Caddy (TLS via Let's Encrypt), using the files in [`deploy/keycloak/`](https://github.com/kasperwelbers/societal-analytics-lab-infra/tree/main/deploy/keycloak). It takes about an hour. Why Keycloak is being evaluated is explained in the [OIDC provider comparison](./auth-providers.md); what to test after the setup is in its [test checklist](./auth-providers.md#keycloak-test-checklist).
 
 !!! info "Placeholders"
-    This page uses `auth.example.org` (public hostname) and `auth-admin.example.org` (admin hostname). The real hostnames, IP ranges and secrets are only stored in `.env` on the VM.
+    This page uses `auth.example.org` (public hostname), `auth-admin.example.org` (admin hostname) and `apps.example.org` (app registration). The real hostnames, IP ranges and secrets are only stored on the VM (`.env`, `vault/` and `admin-access.caddy`).
 
 ## Overview
 
 | Component | Role |
 | --- | --- |
-| **Caddy** | Public TLS certificates via Let's Encrypt. Forwards only the paths that need to be public to Keycloak, over a second TLS connection (re-encrypt). |
+| **Caddy** | Public TLS certificates via Let's Encrypt. Forwards only the paths that need to be public to Keycloak, over a second TLS connection (re-encrypt). Built with a rate limit module, to limit requests that make Keycloak send emails. |
 | **Keycloak** | An optimized image (built from the official image), started with `start --optimized`. Only accepts HTTPS, with an internal certificate that only Caddy trusts. |
 | **tls-init** | A one-off service that creates the internal certificate on the first start (and does nothing on later starts). |
 | **PostgreSQL** | The database, only reachable by Keycloak. |
+| **keycloak-config** | Only runs when you apply the realm configuration ([step 7](#7-configuration-as-code)): [keycloak-config-cli](https://github.com/adorsys/keycloak-config-cli) applies `realms/*.yaml` to Keycloak. |
+| **app-registration** | A small site where users register apps (OIDC clients) in the `idp` realm ([step 8](#8-app-registration)). |
 
 Two TLS connections:
 
 * **Browser to Caddy:** the public certificates from Let's Encrypt, which Caddy renews automatically.
 * **Caddy to Keycloak:** an internal certificate, valid for 10 years, which is never shown to browsers. Caddy trusts exactly this certificate. This is the *re-encrypt* setup preferred in the [reverse proxy guide](https://www.keycloak.org/server/reverseproxy), so that traffic between Caddy and Keycloak is encrypted too.
 
-Two hostnames:
+Three hostnames:
 
 * **`auth.example.org`** (public): logins, OIDC endpoints and static resources (`/realms/`, `/resources/`, `/.well-known/`). Everything else returns 404, including the admin console and the admin realm (`master`).
 * **`auth-admin.example.org`** (admin): the admin consoles of all realms, the admin API, and the logins of the administrative `master` realm. Without further settings it is reachable from anywhere, behind Keycloak's login and 2FA. Restricting it to IP ranges is recommended (see [step 4](#4-restrict-admin-access-recommended)).
+* **`apps.example.org`** (app registration): the [app registration site](./app-registration.md).
 
 | File | Contents |
 | --- | --- |
-| `docker-compose.yml` | The three services, pinned versions, memory limits, health checks, and two networks (the database network has no internet access) |
-| `Dockerfile` | The optimized Keycloak image (`kc.sh build` with PostgreSQL and health endpoints) |
+| `docker-compose.yml` | The services, pinned versions, memory limits, health checks, and two networks (the database network has no internet access) |
+| `Dockerfile` | The optimized Keycloak image (`kc.sh build` with PostgreSQL, health endpoints and the file vault) |
+| `Caddy.Dockerfile` | Caddy with the [rate limit module](https://github.com/mholt/caddy-ratelimit) |
+| `realms/` | The realm configuration (`master`, `lab`, `idp`), applied in [step 7](#7-configuration-as-code) |
+| `check-realms.py` | Checks `realms/` for mistakes that Keycloak accepts silently (run it after every change) |
+| `app-registration/` | The [app registration site](./app-registration.md) |
 | `internal-tls.sh` | Creates the internal certificate (run by the tls-init service) |
 | `admin-cli.sh` | Runs Keycloak's admin command-line tool (`kcadm.sh`) inside the container, over the internal TLS connection |
 | `Caddyfile` | The public and admin hostnames. The admin hostname reads the local restrictions from `admin-access.caddy`. |
 | `admin-access.example.caddy` | Template for restricting the admin hostname. Copied to `admin-access.caddy`, a local file that is never committed. |
 | `.env.example` | All settings. Copied to `.env`, which holds the secrets and is never committed. |
+| `vault/` | Secrets that Keycloak reads at runtime (SMTP password, Google and GitHub client secrets). A local folder that is never committed. |
 | `backup.sh` | A database dump, for a daily cron job |
 
 ## 1. Prerequisites
 
 **The VM.** On a university VM, first follow [University VMs](./vm.md): secure SSH logins, open ports 80 and 443 in the VM firewall, and install Docker. Read the warning there about Docker bypassing the VM firewall.
 
-**DNS.** Create two **A records** pointing to the VM's IPv4 address, e.g. `auth` and `auth-admin` in the zone of your domain. Don't create AAAA (IPv6) records: with IPv4 only, the IP restriction of the admin hostname only needs IPv4 ranges, and Let's Encrypt can't fail on a stale IPv6 address. If your DNS provider can proxy traffic (e.g. Cloudflare), use "DNS only", otherwise Caddy can't see visitors' IP addresses. Check from your own machine:
+**DNS.** Create three **A records** pointing to the VM's IPv4 address, e.g. `auth`, `auth-admin` and `apps` in the zone of your domain. Don't create AAAA (IPv6) records: with IPv4 only, the IP restriction of the admin hostname only needs IPv4 ranges, and Let's Encrypt can't fail on a stale IPv6 address. If your DNS provider can proxy traffic (e.g. Cloudflare), use "DNS only", otherwise Caddy can't see visitors' IP addresses. Check from your own machine:
 
 ```bash
 dig +short auth.example.org
@@ -136,13 +144,13 @@ Create `.env`, readable only by `keycloak`:
 sudo -u keycloak cp .env.example .env && sudo -u keycloak chmod 600 .env
 ```
 
-Generate three secrets with the command below (run it once per secret), and paste them into `.env`: `POSTGRES_PASSWORD`, `INTERNAL_TLS_KEYSTORE_PASSWORD` and `KC_BOOTSTRAP_ADMIN_PASSWORD`.
+Generate five secrets with the command below (run it once per secret), and paste them into `.env`: `POSTGRES_PASSWORD`, `INTERNAL_TLS_KEYSTORE_PASSWORD`, `KC_BOOTSTRAP_ADMIN_PASSWORD`, `APP_REGISTRATION_CLIENT_SECRET` and `APP_REGISTRATION_SESSION_SECRET`.
 
 ```bash
 openssl rand -hex 32
 ```
 
-Fill in the other values in `.env`: both hostnames (without `https://`), and `ACME_EMAIL` (for Let's Encrypt expiry notices). Store the secrets in your password manager as well.
+Fill in the other values in `.env`: the three hostnames (without `https://`), and `ACME_EMAIL` (for Let's Encrypt expiry notices). The values under "Realm configuration" follow in [step 7](#7-configuration-as-code). Store the secrets in your password manager as well.
 
 ```bash
 sudo -u keycloak nano .env
@@ -152,6 +160,12 @@ Create the local file for restricting the admin hostname. Unchanged, it adds no 
 
 ```bash
 sudo -u keycloak cp admin-access.example.caddy admin-access.caddy
+```
+
+Create the vault folder (filled in [step 7](#7-configuration-as-code)). Keycloak runs as a different user inside its container (uid 1000), with group root, so the folder belongs to `keycloak:root` and is readable for the group:
+
+```bash
+sudo install -d -o keycloak -g root -m 750 vault
 ```
 
 ### Build and start
@@ -168,7 +182,9 @@ Wait until Keycloak is `healthy` (about a minute):
 sudo docker compose ps
 ```
 
-Check that Caddy obtained both certificates (look for `certificate obtained successfully`):
+The `app-registration` service restarts until the `idp` realm exists ([step 7](#7-configuration-as-code)); that is expected.
+
+Check that Caddy obtained the certificates (look for `certificate obtained successfully`):
 
 ```bash
 sudo docker compose logs caddy | grep -i certificate
@@ -297,16 +313,120 @@ Following [Bootstrapping and recovering an admin account](https://www.keycloak.o
 
 By default, Keycloak asks for the second factor of every user who has one configured, so the permanent admin always needs their authenticator app.
 
-## 7. First realm
+## 7. Configuration as code
 
-Create the realm for the shared pool of users. Everything after these basics follows the [test checklist](./auth-providers.md#keycloak-test-checklist).
+The realms are configured in `realms/*.yaml`, and applied with [keycloak-config-cli](https://github.com/adorsys/keycloak-config-cli). This makes the configuration reviewable and repeatable: a change is made in the repository, pulled onto the VM, and applied.
 
-1. **Manage realms → Create realm**, with a short name (it becomes part of every URL, e.g. `https://auth.example.org/realms/<name>`).
-2. **Realm settings → Login:** turn on **User registration**, **Verify email** and **Login with email**.
-3. **Realm settings → Email:** the sender address and SMTP server. For Scaleway Transactional Email: host `smtp.tem.scaleway.com`, port `465`, **Enable SSL**, username your Scaleway project ID, password an API secret key. Click **Test connection**.
-4. **Realm settings → Sessions:** **SSO Session Idle** and **SSO Session Max** to 30 minutes. Applications keep their own sessions; this only determines how long users stay signed in at Keycloak.
+| Realm | For | Login | Registration | External login |
+| --- | --- | --- | --- | --- |
+| `master` | Administrators only | Password + mandatory 2FA | No | No (and no email) |
+| `lab` | The lab's own infrastructure | Password + mandatory 2FA | Invitation only | Google, GitHub (existing accounts only) |
+| `idp` | The shared login for servers run by others | Password + optional 2FA | Open | Google, GitHub |
 
-## 8. Backups
+In all realms:
+
+* **2FA:** OTP (authenticator app), passkeys or security keys, and recovery codes count as a second factor. With mandatory 2FA, users without a second factor are asked to set up OTP when they log in. Google and GitHub replace only the password: the second factor is asked after them, in the same way.
+* **The `amr` claim** in tokens contains `mfa` when a second factor was used, and `pwd` for a password (for our software: `OIDC_MFA_CLAIM=amr:mfa`, see the [Authentication standard](./auth.md)).
+* **Passwords:** at least 10 characters, with an uppercase letter and a digit, not equal to the username or email.
+* **Login action timeout** 15 minutes (time for e.g. setting up 2FA), brute force detection, and login and admin events kept for 90 days.
+* **Sessions** at Keycloak last 30 minutes in `lab` and `idp` (applications keep their own sessions), and up to 8 hours in `master`.
+
+Only what is in the files is managed: settings that are not in a file can still be changed in the admin console, and settings that are in a file are reset to the file's value on every apply. Nothing is deleted that isn't in the files: clients (e.g. registered apps), roles, flows, client scopes and login providers that were added in the admin console stay. Not managed at all: the frontend URL of `master` ([step 3](#3-point-the-admin-realm-to-the-admin-hostname)), users (except the app registration service account) and the `keycloak-config` client itself.
+
+### Google and GitHub
+
+Register a separate OAuth app per realm, so that each realm has its own credentials, and the consent screen shows which login it is for. The redirect URI (callback URL) is:
+
+```
+https://auth.example.org/realms/<realm>/broker/<google or github>/endpoint
+```
+
+* **Google:** in the [Google Cloud console](https://console.cloud.google.com/apis/credentials), **Create credentials → OAuth client ID → Web application**, with the redirect URI above. The OAuth consent screen needs the scopes `openid`, `email` and `profile`, and must be published (**In production**), otherwise only test users can log in.
+* **GitHub:** under the organization's **Settings → Developer settings → OAuth Apps → New OAuth App**, with the redirect URI above as **Authorization callback URL**. Email addresses from GitHub are not trusted as verified: Keycloak verifies them itself.
+
+Put the four client IDs in `.env` (`LAB_GOOGLE_CLIENT_ID`, ...), and the client secrets in the vault (below).
+
+### Email
+
+The `lab` and `idp` realms send email (verification, password reset, linking an external account); `master` has no email server, so admin access never depends on an inbox. Fill in `SMTP_HOST`, `SMTP_PORT`, `SMTP_SSL`, `SMTP_USER`, `SMTP_FROM` and `SMTP_FROM_NAME` in `.env`. For Scaleway Transactional Email: host `smtp.tem.scaleway.com`, port `465` with SSL, user your Scaleway project ID, and the password is an API secret key (in the vault).
+
+### The vault
+
+Secrets that Keycloak uses itself are not in `.env` or in the realm files, but in [Keycloak's file vault](https://www.keycloak.org/server/vault): one file per secret, read by Keycloak when it needs it, and never stored in the database (the realm configuration only refers to them, e.g. `${vault.smtpPassword}`). Realm admins see only the reference in the admin console, not the secret.
+
+The file name is `<realm>_<name>`, and the file contains only the secret:
+
+| File | Contents |
+| --- | --- |
+| `lab_smtpPassword`, `idp_smtpPassword` | The SMTP password (the same for both realms) |
+| `lab_googleClientSecret`, `idp_googleClientSecret` | The client secret of the Google OAuth app of that realm |
+| `lab_githubClientSecret`, `idp_githubClientSecret` | The client secret of the GitHub OAuth app of that realm |
+
+Create each file like this (you are prompted for the secret; it doesn't end up in your shell history):
+
+```bash
+sudo bash -c 'read -rsp "Secret: " s && printf %s "$s" > vault/idp_smtpPassword && chown keycloak:root vault/idp_smtpPassword && chmod 640 vault/idp_smtpPassword'
+```
+
+To change a secret, overwrite its file in the same way, and restart Keycloak (`sudo docker compose restart keycloak`). The vault is part of what you need for a restore (see [Backups](#9-backups)).
+
+### The client for keycloak-config-cli
+
+keycloak-config-cli logs in to Keycloak with a client in the `master` realm. In the admin console of `master`:
+
+1. **Clients → Create client**, client ID `keycloak-config`. Click **Next**.
+2. Turn on **Client authentication** and **Service accounts roles**; turn off **Standard flow** and **Direct access grants**. Click **Next**, then **Save**.
+3. **Service accounts roles** tab: **Assign role**, filter by realm roles, and assign **admin**.
+4. **Client scopes** tab: **Add client scope**, select **kc-admin-api**, and add it as **Default**. Without it, the admin API refuses the client's tokens (401).
+5. **Credentials** tab: copy the **Client secret** into `.env` as `KEYCLOAK_CONFIG_SECRET`.
+
+This client can change everything in Keycloak: its secret is as sensitive as an admin password.
+
+### Apply
+
+Make a backup first ([Backups](#9-backups)). Then, from the deployment folder:
+
+```bash
+sudo docker compose run --rm keycloak-config
+```
+
+It ends with the `master` realm and no errors. A value missing from `.env` is reported before anything is changed (`Missing in .env: ...`). Then restart the app registration site, which needs the `idp` realm:
+
+```bash
+sudo docker compose restart app-registration
+```
+
+Check, in a private browser window:
+
+* the `lab` and `idp` login pages (`https://auth.example.org/realms/<realm>/account`) show Google and GitHub;
+* a user without a second factor is asked to set up OTP in `lab`, and not in `idp`;
+* **Realm settings → Email → Test connection** works in both realms.
+
+**After the first apply on an existing installation:** flows, login providers and other things that were created by hand stay, even if the files now define the same thing under another name. Check **Authentication** in each realm: the flows bound to *Browser flow* are now the ones from the files (`browser-2fa-required` or `browser-2fa-optional`); delete custom flows that are no longer used. A realm whose name is not `lab` or `idp` is not touched: the files create new realms with these names.
+
+### Changing the configuration
+
+1. Change `realms/*.yaml`, and run the checks (requires PyYAML):
+
+    ```bash
+    python3 check-realms.py
+    ```
+
+2. Commit, and get the change onto the VM with `sudo -u keycloak git pull`.
+3. Apply it, as above.
+
+Things to know when editing the files:
+
+* `$(env:NAME)` is replaced by the value from `.env`, also inside comments: never write it in a comment. Add new names to the `keycloak-config` service in `docker-compose.yml`.
+* Something removed from a file is not removed from Keycloak: also delete it in the admin console.
+* Flows that are defined in more than one file must stay identical; `check-realms.py` checks this.
+* Copying a flow in the admin console keeps the old flow name in its conditions ("Condition - sub-flow executed"), which then silently stop working. `check-realms.py` catches this in the files.
+
+## 8. App registration
+
+The [app registration site](./app-registration.md) at `https://apps.example.org` lets anyone with an account in the `idp` realm register apps (OIDC clients) and manage their settings. Its client and service account are created by the realm configuration ([step 7](#7-configuration-as-code)), with the secret from `APP_REGISTRATION_CLIENT_SECRET`. How it works, its limits, and how to raise them for a user: see [App registration](./app-registration.md).
+
+## 9. Backups
 
 `backup.sh` writes a compressed database dump (`pg_dump --format=custom`) to `/var/backups/keycloak`, and removes dumps older than 14 days. Run it once by hand:
 
@@ -321,7 +441,7 @@ echo '15 3 * * * root /opt/keycloak/societal-analytics-lab-infra/deploy/keycloak
 ```
 
 * **The dumps are sensitive:** they contain user data, password hashes, client secrets and the realm signing keys. The backup folder is only readable by root.
-* **Keycloak has no master key:** the database dump (plus `.env` and `admin-access.caddy`) is all you need to restore. The internal certificate is not part of the backup: on a new VM, tls-init creates a new one.
+* **Keycloak has no master key:** the database dump (plus `.env`, `vault/` and `admin-access.caddy`) is all you need to restore. The internal certificate is not part of the backup: on a new VM, tls-init creates a new one.
 * **Keycloak's register of running instances** (the `jgroups_ping` table) is left out of the dump. Restoring old entries would make Keycloak believe another instance is running.
 * ==TODO: encryption and an off-site copy, once the lab's backup strategy is decided. Until then, the dumps are on the same VM, so they don't protect against losing the VM.==
 
@@ -353,7 +473,7 @@ sudo docker compose start keycloak
 
 Do a restore test after setting up the backups, e.g. on a test machine.
 
-## 9. Maintenance
+## 10. Maintenance
 
 **Logs:**
 
@@ -390,7 +510,15 @@ sudo docker compose restart keycloak caddy
 sudo docker compose build --pull && sudo docker compose up -d
 ```
 
-**PostgreSQL and Caddy:** change the image tag in `docker-compose.yml`, and run `sudo docker compose up -d`. Minor PostgreSQL versions (e.g. 18.7 to 18.8) need nothing else. A new major version (e.g. 18 to 19) needs a dump and restore; check that Keycloak supports it first.
+**PostgreSQL:** change the image tag in `docker-compose.yml`, and run `sudo docker compose up -d`. Minor PostgreSQL versions (e.g. 18.7 to 18.8) need nothing else. A new major version (e.g. 18 to 19) needs a dump and restore; check that Keycloak supports it first.
+
+**Caddy** is built with the rate limit module: change `CADDY_VERSION` in `Caddy.Dockerfile` (and, if needed, the pinned commit of the module), then rebuild with `sudo docker compose up -d --build caddy`.
+
+**keycloak-config-cli:** its image tag names the Keycloak version it was built for (e.g. `6.5.1-26.5.5`). After a Keycloak upgrade, use a release built for that version or close to it, and apply the configuration once to check.
+
+**The app registration site:** after `git pull`, rebuild it with `sudo docker compose up -d --build app-registration`.
+
+**Email rate limits.** Caddy limits the requests that make Keycloak send an email (registration, email verification, password reset, linking an external account) to `EMAIL_RATE_LIMIT_EVENTS` per `EMAIL_RATE_LIMIT_WINDOW` (default 30 per 10 minutes) per IP address. Users above the limit see "Too many attempts from your network". Many people can share one address, e.g. a campus network: for a teaching session where a whole class registers at once, raise the limit in `.env` beforehand, apply it with `sudo docker compose up -d caddy`, and lower it again afterwards. Separately, the app registration site limits the emails per registered app (see [App registration](./app-registration.md#limits)).
 
 **Recovering admin access** (e.g. a lost authenticator app, or no admin left), following the [recovery guide](https://www.keycloak.org/server/bootstrap-admin-recovery). This requires access to the VM, which is the break-glass route. Stop Keycloak and create a temporary admin (you are prompted for a password):
 
@@ -422,6 +550,12 @@ Log in to the admin console as `recovery-admin`, fix the problem (e.g. delete th
 | The admin console of a realm with an exception stays on "Loading", or shows a permission error | The exception is missing `/resources/*` or `/admin/serverinfo`, or the realm name in the paths is misspelled (see step 4). |
 | Requests through Caddy return 502 Bad Gateway | Keycloak is still starting, or Caddy doesn't trust Keycloak's internal certificate (e.g. after `tls-init renew` without restarting Caddy). Run `sudo docker compose restart caddy`, and check `sudo docker compose logs caddy`. |
 | Requests through Caddy return 403 Forbidden | `KC_PROXY_HEADERS` is not set to `xforwarded`, so Keycloak's origin checks fail (see the reverse proxy guide). |
+| `docker compose run --rm keycloak-config` fails with `401 Unauthorized` | The `keycloak-config` client lacks the default client scope `kc-admin-api`, or `KEYCLOAK_CONFIG_SECRET` is wrong (see [step 7](#the-client-for-keycloak-config-cli)). |
+| keycloak-config-cli: `Cannot resolve variable 'env:...'` | A `$(env:NAME)` in a realm file (possibly in a comment) whose name is not passed to the `keycloak-config` service in `docker-compose.yml`. |
+| Locked out of the admin console after turning on **Verify email** in `master` | `master` has no email server, so the verification email never arrives. Don't turn it on (the realm configuration keeps it off). To recover, follow [Recovering admin access](#10-maintenance), but create a service account (`bootstrap-admin service --optimized --client-id recovery`) instead of a user, because a new user would also have to verify their email. Log in to the admin tool with `sudo ./admin-cli.sh config credentials --server https://localhost:8443 --realm master --client recovery --secret <secret>` (after `sudo ./admin-cli.sh login` has set up the truststore; its password prompt may fail), turn verification off with `sudo ./admin-cli.sh update realms/master -s verifyEmail=false`, and delete the `recovery` client. |
+| After renaming a realm, the account console or admin console of that realm doesn't load | Keycloak doesn't update the URLs of the built-in clients (`account`, `account-console`, `security-admin-console`): fix their root and redirect URLs by hand, or create the realm again with the new name. |
+| A login flow asks for OTP twice, or not at all | A "Condition - sub-flow executed" refers to a flow name that doesn't exist (e.g. after copying a flow). Run `python3 check-realms.py`. |
+| The app registration site restarts continuously | The `idp` realm doesn't exist yet (apply the realm configuration), or a value is missing in `.env`: check `sudo docker compose logs app-registration`. |
 | `WARN ... configured to build using Bake, but buildx isn't installed` | Harmless: Compose falls back to the classic build. To remove the warning, install the buildx plugin (`sudo apt install docker-buildx-plugin`, with Docker from Docker's own repository). |
 
 ## Why it is set up this way
@@ -435,10 +569,13 @@ Log in to the admin console as `recovery-admin`, fix the problem (e.g. delete th
 * **IP restriction of the admin hostname in a local file:** restricting the administration interfaces, and the `master` realm in particular, follows Keycloak's recommendations. The ranges and exceptions are specific to each installation, so they live in `admin-access.caddy` on the VM instead of in the repository.
 * **Exceptions for specific realms:** not a Keycloak recommendation, but a deliberate choice to let admins outside our network manage their own realm. It makes that realm's admin console reachable for them, behind its own login and 2FA, and keeps the `master` realm restricted.
 * **PostgreSQL 18:** the version Keycloak 26.8 is tested with.
+* **Configuration as code with keycloak-config-cli:** the realm settings are reviewed and versioned like code, and a realm can be rebuilt. It never deletes what it doesn't manage (`IMPORT_MANAGED_*=no-delete`), so things added in the admin console, and apps registered by users, are safe. It applies every file on every run (`IMPORT_CACHE_ENABLED=false`), so changes made in the admin console to managed settings don't silently persist.
+* **Secrets in the vault, not in the database:** the [file vault](https://www.keycloak.org/server/vault) keeps the SMTP password and the Google and GitHub client secrets out of the database, its backups, and the admin console.
+* **Rate limiting emails in Caddy:** Keycloak has no limit on how many emails it sends; brute force detection only covers logins. Without a limit, anyone could use the registration and password reset forms to send many emails, which costs money and damages the sender reputation of our domain.
+* **2FA with OTP as the default to set up:** OTP works on every device and doesn't depend on a particular platform; passkeys and security keys can be added in the account console.
 * **Temporary bootstrap admin, replaced by a permanent admin with 2FA:** see [Bootstrapping and recovering an admin account](https://www.keycloak.org/server/bootstrap-admin-recovery).
 
 ## Next steps
 
-* Work through the [test checklist](./auth-providers.md#keycloak-test-checklist).
-* Configuration as code: once the realm settings are clear, keep them in this repository (realm export or [keycloak-config-cli](https://github.com/adorsys/keycloak-config-cli)), so that realms, clients and policies can be rebuilt as well.
+* Work through the [test checklist](./auth-providers.md#keycloak-test-checklist), including real logins with Google and GitHub.
 * Encrypted, off-site backups (part of the lab's backup strategy).

@@ -12,6 +12,7 @@ nav:
       - "2FA: where should it live?": auth-2fa.md
       - Provider comparison: auth-providers.md
       - Keycloak deployment: keycloak-deploy.md
+      - App registration: app-registration.md
   - Lab authentication: lab-auth.md
   - University VMs: vm.md
   - Policies:
