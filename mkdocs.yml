@@ -13,6 +13,7 @@ nav:
       - Provider comparison: auth-providers.md
       - Keycloak deployment: keycloak-deploy.md
   - Lab authentication: lab-auth.md
+  - University VMs: vm.md
   - Policies:
       - Privacy statement: policies/privacy.md
       - Acceptable use policy: policies/aup.md

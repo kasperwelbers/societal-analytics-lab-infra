@@ -36,6 +36,8 @@ Two hostnames:
 
 ## 1. Prerequisites
 
+**The VM.** On a university VM, first follow [University VMs](./vm.md): secure SSH logins, open ports 80 and 443 in the VM firewall, and install Docker. Read the warning there about Docker bypassing the VM firewall.
+
 **DNS.** Create two **A records** pointing to the VM's IPv4 address, e.g. `auth` and `auth-admin` in the zone of your domain. Don't create AAAA (IPv6) records: with IPv4 only, the IP restriction of the admin hostname only needs IPv4 ranges, and Let's Encrypt can't fail on a stale IPv6 address. If your DNS provider can proxy traffic (e.g. Cloudflare), use "DNS only", otherwise Caddy can't see visitors' IP addresses. Check from your own machine:
 
 ```bash
@@ -47,6 +49,8 @@ dig +short auth.example.org
 ```bash
 sudo ss -tlnp '( sport = :80 or sport = :443 )'
 ```
+
+Only a header line, without any rows below it, means the ports are free. This doesn't show whether they are reachable from outside: that shows in step 2, when Caddy obtains its certificates.
 
 **Docker.** Docker Engine with the compose plugin ([installation](https://docs.docker.com/engine/install/)). The commands below assume your user may run `docker` (member of the `docker` group); otherwise prefix them with `sudo`.
 
