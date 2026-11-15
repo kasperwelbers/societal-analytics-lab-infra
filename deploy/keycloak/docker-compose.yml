@@ -13,6 +13,8 @@ services:
         # Keycloak version: change it here to upgrade (see docs/keycloak-deploy.md)
         KEYCLOAK_IMAGE: ${KEYCLOAK_IMAGE:-quay.io/keycloak/keycloak:26.8.2}
     image: lab-keycloak
+    # Built locally from the Dockerfile: never try to download it from a registry
+    pull_policy: never
     command: ["start", "--optimized"]
     restart: unless-stopped
     environment:
@@ -63,6 +65,8 @@ services:
   # Creates the internal certificate for Caddy -> Keycloak on the first start (see internal-tls.sh)
   tls-init:
     image: lab-keycloak
+    # Built by the keycloak service above: never try to download it from a registry
+    pull_policy: never
     entrypoint: ["bash", "/internal-tls.sh"]
     restart: "no"
     environment:

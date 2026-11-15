@@ -360,6 +360,7 @@ Log in to the admin console as `recovery-admin`, fix the problem (e.g. delete th
 | Admin hostname returns 403 while on the VPN | Your IP address is not in `ADMIN_ALLOWED_IPS`. Check `curl -4 https://ifconfig.me` on your device. After changing `.env`, run `sudo docker compose up -d caddy`. |
 | Requests through Caddy return 502 Bad Gateway | Keycloak is still starting, or Caddy doesn't trust Keycloak's internal certificate (e.g. after `tls-init renew` without restarting Caddy). Run `sudo docker compose restart caddy`, and check `sudo docker compose logs caddy`. |
 | Requests through Caddy return 403 Forbidden | `KC_PROXY_HEADERS` is not set to `xforwarded`, so Keycloak's origin checks fail (see the reverse proxy guide). |
+| `WARN ... configured to build using Bake, but buildx isn't installed` | Harmless: Compose falls back to the classic build. To remove the warning, install the buildx plugin (`sudo apt install docker-buildx-plugin`, with Docker from Docker's own repository). |
 
 ## Why it is set up this way
 
