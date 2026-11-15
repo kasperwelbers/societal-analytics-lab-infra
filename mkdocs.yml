@@ -10,6 +10,7 @@ nav:
       - Installation guide: auth-install.md
       - Migration guide: auth-migration.md
       - "2FA: where should it live?": auth-2fa.md
+      - Provider comparison: auth-providers.md
   - Lab authentication: lab-auth.md
   - Policies:
       - Privacy statement: policies/privacy.md

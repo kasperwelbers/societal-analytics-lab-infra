@@ -21,9 +21,9 @@ There are two options. Both require 2FA; they differ in who manages the provider
 | | Option 1: our shared OIDC provider | Option 2: your own OIDC provider |
 | --- | --- | --- |
 | **For** | Servers without sensitive data, such as teaching and pilots | Any server, required for sensitive research data |
-| **Provider** | ZITADEL, run by the lab. Teams create their own organization and manage their own users. | Ideally your institution's identity provider (see the [Installation guide](./auth-install.md#option-2-your-own-oidc-provider)) |
+| **Provider** | Run by the lab. ==Under review:== see the [OIDC provider comparison](./auth-providers.md). | Ideally your institution's identity provider (see the [Installation guide](./auth-install.md#option-2-your-own-oidc-provider)) |
 | **Maintained by** | The lab, with best effort | A security team (recommended) |
-| **Account recovery** | The admin of your own organization at our provider | The provider's helpdesk (recommended) |
+| **Account recovery** | ==TODO: depends on the provider choice== (see the [Installation guide](./auth-install.md#option-1-our-shared-oidc-provider)) | The provider's helpdesk (recommended) |
 | **Cost** | Free | Depends on the provider |
 
 **Why our shared provider is not for sensitive data**
@@ -102,7 +102,7 @@ All software developed by the Societal Analytics Lab follows these rules, to ens
 | --- | --- |
 | Same origin | The server and web client are always hosted on the same domain. |
 | Server-side OIDC flow | The server initiates and completes the OIDC flow with the trusted provider (`OIDC_HOST`), and sets a signed, http-only session cookie. |
-| One session per application | When AmCAT and AnnoTinder are hosted together, each is a separate OIDC client with its own session. The second login completes without user interaction, because the user is already signed in at the provider. Logging out is per application. |
+| One session per application | When AmCAT and AnnoTinder are hosted together, each application has its own session. They can share one OIDC client (the same client ID and client secret), so that users consent once per host (see [One client per host](./auth-providers.md#one-client-per-host)). The second login completes without user interaction, because the user is already signed in at the provider. Logging out is per application. |
 | Authorization on the server | The server decides what users may do, not the OIDC provider (see [Authorization](#authorization)). |
 | API keys for other clients | Other clients (e.g. R or Python) can only access the backend via [API keys](#api-keys). |
 | Email verification | The server checks the `email_verified` claim. This cannot be disabled. |

@@ -25,7 +25,7 @@ This statement does **not** apply to AmCAT or AnnoTinder servers that are hosted
 | **AnnoTinder** (lab server) | Annotating research data | Data that users upload, and their annotations |
 | **Whisper** | Transcription of audio | Audio files and transcripts, processed on lab hardware |
 | **Ollama** | AI inference with language models | Prompts and outputs, processed on lab hardware |
-| **Shared OIDC provider** (ZITADEL) | Login service for teams hosting our software | Accounts of users in the organizations at the provider (see [Shared OIDC provider](#shared-oidc-provider)) |
+| **Shared OIDC provider** ==TODO: provider under review== | Login service for teams hosting our software | Accounts of users at the provider (see [Shared OIDC provider](#shared-oidc-provider)) |
 
 ## Which personal data we process
 
@@ -60,17 +60,18 @@ AmCAT and AnnoTinder store data that users upload to research projects. That dat
 The lab offers a [shared OIDC provider](../auth-install.md#option-1-our-shared-oidc-provider) for teams that host our software themselves. For accounts at this provider:
 
 * The lab processes account data (name, email address, login and 2FA settings, security logs) to provide the login service.
-* Each organization at the provider is managed by its own owner, who invites users and can reset their second factor.
+* Before a server receives your name and email address, you are asked to consent. ==TODO: confirm once the provider is chosen (see the [OIDC provider comparison](../auth-providers.md)).==
+* ==TODO: who manages accounts and resets second factors (the lab for the shared pool, or a team for its own pool).==
 * The team hosting a server that uses the shared provider is responsible for that server, and for the data in it.
 
 ## Who we share data with
 
 | Recipient | Why |
 | --- | --- |
-| The login provider (e.g. SURF, or ZITADEL for the shared provider) | Logging in. The login provider has its own privacy statement. |
+| The login provider (e.g. SURF, or the lab's shared provider) | Logging in. The login provider has its own privacy statement. |
 | ==TODO: hosting providers (e.g. SURF for SciCloud)== | Hosting our servers |
 
-We do not sell personal data, and do not share it for advertising. ==TODO: confirm that no data is transferred outside the EU/EEA (relevant if the shared provider runs on ZITADEL Cloud).==
+We do not sell personal data, and do not share it for advertising. ==TODO: confirm that no data is transferred outside the EU/EEA (relevant if the shared provider runs on a cloud service).==
 
 ## Retention
 

@@ -2,7 +2,7 @@
 
 **Status: open decision.**
 
-This page is about authentication for the lab's own infrastructure: our own AmCAT and AnnoTinder servers, and the AuthWall in front of services without their own login (Whisper, Ollama). It is not about the [shared OIDC provider](./auth-install.md#option-1-our-shared-oidc-provider) that we offer to other teams. That one runs on ZITADEL, and is kept separate from the lab's own identity provider, because it is open to the public.
+This page is about authentication for the lab's own infrastructure: our own AmCAT and AnnoTinder servers, and the AuthWall in front of services without their own login (Whisper, Ollama). It is not about the [shared OIDC provider](./auth-install.md#option-1-our-shared-oidc-provider) that we offer to other teams. Its provider is under review (see the [OIDC provider comparison](./auth-providers.md)), and it is kept separate from the lab's own identity provider, because it is open to the public.
 
 ## What we need
 
@@ -27,9 +27,9 @@ SRAM is SURF's service for research collaborations. We register our services, cr
     * Less control: we can't reset a member's 2FA ourselves.
     * ==To test:== does SRAM's ID token include `email_verified`, a 2FA signal (`amr`/`acr`), and `auth_time`, and does it honour `max_age`? If SRAM enforces 2FA but doesn't signal it, our standard needs a way to handle that.
 
-### ZITADEL (lab instance)
+### Self-hosted provider (lab instance or realm)
 
-The same software as our shared provider, but as a separate instance for the lab (on its own VM).
+The same software as our shared provider, isolated for the lab. With Keycloak this can be a separate realm on the same server; with ZITADEL or Authentik it needs a separate instance (see the [OIDC provider comparison](./auth-providers.md)).
 
 * **Strengths**
     * One software stack for both the lab and the shared provider.
@@ -38,22 +38,22 @@ The same software as our shared provider, but as a separate instance for the lab
 * **Weaknesses**
     * We maintain it ourselves: updates, backups, availability.
     * External collaborators need an account with us, unless we set up federation with SURFconext or eduGAIN, which is extra work.
-    * No forward auth built in: the AuthWall needs oauth2-proxy (see below).
+    * No forward auth built in (except in Authentik): the AuthWall needs oauth2-proxy (see below).
 
 ### Authentik (current setup)
 
-Our current lab identity provider. It has forward auth built in (proxy provider) and can serve LDAP. But since we run ZITADEL for the shared provider anyway, keeping Authentik for the lab means maintaining two identity stacks. So we only keep Authentik if we decide against both SRAM and a lab ZITADEL instance.
+Our current lab identity provider. It has forward auth built in (proxy provider) and can serve LDAP. If the shared provider runs on other software, keeping Authentik for the lab means maintaining two identity stacks. So we only keep Authentik for the lab if we decide against both SRAM and a lab instance of the shared provider's software, or if Authentik becomes the shared provider.
 
 ## The AuthWall
 
-* **With SRAM or ZITADEL:** Caddy `forward_auth` with oauth2-proxy, which handles the OIDC login and session for services without their own login.
+* **With SRAM, Keycloak or ZITADEL:** Caddy `forward_auth` with oauth2-proxy, which handles the OIDC login and session for services without their own login.
 * **With Authentik:** Authentik's built-in proxy provider (forward auth).
 
 ## Next steps
 
 1. Test SRAM on its acceptance environment (`acc.sram.surf.nl`): register a test service, log in, and check the claims in the ID token against our standard.
-2. If SRAM meets the standard (or the gaps can be handled), use SRAM for the lab, and run ZITADEL only for the shared provider.
-3. Otherwise, set up a lab ZITADEL instance on a separate VM, and migrate the lab's few Authentik users.
+2. If SRAM meets the standard (or the gaps can be handled), use SRAM for the lab, and run our own provider only for the shared provider.
+3. Otherwise, set up a lab instance (or realm) of the shared provider's software, and migrate the lab's few Authentik users.
 
 ## Sources
 

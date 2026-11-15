@@ -55,7 +55,7 @@ An OIDC provider returns an ID token with claims about the login. The ones that 
 
 * The OIDC provider requires 2FA, and signals it in the ID token. Which claim counts as 2FA is configured per deployment with `OIDC_MFA_CLAIM` (e.g. `amr` containing `mfa`, or a specific `acr` value).
 * For sensitive actions, the server checks the claim and `auth_time`, and redirects to the provider with `max_age` if the login is too old.
-* Teams without a suitable provider can use our [shared OIDC provider](./auth-install.md#option-1-our-shared-oidc-provider) (ZITADEL, with 2FA) for servers without sensitive data.
+* Teams without a suitable provider can use our [shared OIDC provider](./auth-install.md#option-1-our-shared-oidc-provider) (with 2FA, provider under review) for servers without sensitive data.
 
 | Pros | Cons |
 | --- | --- |

@@ -13,24 +13,24 @@ Whichever option you choose, your team is responsible for the personal data on y
 
 ## Option 1: our shared OIDC provider
 
-To make it easy to start, the Societal Analytics Lab offers a shared OIDC provider ([ZITADEL](https://zitadel.com)) with 2FA. It is open to anyone hosting our software, and separate from the identity provider for the lab's own infrastructure (see [Lab authentication](./lab-auth.md)). You create your own organization there, and manage its users yourself. Other organizations at the shared provider can't see or manage your users.
+!!! warning "Not available yet"
+    The lab plans to offer a shared OIDC provider, but the choice of provider is under review (see the [OIDC provider comparison](./auth-providers.md)). Until then, use [option 2](#option-2-your-own-oidc-provider).
 
-==TODO: URL of the shared provider (self-hosted or ZITADEL Cloud, to be decided).==
+To make it easy to start, the Societal Analytics Lab plans to offer a shared OIDC provider with 2FA, separate from the identity provider for the lab's own infrastructure (see [Lab authentication](./lab-auth.md)). The plan:
 
-**Setting up your organization**
+* **One account per user.** Users create one account at the shared provider, which works on every server that uses it.
+* **You register your server yourself,** and get a client ID, client secret and redirect URI configuration. New registrations start with limits that the lab can increase.
+* **Users consent once per host.** Before your server receives a user's name and email address, the user is asked to consent. AmCAT and AnnoTinder on the same host share one client, so one consent covers both (see [One client per host](./auth-providers.md#one-client-per-host)).
+* **Optionally, your own pool of users,** which your team manages itself (users, login methods, account recovery), isolated from other pools.
 
-1. Register your organization at the shared provider's sign-up page (`<shared-provider-url>/ui/login/register/org`). The account you register with becomes the organization owner.
-2. In your organization's login settings, require a second factor for all users (passkey or authenticator app).
-3. Create a project with a web application for your server, using the authorization code flow, with the redirect URI of your server. ==TODO: redirect URI per app (AmCAT, AnnoTinder).==
-4. Configure your server with `OIDC_HOST`, `OIDC_CLIENT_ID` and `OIDC_CLIENT_SECRET` from the application, and `OIDC_MFA_CLAIM=amr:mfa` ==TODO: verify the exact `amr` value ZITADEL sends==. See [Configuration](./auth.md#configuration).
-5. Invite your users. They create an account in your organization and set up their second factor.
+==TODO: URL and registration steps, once the provider is chosen.==
 
 **Terms**
 
 * **No sensitive research data.** Names and email addresses of users (e.g. students) are personal data too, so you are responsible for handling those according to your institution's rules.
 * **Best-effort availability.** If the shared provider is down, nobody can log in to your server. Keep this in mind for teaching and exams.
-* **You handle account recovery.** Your organization's owner can reset users' second factors. The lab does not provide a helpdesk.
-* **The lab operates the provider.** As the operator, the lab could in principle access every organization. This is one of the reasons the shared provider is not for sensitive data.
+* **Account recovery.** ==TODO: by the lab (best effort) for accounts in the shared pool, and by your own team for your own pool.== The lab does not provide a helpdesk.
+* **The lab operates the provider.** As the operator, the lab could in principle access every account. This is one of the reasons the shared provider is not for sensitive data.
 
 !!! warning "Is your server getting used for research data?"
     If you start using sensitive research data, move to your own OIDC provider first (see the [Migration guide](./auth-migration.md)). The web client shows server admins a **Shared OIDC provider: not for sensitive data** label as a reminder.
@@ -54,7 +54,7 @@ SURF is only available to Dutch institutions. Institutions in other countries of
 
 **ZITADEL Cloud free plan (small teams)**
 
-If your institution can't offer a provider, you can create your own [ZITADEL Cloud](https://zitadel.com) instance. The free plan includes 2FA and passkeys, and lets you choose an EU data region, but is limited to 100 daily active users. We only recommend it if you don't expect many active users, or are able to move to a paid plan when you do. As with our shared provider, you handle account recovery yourself.
+If your institution can't offer a provider, you can create your own [ZITADEL Cloud](https://zitadel.com) instance. The free plan includes 2FA and passkeys, and lets you choose an EU data region, but is limited to 100 daily active users. We only recommend it if you don't expect many active users, or are able to move to a paid plan when you do. You handle account recovery yourself.
 
 **Other providers**
 
@@ -64,7 +64,7 @@ If your institution can't offer a provider, you can create your own [ZITADEL Clo
 | **Microsoft Entra ID** | Yes | `amr:mfa` (add `amr` as optional claim) | **Yes** | Paid (Institutional) | Hard (Admin setup) | Proper enterprise/institutional contracts and DPAs. |
 | **Google Workspace** | Yes | `amr:mfa` | **Yes** | Paid (Institutional) | Hard (Admin setup) | Google only includes `amr` when the information is available. Test before relying on it. |
 | **Auth0 paid plans** | Yes (TOTP from Essentials, WebAuthn from Professional) | `amr:mfa` | **Yes** | Paid | Easy | Includes enterprise agreements, SLAs, and DPA. |
-| **ZITADEL** (Cloud or self-hosted) | Yes | `amr:mfa` (verify) | **Yes** (EU region or hosting) | Free plan (100 daily active users) / paid plans / hosting cost | Easy (Cloud) / Medium (self-hosted) | Organizations with their own admins. |
+| **ZITADEL** (Cloud or self-hosted) | Yes | `amr:mfa` (verify) | **Yes** (EU region or hosting) | Free plan (100 daily active users) / paid plans / hosting cost | Easy (Cloud) / Medium (self-hosted) | Use one instance per team: organizations within one instance don't isolate users from each other (see the [comparison](./auth-providers.md#zitadel)). |
 | **Self-hosted Authentik** | Yes | `amr:mfa` | **Yes** (when hosted on-prem/EU cloud) | Hosting cost / labor | Medium | MFA must be required in the authentication flow (Authentik can't be asked for MFA on demand). |
 | **Self-hosted Keycloak** | Yes | `acr:<value>` | **Yes** (when hosted on-prem/EU cloud) | Hosting cost / labor | Medium | Map the acr value to a level of authentication that requires 2FA. |
 

@@ -60,8 +60,8 @@ graph TD
 | **SciCloud** | **[AmCAT](./amcat.md)** | Public / Authenticated | Web Application & API for storing, managing and sharing data |
 | **Data Storage** | **ElasticSearch**, **S3** | Internal Only | Backend storage for text and large files. |
 | **LabServices** | **Whisper**, **Ollama** | Authenticated | GPU-accelerated AI inference & transcription. |
-| ==TODO: depends on decision== | **Lab OIDC provider** (to be decided: SRAM, ZITADEL or Authentik) | Lab members and collaborators | Identity provider for lab services, with 2FA. See [Lab authentication](./lab-auth.md). |
-| ==TODO: separate VM or ZITADEL Cloud== | **Shared OIDC provider** (ZITADEL, only for other teams) | Public (self-service organizations) | [Shared provider](./auth-install.md#option-1-our-shared-oidc-provider) for other teams hosting AmCAT or AnnoTinder without sensitive data. Kept separate from the lab OIDC provider. |
+| ==TODO: depends on decision== | **Lab OIDC provider** (to be decided: SRAM, or a self-hosted provider, see the [comparison](./auth-providers.md)) | Lab members and collaborators | Identity provider for lab services, with 2FA. See [Lab authentication](./lab-auth.md). |
+| ==TODO: depends on decision== | **Shared OIDC provider** (under review, see the [comparison](./auth-providers.md)) | Public (self-registration) | [Shared provider](./auth-install.md#option-1-our-shared-oidc-provider) for other teams hosting AmCAT or AnnoTinder without sensitive data. Kept separate from the lab OIDC provider. |
 
 ---
 
