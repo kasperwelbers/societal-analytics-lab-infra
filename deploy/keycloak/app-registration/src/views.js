@@ -2,7 +2,6 @@
 
 import { html, raw } from 'hono/html';
 import { config } from './config.js';
-import { ATTR } from './apps.js';
 
 const style = raw(`
   :root { --fg:#1d1d1f; --muted:#5f6368; --line:#d9dce1; --bg:#fff; --accent:#0b57d0; --warn:#b3261e; --ok:#146c2e; --soft:#f4f6f9; }
@@ -110,9 +109,8 @@ ${errorBox(error)}
   });
 }
 
-export function appPage({ user, client, settings, secret, emails, emailLimit, error, notice }) {
+export function appPage({ user, client, settings, secret, error, notice }) {
   const issuer = config.issuer;
-  const disabledByLimit = !client.enabled && client.attributes?.[ATTR.disabledBy] === 'email-limit';
   return page({
     title: client.name || client.clientId,
     user,
@@ -120,12 +118,7 @@ export function appPage({ user, client, settings, secret, emails, emailLimit, er
 <h1>${client.name || client.clientId} ${status(client)}</h1>
 ${errorBox(error)}
 ${notice ? html`<div class="box notice">${notice}</div>` : ''}
-${disabledByLimit
-  ? html`<div class="box error">This app was disabled because it caused more than ${emailLimit} emails in 24 hours.
-    It is enabled again automatically when the count drops below the limit. ${contactLine()} if you need a higher limit.</div>`
-  : !client.enabled
-    ? html`<div class="box error">This app was disabled by an administrator. ${contactLine()}.</div>`
-    : ''}
+${client.enabled ? '' : html`<div class="box error">This app was disabled by an administrator. ${contactLine()}.</div>`}
 
 <h2>Connection details</h2>
 <table>
@@ -133,11 +126,12 @@ ${disabledByLimit
 <tr><th>Discovery URL</th><td class="mono">${issuer}/.well-known/openid-configuration</td></tr>
 <tr><th>Client ID</th><td class="mono">${client.clientId}</td></tr>
 <tr><th>Client secret</th><td><details><summary>Show</summary><span class="mono">${secret}</span></details></td></tr>
-<tr><th>Emails (24 hours)</th><td>${emails} of ${emailLimit} <span class="hint">verification, password reset and account linking emails caused by this app</span></td></tr>
 </table>
 <p class="muted">Use the authorization code flow with PKCE (S256), and keep the client secret on your server.
 Users are asked to consent before your app receives their data. The <code>amr</code> claim contains
 <code>mfa</code> when the user logged in with a second factor.</p>
+<p class="muted">The emails our login service sends because of your app (to verify email addresses and reset
+passwords) are limited. If your users see "This app has reached its limit": ${contactLine()} for a higher limit.</p>
 
 <h2>Settings</h2>
 <form method="post" action="/apps/${client.clientId}">${settingsFields(settings)}

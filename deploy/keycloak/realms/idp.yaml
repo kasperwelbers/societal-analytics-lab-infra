@@ -119,7 +119,7 @@ users:
     serviceAccountClientId: app-registration
     realmRoles: [default-roles-idp, client-self-service]
     clientRoles:
-      realm-management: [manage-clients, view-events]
+      realm-management: [manage-clients]
 clientProfiles:
   profiles:
     - name: self-service-clients

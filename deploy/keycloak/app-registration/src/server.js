@@ -12,8 +12,7 @@ import * as oidc from 'openid-client';
 
 import { config, publicKeycloakOrigin } from './config.js';
 import * as kc from './keycloak.js';
-import { ValidationError, applySettings, emailLimitOf, isOwner, newClient, parseForm, settingsOf } from './apps.js';
-import { emailCounts, startEmailLimitJob } from './email-limit.js';
+import { ValidationError, applySettings, isOwner, newClient, parseForm, settingsOf } from './apps.js';
 import * as views from './views.js';
 
 const SESSION = '__Host-session';
@@ -187,15 +186,13 @@ const NOTICES = {
 };
 
 async function renderApp(c, client, { settings, error, status = 200 } = {}) {
-  const [secret, counts] = await Promise.all([kc.getClientSecret(client), emailCounts()]);
+  const secret = await kc.getClientSecret(client);
   return c.html(
     views.appPage({
       user: c.get('user'),
       client,
       settings: settings || settingsOf(client),
       secret,
-      emails: counts.get(client.clientId) || 0,
-      emailLimit: emailLimitOf(client, config.emailLimit),
       error,
       notice: NOTICES[c.req.query('notice')],
     }),
@@ -254,4 +251,3 @@ app.onError((err, c) => {
 });
 
 serve({ fetch: app.fetch, port: config.port }, () => console.log(`app registration listening on port ${config.port}`));
-startEmailLimitJob();

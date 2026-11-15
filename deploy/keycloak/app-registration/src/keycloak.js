@@ -80,19 +80,3 @@ export const getClientSecret = async (client) =>
   (await admin('GET', `/clients/${client.id}/client-secret`)).value;
 export const regenerateClientSecret = async (client) =>
   (await admin('POST', `/clients/${client.id}/client-secret`)).value;
-
-// --- Events ----------------------------------------------------------------------------------
-
-// Events of the given types since the given time (ms), oldest pages first
-export async function listEvents(types, since) {
-  const all = [];
-  const query = new URLSearchParams({ dateFrom: String(since) });
-  for (const type of types) query.append('type', type);
-  for (let first = 0; ; first += 1000) {
-    query.set('first', String(first));
-    query.set('max', '1000');
-    const page = await admin('GET', `/events?${query}`);
-    all.push(...page);
-    if (page.length < 1000) return all;
-  }
-}

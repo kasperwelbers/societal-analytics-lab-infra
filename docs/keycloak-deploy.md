@@ -330,6 +330,7 @@ In all realms:
 * **Passwords:** at least 10 characters, with an uppercase letter and a digit, not equal to the username or email.
 * **Login action timeout** 15 minutes (time for e.g. setting up 2FA), brute force detection, and login and admin events kept for 90 days.
 * **Sessions** at Keycloak last 30 minutes in `lab` and `idp` (applications keep their own sessions), and up to 8 hours in `master`.
+* **Registration** (in `idp`) asks only for email and name: users choose their password after verifying their email address. This is Keycloak's default when email verification is on, so that nobody can set a password for an address they don't own.
 
 Only what is in the files is managed: settings that are not in a file can still be changed in the admin console, and settings that are in a file are reset to the file's value on every apply. Nothing is deleted that isn't in the files: clients (e.g. registered apps), roles, flows, client scopes and login providers that were added in the admin console stay. Not managed at all: the frontend URL of `master` ([step 3](#3-point-the-admin-realm-to-the-admin-hostname)), users (except the app registration service account) and the `keycloak-config` client itself.
 
@@ -518,7 +519,17 @@ sudo docker compose build --pull && sudo docker compose up -d
 
 **The app registration site:** after `git pull`, rebuild it with `sudo docker compose up -d --build app-registration`.
 
-**Email rate limits.** Caddy limits the requests that make Keycloak send an email (registration, email verification, password reset, linking an external account) to `EMAIL_RATE_LIMIT_EVENTS` per `EMAIL_RATE_LIMIT_WINDOW` (default 30 per 10 minutes) per IP address. Users above the limit see "Too many attempts from your network". Many people can share one address, e.g. a campus network: for a teaching session where a whole class registers at once, raise the limit in `.env` beforehand, apply it with `sudo docker compose up -d caddy`, and lower it again afterwards. Separately, the app registration site limits the emails per registered app (see [App registration](./app-registration.md#limits)).
+**Email limits.** Keycloak has no limit on the emails it sends, so Caddy limits the requests that make it send one: the first visit to the "verify your email" page (after registering, or when a user with an unverified email address logs in) and submitting "forgot password". Logins (with password, OTP, passkey, Google or GitHub), token requests and refresh grants, and finishing a password reset from an email that was already sent are never limited. Above a limit, Caddy shows a page "Please try again later", only to the person who ran into it, and Keycloak doesn't send the email. There are two limits, set in `.env` and applied with `sudo docker compose up -d caddy` (which also resets the counters):
+
+| Limit | Default | Message |
+| --- | --- | --- |
+| **Per IP address** (`EMAIL_LIMIT_PER_IP` per `EMAIL_LIMIT_PER_IP_WINDOW`) | 30 per 10 minutes. Also counts registrations and first logins with Google or GitHub. | "Too many attempts from your network" |
+| **Per app** (client ID, in tiers, per `EMAIL_LIMIT_WINDOW`) | 25 per 30 minutes; apps listed in `EMAIL_LIMIT_TIER2_APPS` 100, in `EMAIL_LIMIT_TIER3_APPS` 500 | "This app has reached its limit for sign-ups and password resets" |
+
+* **Teaching sessions:** many people can share one IP address (e.g. a campus network). When a whole class registers at once, raise `EMAIL_LIMIT_PER_IP` beforehand, and lower it again afterwards. If they all use one app, put that app in a higher tier for the session too.
+* **A higher limit for an app:** add its client ID to `EMAIL_LIMIT_TIER2_APPS` or `EMAIL_LIMIT_TIER3_APPS` (client IDs separated by spaces), e.g. `EMAIL_LIMIT_TIER2_APPS=survey-tool-1890fa other-app-ab12cd`. Put an app in one tier only.
+* **The limit per app can't be avoided** by leaving out or changing the client ID in the URL: Keycloak then refuses the request and sends nothing (tested). Someone can use up an app's limit on purpose, but then only sign-ups and password resets through that app pause; its logins keep working.
+* The counters are kept in memory: a restart of Caddy resets them.
 
 **Recovering admin access** (e.g. a lost authenticator app, or no admin left), following the [recovery guide](https://www.keycloak.org/server/bootstrap-admin-recovery). This requires access to the VM, which is the break-glass route. Stop Keycloak and create a temporary admin (you are prompted for a password):
 
@@ -556,6 +567,7 @@ Log in to the admin console as `recovery-admin`, fix the problem (e.g. delete th
 | After renaming a realm, the account console or admin console of that realm doesn't load | Keycloak doesn't update the URLs of the built-in clients (`account`, `account-console`, `security-admin-console`): fix their root and redirect URLs by hand, or create the realm again with the new name. |
 | A login flow asks for OTP twice, or not at all | A "Condition - sub-flow executed" refers to a flow name that doesn't exist (e.g. after copying a flow). Run `python3 check-realms.py`. |
 | The app registration site restarts continuously | The `idp` realm doesn't exist yet (apply the realm configuration), or a value is missing in `.env`: check `sudo docker compose logs app-registration`. |
+| Users see "Please try again later" | An email limit was reached (see [Email limits](#10-maintenance)). The message says which: their network, or the app. |
 | `WARN ... configured to build using Bake, but buildx isn't installed` | Harmless: Compose falls back to the classic build. To remove the warning, install the buildx plugin (`sudo apt install docker-buildx-plugin`, with Docker from Docker's own repository). |
 
 ## Why it is set up this way
@@ -571,7 +583,7 @@ Log in to the admin console as `recovery-admin`, fix the problem (e.g. delete th
 * **PostgreSQL 18:** the version Keycloak 26.8 is tested with.
 * **Configuration as code with keycloak-config-cli:** the realm settings are reviewed and versioned like code, and a realm can be rebuilt. It never deletes what it doesn't manage (`IMPORT_MANAGED_*=no-delete`), so things added in the admin console, and apps registered by users, are safe. It applies every file on every run (`IMPORT_CACHE_ENABLED=false`), so changes made in the admin console to managed settings don't silently persist.
 * **Secrets in the vault, not in the database:** the [file vault](https://www.keycloak.org/server/vault) keeps the SMTP password and the Google and GitHub client secrets out of the database, its backups, and the admin console.
-* **Rate limiting emails in Caddy:** Keycloak has no limit on how many emails it sends; brute force detection only covers logins. Without a limit, anyone could use the registration and password reset forms to send many emails, which costs money and damages the sender reputation of our domain.
+* **Email limits in Caddy:** Keycloak has no limit on how many emails it sends; brute force detection only covers logins. Without a limit, anyone could use the registration and password reset forms to send many emails, which costs money and damages the sender reputation of our domain. Caddy blocks only the requests that send an email, so a limit never breaks logins or the sessions of an app; the limit per app keeps one app (or someone abusing its login page) from using up everything.
 * **2FA with OTP as the default to set up:** OTP works on every device and doesn't depend on a particular platform; passkeys and security keys can be added in the account console.
 * **Temporary bootstrap admin, replaced by a permanent admin with 2FA:** see [Bootstrapping and recovering an admin account](https://www.keycloak.org/server/bootstrap-admin-recovery).
 

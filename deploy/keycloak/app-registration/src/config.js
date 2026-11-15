@@ -31,9 +31,6 @@ export const config = {
   // Signs the session cookie: generate with `openssl rand -hex 32`
   sessionSecret: required('SESSION_SECRET'),
   maxAppsPerUser: integer('MAX_APPS_PER_USER', 3),
-  // Emails (verification, password reset, account linking) per app in 24 hours
-  emailLimit: integer('EMAIL_LIMIT_PER_DAY', 100),
-  emailCheckMinutes: integer('EMAIL_CHECK_MINUTES', 5),
   contact: process.env.CONTACT_EMAIL || '',
 };
 

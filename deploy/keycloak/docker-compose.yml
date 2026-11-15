@@ -159,7 +159,6 @@ services:
       OIDC_CLIENT_SECRET: ${APP_REGISTRATION_CLIENT_SECRET:-}
       SESSION_SECRET: ${APP_REGISTRATION_SESSION_SECRET:-}
       MAX_APPS_PER_USER: ${MAX_APPS_PER_USER:-3}
-      EMAIL_LIMIT_PER_DAY: ${EMAIL_LIMIT_PER_DAY:-100}
       CONTACT_EMAIL: ${CONTACT_EMAIL:-}
       # Trust Keycloak's internal certificate (created by tls-init)
       NODE_EXTRA_CA_CERTS: /internal-tls/tls.crt
@@ -212,8 +211,15 @@ services:
       KC_HOSTNAME_ADMIN: ${KC_HOSTNAME_ADMIN}
       APPS_HOSTNAME: ${APPS_HOSTNAME:?set APPS_HOSTNAME in .env}
       ACME_EMAIL: ${ACME_EMAIL:?set ACME_EMAIL in .env}
-      EMAIL_RATE_LIMIT_EVENTS: ${EMAIL_RATE_LIMIT_EVENTS:-30}
-      EMAIL_RATE_LIMIT_WINDOW: ${EMAIL_RATE_LIMIT_WINDOW:-10m}
+      # Email limits (see the Caddyfile and .env.example)
+      EMAIL_LIMIT_PER_IP: ${EMAIL_LIMIT_PER_IP:-30}
+      EMAIL_LIMIT_PER_IP_WINDOW: ${EMAIL_LIMIT_PER_IP_WINDOW:-10m}
+      EMAIL_LIMIT_WINDOW: ${EMAIL_LIMIT_WINDOW:-30m}
+      EMAIL_LIMIT_PER_APP: ${EMAIL_LIMIT_PER_APP:-25}
+      EMAIL_LIMIT_TIER2: ${EMAIL_LIMIT_TIER2:-100}
+      EMAIL_LIMIT_TIER2_APPS: ${EMAIL_LIMIT_TIER2_APPS:-}
+      EMAIL_LIMIT_TIER3: ${EMAIL_LIMIT_TIER3:-500}
+      EMAIL_LIMIT_TIER3_APPS: ${EMAIL_LIMIT_TIER3_APPS:-}
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       # Local restrictions of the admin hostname (copy admin-access.example.caddy first)

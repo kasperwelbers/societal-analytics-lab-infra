@@ -160,6 +160,7 @@ Tested with Keycloak 26.8 (locally, with the realm configuration of the runbook)
 * **Delegating clients to their owners** works with fine-grained admin permissions (v2): a user sees and edits only their own client in the admin console. But managing those permissions requires `manage-realm`, which is too much for an automated registration site.
 * **Client policies** can enforce consent, PKCE and redirect URI rules for changes made by a specific role. The redirect URI rule can only allow `http://localhost` by allowing `http://` in general (our site checks the rest). An empty post logout redirect URI attribute is refused.
 * **Client updates** keep attributes that are left out; clearing one needs an empty value. Searching clients by attribute is disabled by default.
+* **Emails:** Keycloak sends the verification email on the first visit to the "verify your email" page (not on the registration form itself), and the password reset email when "forgot password" is submitted. Both only when `client_id` in the URL is the app of the login, which makes a limit per app in the proxy possible. Resending a verification email right away sends nothing (Keycloak throttles it). With email verification on, Keycloak 26.8 lets new users choose their password only after verifying their email.
 * **keycloak-config-cli** substitutes variables inside comments too, skips unchanged files unless its cache is turned off, and deletes things it doesn't manage unless set to `no-delete`.
 
 ==TODO: real Google and GitHub logins, passkeys, and the remaining items above.==

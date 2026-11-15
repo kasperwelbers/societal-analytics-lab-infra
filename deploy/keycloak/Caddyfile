@@ -17,24 +17,58 @@
 	}
 }
 
+# --- Email limits -----------------------------------------------------------------------------
+# Keycloak has no limit on the emails it sends. These limits stop people from using the login
+# pages to send many emails (which costs money and harms the reputation of our email domain).
+#
+# Requests that make Keycloak send an email (tested with Keycloak 26.8):
+# - the first visit to the "verify your email" page, after registering or when a user with an
+#   unverified email address logs in (reloads and the "resend" link are counted too);
+# - submitting the "forgot password" form.
+# Keycloak only sends the email if the client_id in the URL is the app of the login, so leaving
+# it out or changing it doesn't avoid the limit per app. Logins, token requests and the later
+# steps of a password reset are never limited.
+#
+# A rate limit zone for these requests: {args[0]} = zone name, {args[1]} = key (what is counted
+# separately), {args[2]} = extra condition (starting with && or ||), {args[3]} = window,
+# {args[4]} = number of requests per window
+(email_zone) {
+	zone {args[0]} {
+		match {
+			expression `(({method} == "GET" && {path}.matches("^/realms/[^/]+/login-actions/required-action$") && {query.execution} == "VERIFY_EMAIL") || ({method} == "POST" && {path}.matches("^/realms/[^/]+/login-actions/reset-credentials$"))) {args[2]}`
+		}
+		key {args[1]}
+		ipv6_prefix 64
+		window {args[3]}
+		events {args[4]}
+	}
+}
+
 # Public hostname: logins, OIDC endpoints, static resources
 {$KC_HOSTNAME} {
-	# Limit the requests that make Keycloak send an email (registration, email verification,
-	# forgot password, linking an external account), per client IP address. Many people can
-	# share one address (e.g. a campus network), so raise the limit for teaching sessions.
 	rate_limit {
-		zone keycloak_email {
-			match {
-				expression `({method} == "POST" && {path}.matches("^/realms/[^/]+/login-actions/(registration|reset-credentials|first-broker-login)$")) || ({path}.matches("^/realms/[^/]+/login-actions/required-action$") && {query.execution} == "VERIFY_EMAIL")`
-			}
-			key {remote_host}
-			ipv6_prefix 64
-			window {$EMAIL_RATE_LIMIT_WINDOW:10m}
-			events {$EMAIL_RATE_LIMIT_EVENTS:30}
-		}
+		# Per IP address. Also counts registrations and first logins with Google or GitHub
+		# (account creation, and the email to confirm linking an existing account). Many people
+		# can share one address (e.g. a campus network): raise it for teaching sessions.
+		import email_zone email_per_ip {remote_host} `|| ({method} == "POST" && {path}.matches("^/realms/[^/]+/login-actions/(registration|first-broker-login)$"))` {$EMAIL_LIMIT_PER_IP_WINDOW:10m} {$EMAIL_LIMIT_PER_IP:30}
+		# Per app (client ID, per realm), in tiers: apps listed in EMAIL_LIMIT_TIER2_APPS or
+		# EMAIL_LIMIT_TIER3_APPS (separated by spaces) get a higher limit, other apps the default
+		import email_zone email_per_app {http.request.uri.path.1}/{query.client_id} `&& {query.client_id} != "" && !(" {$EMAIL_LIMIT_TIER2_APPS} {$EMAIL_LIMIT_TIER3_APPS} ".contains(" " + {query.client_id} + " "))` {$EMAIL_LIMIT_WINDOW:30m} {$EMAIL_LIMIT_PER_APP:25}
+		import email_zone email_per_app_tier2 {http.request.uri.path.1}/{query.client_id} `&& {query.client_id} != "" && " {$EMAIL_LIMIT_TIER2_APPS} ".contains(" " + {query.client_id} + " ")` {$EMAIL_LIMIT_WINDOW:30m} {$EMAIL_LIMIT_TIER2:100}
+		import email_zone email_per_app_tier3 {http.request.uri.path.1}/{query.client_id} `&& {query.client_id} != "" && " {$EMAIL_LIMIT_TIER3_APPS} ".contains(" " + {query.client_id} + " ")` {$EMAIL_LIMIT_WINDOW:30m} {$EMAIL_LIMIT_TIER3:500}
 	}
 	handle_errors 429 {
-		respond "Too many attempts from your network. Please wait a few minutes and try again." 429
+		@per_app expression `{http.rate_limit.exceeded.name}.startsWith("email_per_app")`
+		vars message "Too many attempts from your network. Please wait a few minutes and try again."
+		vars @per_app message "This app has reached its limit for sign-ups and password resets. Please try again later, or contact the people who run the app."
+		header Content-Type "text/html; charset=utf-8"
+		respond 429 {
+			body `<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Please try again later</title>
+<style>body{margin:0;font:16px/1.5 system-ui,sans-serif;background:#f4f6f9;color:#1d1d1f}main{max-width:480px;margin:15vh auto;padding:32px 24px;background:#fff;border-radius:8px}h1{font-size:1.4rem;margin:0 0 12px}a{color:#0b57d0}@media(prefers-color-scheme:dark){body{background:#17181a;color:#e8eaed}main{background:#222428}a{color:#8ab4f8}}</style>
+</head><body><main><h1>Please try again later</h1><p>{vars.message}</p><p><a href="javascript:history.back()">Go back</a></p></main></body></html>`
+		}
 	}
 
 	@public {

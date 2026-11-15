@@ -1,16 +1,14 @@
 // Registered apps: validating the form, and turning it into a Keycloak client (and back).
 //
-// Ownership and limits are stored as client attributes. Owners can't edit clients in
-// Keycloak directly (only through this site), so these attributes can be trusted.
-// Admins change them with kcadm (see docs/app-registration.md).
+// Ownership is stored as client attributes. Owners can't edit clients in Keycloak directly
+// (only through this site), so these attributes can be trusted. Admins change them with kcadm
+// (see docs/app-registration.md).
 
 import crypto from 'node:crypto';
 
 export const ATTR = {
   owner: 'registration.owner', // user id (sub) of the owner
   ownerEmail: 'registration.owner_email', // email of the owner when the app was registered
-  emailLimit: 'registration.email_limit', // optional: emails per day for this app (set by admins)
-  disabledBy: 'registration.disabled_by', // "email-limit" when this site disabled the app
 };
 
 const MAX_URIS = 10;
@@ -159,8 +157,3 @@ export function newClient(settings, user) {
 
 export const isOwner = (client, user) => client?.attributes?.[ATTR.owner] === user.sub;
 export const isRegistered = (client) => Boolean(client?.attributes?.[ATTR.owner]);
-
-export function emailLimitOf(client, defaultLimit) {
-  const n = Number(client.attributes?.[ATTR.emailLimit]);
-  return Number.isInteger(n) && n >= 0 && client.attributes?.[ATTR.emailLimit] !== '' ? n : defaultLimit;
-}

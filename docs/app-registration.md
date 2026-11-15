@@ -27,9 +27,9 @@ The ID token contains `email` (verified), `name`, and `amr`: `amr` contains `mfa
 | Limit | Default |
 | --- | --- |
 | Apps per user | 3 |
-| Emails per app per 24 hours | 100 |
+| Emails per app | 25 per 30 minutes |
 
-The email limit counts the emails Keycloak sends because of your app: email verification after registering, password reset, and linking a Google or GitHub account. If an app goes over its limit, it is disabled: users can't log in to it until the number of emails in the last 24 hours drops below the limit again, which happens automatically. The app page shows the count. Contact us if you need more apps or a higher email limit.
+The email limit counts the emails our login service sends because of your app: to verify email addresses (after registering) and to reset passwords. Above the limit, people who try to register or reset their password through your app see "This app has reached its limit for sign-ups and password resets", and can try again later. Logging in to your app always keeps working. Contact us if your app needs more apps or a higher email limit.
 
 ## For administrators
 
@@ -38,11 +38,11 @@ The email limit counts the emails Keycloak sends because of your app: email veri
 The site is a small Node.js server ([`deploy/keycloak/app-registration/`](https://github.com/kasperwelbers/societal-analytics-lab-infra/tree/main/deploy/keycloak/app-registration)), deployed with Keycloak ([step 8 of the runbook](./keycloak-deploy.md#8-app-registration)).
 
 * **Login:** users log in with the client `app-registration` in the `idp` realm (authorization code flow with PKCE). The site keeps a signed session cookie for 8 hours.
-* **Managing apps:** the same client has a service account with two roles of the `realm-management` client: `manage-clients` (create and change clients) and `view-events` (count emails). It has no access to users, realm settings or login flows. The client and its roles are defined in `realms/idp.yaml`.
+* **Managing apps:** the same client has a service account with one role of the `realm-management` client: `manage-clients` (create and change clients). It has no access to users, realm settings or login flows. The client and its role are defined in `realms/idp.yaml`.
 * **Ownership:** an app (client) belongs to the user whose ID is in its attribute `registration.owner`. Users only see and change their own apps, and only the settings on the site: name, description, home page, redirect URIs, post logout redirect URIs, and logo, privacy policy and terms of service URLs.
 * **Fixed settings:** every app is a confidential client with only the authorization code flow, PKCE (S256), consent required, and no service account. Tokens don't contain the user's roles in the `idp` realm (`fullScopeAllowed` off).
 * **Enforced by Keycloak too:** the client policy `self-service-clients` (in `realms/idp.yaml`) applies to every change made by the site's service account: it turns on consent and PKCE, and refuses redirect URIs with wildcards or other unsafe forms. So even a bug in the site can't create an app without consent or with a wildcard redirect URI. Admins (in the admin console) are not affected by this policy.
-* **Email limit:** every 5 minutes, the site counts the email events of the last 24 hours per app (`SEND_VERIFY_EMAIL`, `SEND_RESET_PASSWORD`, `SEND_IDENTITY_PROVIDER_LINK`). An app over its limit is disabled, and marked with the attribute `registration.disabled_by=email-limit`; it is enabled again once it is under the limit. Apps that an admin disabled are left alone. This works on top of the [rate limit per IP address in Caddy](./keycloak-deploy.md#10-maintenance).
+* **Email limit:** not part of the site. Caddy limits the emails per app (client ID), with three tiers set in `.env` (see [Email limits](./keycloak-deploy.md#10-maintenance)).
 
 **Why not let owners use the Keycloak admin console?** Keycloak can give a user access to only their own clients (fine-grained admin permissions), and we tested that: it works. But creating those permissions for each new user requires the role `manage-realm`, which can change the whole realm, including login flows and login providers. Giving that role to a web application was too risky, so the site manages the apps itself, with narrow rights.
 
@@ -56,7 +56,6 @@ In `.env` (see `.env.example`):
 | `APP_REGISTRATION_CLIENT_SECRET` | | Secret of the `app-registration` client; set in Keycloak by the realm configuration |
 | `APP_REGISTRATION_SESSION_SECRET` | | Signs the session cookies |
 | `MAX_APPS_PER_USER` | 3 | |
-| `EMAIL_LIMIT_PER_DAY` | 100 | Default email limit per app |
 | `CONTACT_EMAIL` | | Shown to users who reach a limit |
 
 Apply changes with `sudo docker compose up -d app-registration`.
@@ -69,11 +68,7 @@ All commands are run from the deployment folder, after `sudo ./admin-cli.sh logi
 sudo ./admin-cli.sh get clients -r idp -q clientId=<client ID> --fields id,clientId,enabled,attributes
 ```
 
-**A higher email limit for one app** (here 500 per 24 hours). If the app was disabled because of the limit, it is enabled again within 5 minutes:
-
-```bash
-sudo ./admin-cli.sh update clients/<id> -r idp -s 'attributes."registration.email_limit"=500'
-```
+**A higher email limit for an app:** add its client ID to `EMAIL_LIMIT_TIER2_APPS` (100 per 30 minutes) or `EMAIL_LIMIT_TIER3_APPS` (500) in `.env`, and apply it with `sudo docker compose up -d caddy` (see [Email limits](./keycloak-deploy.md#10-maintenance)).
 
 **More apps for a user:** register the app for them in the admin console (or let them use a colleague's account), and make them the owner by setting `registration.owner` to their user ID (**Users → the user → Details**, field ID):
 
@@ -85,7 +80,7 @@ The same command transfers an app to another owner. An app created in the admin 
 
 **Disable an app** (e.g. abuse): **Clients → the app → Enabled** off in the admin console. The site doesn't enable it again, and tells the owner to contact us.
 
-**Logs:** registrations, new secrets, deletions and email limit actions are logged:
+**Logs:** registrations, new secrets and deletions are logged:
 
 ```bash
 sudo docker compose logs app-registration
@@ -103,4 +98,4 @@ cd deploy/keycloak/app-registration
 npm install && npm test
 ```
 
-The tests cover the validation of the form and the email limit. The whole flow (login, registering, editing, consent, the email limit, deleting) was tested end to end against a local Keycloak with the realm configuration.
+The tests cover the validation of the form. The whole flow (login, registering, editing, a new secret, consent, the limit on apps, deleting) was tested end to end against a local Keycloak with the realm configuration.

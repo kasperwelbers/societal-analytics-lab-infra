@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { ATTR, ValidationError, checkRedirectUri, emailLimitOf, newClient, newClientId, parseForm, settingsOf } from '../src/apps.js';
+import { ATTR, ValidationError, checkRedirectUri, newClient, newClientId, parseForm, settingsOf } from '../src/apps.js';
 
 test('redirect URIs: https anywhere, http only on the local machine', () => {
   assert.equal(checkRedirectUri('https://app.example.org/callback', 'x'), 'https://app.example.org/callback');
@@ -52,10 +52,4 @@ test('new client: fixed safe settings, owner, round trip of settings', () => {
 test('client IDs are readable slugs', () => {
   assert.match(newClientId('Ünïcode & Spaces!'), /^unicode-spaces-[0-9a-f]{6}$/);
   assert.match(newClientId('***'), /^app-[0-9a-f]{6}$/);
-});
-
-test('email limit: default, or per app as set by admins', () => {
-  assert.equal(emailLimitOf({ attributes: {} }, 100), 100);
-  assert.equal(emailLimitOf({ attributes: { [ATTR.emailLimit]: '500' } }, 100), 500);
-  assert.equal(emailLimitOf({ attributes: { [ATTR.emailLimit]: 'lots' } }, 100), 100);
 });
