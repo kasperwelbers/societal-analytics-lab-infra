@@ -1,2 +1,5 @@
 venv
 env
+
+# Secrets of deployments
+.env

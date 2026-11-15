@@ -1,6 +1,6 @@
 # OIDC provider comparison
 
-**Status: under evaluation.** Keycloak is being tested hands-on (see the [test checklist](#keycloak-test-checklist)). Until a decision is made, the shared OIDC provider described in the [Installation guide](./auth-install.md#option-1-our-shared-oidc-provider) is not available.
+**Status: under evaluation.** Keycloak is being tested hands-on (see the [test checklist](#keycloak-test-checklist), and the [Keycloak deployment](./keycloak-deploy.md) runbook). Until a decision is made, the shared OIDC provider described in the [Installation guide](./auth-install.md#option-1-our-shared-oidc-provider) is not available.
 
 This page compares three self-hosted OIDC providers for the lab: **Keycloak**, **Authentik** and **ZITADEL**. It lists what we need, how each provider fits, and what still needs to be tested. Our software works with any provider that meets the [provider requirements](./auth.md#oidc-provider-requirements); this page is only about the provider that the lab runs itself.
 
@@ -140,7 +140,7 @@ To be done on a test machine, before migrating anything. Mark items as done, and
 
 **Operations**
 
-- [ ] Production setup with `start`, PostgreSQL and our reverse proxy (hostname and proxy headers).
+- [ ] Production setup with `start`, PostgreSQL and our reverse proxy (hostname and proxy headers): see the [Keycloak deployment](./keycloak-deploy.md) runbook.
 - [ ] Configuration as code (realm export or keycloak-config-cli).
 - [ ] Upgrade from one 26.x release to the next.
 - [ ] Backups of the database, and a restore test.

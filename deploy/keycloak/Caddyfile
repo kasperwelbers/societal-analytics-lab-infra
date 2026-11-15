@@ -1,0 +1,34 @@
+# Caddy: TLS via Let's Encrypt, and only the Keycloak paths that need to be public.
+# Exposed paths follow the Keycloak reverse proxy guide:
+# https://www.keycloak.org/server/reverseproxy#_exposed_path_recommendations
+
+{
+	email {$ACME_EMAIL}
+}
+
+# Public hostname: logins, OIDC endpoints, static resources
+{$KC_HOSTNAME} {
+	@public {
+		path /realms/* /resources/* /.well-known/*
+		# The admin realm (master) is only reachable via the admin hostname
+		not path /realms/master /realms/master/*
+	}
+	handle @public {
+		reverse_proxy keycloak:8080
+	}
+	# Everything else, including /admin/, is not exposed
+	handle {
+		respond 404
+	}
+}
+
+# Admin hostname: admin console and the admin realm, only from allowed IP ranges
+{$KC_HOSTNAME_ADMIN} {
+	@allowed remote_ip {$ADMIN_ALLOWED_IPS}
+	handle @allowed {
+		reverse_proxy keycloak:8080
+	}
+	handle {
+		respond 403
+	}
+}
