@@ -25,7 +25,7 @@ This statement does **not** apply to AmCAT or AnnoTinder servers that are hosted
 | **AnnoTinder** (lab server) | Annotating research data | Data that users upload, and their annotations |
 | **Whisper** | Transcription of audio | Audio files and transcripts, processed on lab hardware |
 | **Ollama** | AI inference with language models | Prompts and outputs, processed on lab hardware |
-| **Shared OIDC provider** ==TODO: provider under review== | Login service for teams hosting our software | Accounts of users at the provider (see [Shared OIDC provider](#shared-oidc-provider)) |
+| **Shared OIDC provider** (the `idp` realm of the lab's Keycloak) | Login service for teams hosting our software | Accounts of users at the provider (see [Shared OIDC provider](#shared-oidc-provider)) |
 
 ## Which personal data we process
 
@@ -60,8 +60,8 @@ AmCAT and AnnoTinder store data that users upload to research projects. That dat
 The lab offers a [shared OIDC provider](../auth-install.md#option-1-our-shared-oidc-provider) for teams that host our software themselves. For accounts at this provider:
 
 * The lab processes account data (name, email address, login and 2FA settings, security logs) to provide the login service.
-* Before a server receives your name and email address, you are asked to consent. ==TODO: confirm once the provider is chosen (see the [OIDC provider comparison](../auth-providers.md)).==
-* ==TODO: who manages accounts and resets second factors (the lab for the shared pool, or a team for its own pool).==
+* Before a server receives your name and email address, you are asked to consent. You can see and withdraw these consents in your account settings.
+* The lab manages the accounts, and can reset a lost second factor (best effort).
 * The team hosting a server that uses the shared provider is responsible for that server, and for the data in it.
 
 ## Who we share data with
@@ -69,9 +69,11 @@ The lab offers a [shared OIDC provider](../auth-install.md#option-1-our-shared-o
 | Recipient | Why |
 | --- | --- |
 | The login provider (e.g. SURF, or the lab's shared provider) | Logging in. The login provider has its own privacy statement. |
+| Our email provider (Scaleway Transactional Email) | Sending emails to verify your email address and reset your password |
+| Google or GitHub, only if you choose to log in with them at the shared provider | Logging in: they share your name and email address with the shared provider |
 | ==TODO: hosting providers (e.g. SURF for SciCloud)== | Hosting our servers |
 
-We do not sell personal data, and do not share it for advertising. ==TODO: confirm that no data is transferred outside the EU/EEA (relevant if the shared provider runs on a cloud service).==
+We do not sell personal data, and do not share it for advertising. ==TODO: confirm with the VU privacy officer: the shared provider runs on a VU server, and the email provider is in the EU; Google and GitHub, which users can choose to log in with, are US companies.==
 
 ## Retention
 

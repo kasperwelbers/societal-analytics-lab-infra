@@ -55,7 +55,7 @@ An OIDC provider returns an ID token with claims about the login. The ones that 
 
 * The OIDC provider requires 2FA, and signals it in the ID token. Which claim counts as 2FA is configured per deployment with `OIDC_MFA_CLAIM` (e.g. `amr` containing `mfa`, or a specific `acr` value).
 * For sensitive actions, the server checks the claim and `auth_time`, and redirects to the provider with `max_age` if the login is too old.
-* Teams without a suitable provider can use our [shared OIDC provider](./auth-install.md#option-1-our-shared-oidc-provider) (with 2FA, provider under review) for servers without sensitive data.
+* Teams without a suitable provider can use our [shared OIDC provider](./auth-install.md#option-1-our-shared-oidc-provider) (the `idp` realm of our Keycloak, which signals 2FA in `amr`) for servers without sensitive data.
 
 | Pros | Cons |
 | --- | --- |
@@ -140,7 +140,7 @@ Checked in November 2026. Provider behaviour changes, so re-check before relying
 | **Microsoft Entra ID** | `amr` (`mfa` only when MFA was completed) | Conditional Access, `max_age` | Since 2026, `amr` can be added as an optional claim to v2.0 tokens. Configure per app. |
 | **Auth0** | `amr` contains `mfa` | Actions + `acr_values` | The free plan has no step-up MFA factors (TOTP from the Essentials plan, WebAuthn from Professional). `amr` can be missing on silent SSO renewal. |
 | **Authentik** | `amr` (`pwd`, `mfa`, passwordless WebAuthn) | `max_age`, `prompt=login` | `acr` is a fixed value, so MFA can't be requested on demand. MFA must be part of the authentication flow. |
-| **Keycloak** | `acr` (levels of authentication mapped to flows) | `acr_values`, `max_age` | Always check the returned `acr` yourself (see CVE-2026-97176). |
+| **Keycloak** | `amr` (`pwd`, `mfa`) with the AMR mapper and a reference value per authenticator (our setup); `acr` levels of authentication are also possible | `max_age` (tested); `acr_values` | If you use `acr_values`, always check the returned `acr` yourself (see CVE-2026-97176). |
 | **ZITADEL** | `amr` and `acr` in the ID token | `max_age` (to verify) | The exact `amr` values need to be verified; one report mentions `amr` as a string instead of a list, so accept both. |
 | **SURFconext** (Dutch institutions) | `acr` with a SURFsecureID LoA value | `acr_values` | 2FA via SURFsecureID, which institutions procure separately. |
 

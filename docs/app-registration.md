@@ -38,11 +38,11 @@ The email limit counts the emails our login service sends because of your app: t
 The site is a small Node.js server ([`deploy/keycloak/app-registration/`](https://github.com/kasperwelbers/societal-analytics-lab-infra/tree/main/deploy/keycloak/app-registration)), deployed with Keycloak ([step 8 of the runbook](./keycloak-deploy.md#8-app-registration)).
 
 * **Login:** users log in with the client `app-registration` in the `idp` realm (authorization code flow with PKCE). The site keeps a signed session cookie for 8 hours.
-* **Managing apps:** the same client has a service account with one role of the `realm-management` client: `manage-clients` (create and change clients). It has no access to users, realm settings or login flows. The client and its role are defined in `realms/idp-realm.json`.
+* **Managing apps:** the same client has a service account with one role of the `realm-management` client: `manage-clients`: it can create, change and delete any client in the idp realm (including Keycloak's built-in clients), and nothing else: no access to users, realm settings or login flows. It also holds the realm role `client-self-service`, which only makes the client policy below apply to it. The client and its role are defined in `realms/idp-realm.json`.
 * **Ownership:** an app (client) belongs to the user whose ID is in its attribute `registration.owner`. Users only see and change their own apps, and only the settings on the site: name, description, home page, redirect URIs, post logout redirect URIs, and logo, privacy policy and terms of service URLs.
 * **Fixed settings:** every app is a confidential client with only the authorization code flow, PKCE (S256), consent required, and no service account. Tokens don't contain the user's roles in the `idp` realm (`fullScopeAllowed` off).
 * **Enforced by Keycloak too:** the client policy `self-service-clients` (in `realms/idp-realm.json`) applies to every change made by the site's service account: it turns on consent and PKCE, and refuses redirect URIs with wildcards or other unsafe forms. So even a bug in the site can't create an app without consent or with a wildcard redirect URI. Admins (in the admin console) are not affected by this policy.
-* **Email limit:** not part of the site. Caddy limits the emails per app (client ID), in tiers set in `caddy/email-tiers.caddy` on the VM (see [Email limits](./keycloak-deploy.md#10-maintenance)).
+* **Email limit:** not part of the site. Caddy limits the emails per app (client ID), in tiers set in `caddy/email-tiers.caddy` on the VM (see [Email limits](./keycloak-deploy.md#email-limits)).
 
 **Why not let owners use the Keycloak admin console?** Keycloak can give a user access to only their own clients (fine-grained admin permissions), and we tested that: it works. But creating those permissions for each new user requires the role `manage-realm`, which can change the whole realm, including login flows and login providers. Giving that role to a web application was too risky, so the site manages the apps itself, with narrow rights.
 
@@ -68,7 +68,7 @@ All commands are run from the deployment folder, after `sudo ./admin-cli.sh logi
 sudo ./admin-cli.sh get clients -r idp -q clientId=<client ID> --fields id,clientId,enabled,attributes
 ```
 
-**A higher email limit for an app** (for owners you trust): add a line with its client ID and tier to `email_tier_apps` in `caddy/email-tiers.caddy` (tier2: 100 per 30 minutes, tier3: 500), and apply it with `sudo docker compose exec caddy caddy reload --config /etc/caddy/Caddyfile` (see [Email limits](./keycloak-deploy.md#10-maintenance)).
+**A higher email limit for an app** (for owners you trust): add a line with its client ID and tier to `email_tier_apps` in `caddy/email-tiers.caddy` (tier2: 100 per 30 minutes, tier3: 500), and apply it with `sudo docker compose exec caddy caddy reload --config /etc/caddy/Caddyfile` (see [Email limits](./keycloak-deploy.md#email-limits)).
 
 **More apps for a user:** register the app for them in the admin console (or let them use a colleague's account), and make them the owner by setting `registration.owner` to their user ID (**Users → the user → Details**, field ID):
 

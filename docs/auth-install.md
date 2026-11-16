@@ -13,23 +13,18 @@ Whichever option you choose, your team is responsible for the personal data on y
 
 ## Option 1: our shared OIDC provider
 
-!!! warning "Not available yet"
-    The lab plans to offer a shared OIDC provider, but the choice of provider is under review (see the [OIDC provider comparison](./auth-providers.md)). Until then, use [option 2](#option-2-your-own-oidc-provider).
-
-To make it easy to start, the Societal Analytics Lab plans to offer a shared OIDC provider with 2FA, separate from the identity provider for the lab's own infrastructure (see [Lab authentication](./lab-auth.md)). The plan:
+To make it easy to start, the Societal Analytics Lab offers a shared OIDC provider: the `idp` realm of our Keycloak (see [Keycloak setup](./keycloak.md)), separate from the realm for the lab's own infrastructure. Users can log in with an email address and password, or with Google or GitHub. A second factor is optional at login; our software asks for it for sensitive actions.
 
 * **One account per user.** Users create one account at the shared provider, which works on every server that uses it.
-* **You register your server yourself,** and get a client ID, client secret and redirect URI configuration. New registrations start with limits that the lab can increase.
+* **You register your server yourself** on the [app registration site](./app-registration.md), and get a client ID and client secret right away. You can register up to 3 apps; the lab can raise this, and the email limits of an app, on request.
 * **Users consent once per host.** Before your server receives a user's name and email address, the user is asked to consent. AmCAT and AnnoTinder on the same host share one client, so one consent covers both (see [One client per host](./auth-providers.md#one-client-per-host)).
-* **Optionally, your own pool of users,** which your team manages itself (users, login methods, account recovery), isolated from other pools.
-
-==TODO: URL and registration steps, once the provider is chosen.==
+**Setting up your server:** register it on the app registration site (with your server's redirect URIs), and configure our software with the issuer `https://auth.example.org/realms/idp`, the client ID and secret from the app page, and `OIDC_MFA_CLAIM=amr:mfa`. Details: [App registration](./app-registration.md#for-app-developers).
 
 **Terms**
 
 * **No sensitive research data.** Names and email addresses of users (e.g. students) are personal data too, so you are responsible for handling those according to your institution's rules.
 * **Best-effort availability.** If the shared provider is down, nobody can log in to your server. Keep this in mind for teaching and exams.
-* **Account recovery.** ==TODO: by the lab (best effort) for accounts in the shared pool, and by your own team for your own pool.== The lab does not provide a helpdesk.
+* **Account recovery.** Users reset their own password by email. For a lost second factor, the lab helps on a best-effort basis; the lab does not provide a helpdesk.
 * **The lab operates the provider.** As the operator, the lab could in principle access every account. This is one of the reasons the shared provider is not for sensitive data.
 
 !!! warning "Is your server getting used for research data?"
@@ -66,7 +61,7 @@ If your institution can't offer a provider, you can create your own [ZITADEL Clo
 | **Auth0 paid plans** | Yes (TOTP from Essentials, WebAuthn from Professional) | `amr:mfa` | **Yes** | Paid | Easy | Includes enterprise agreements, SLAs, and DPA. |
 | **ZITADEL** (Cloud or self-hosted) | Yes | `amr:mfa` (verify) | **Yes** (EU region or hosting) | Free plan (100 daily active users) / paid plans / hosting cost | Easy (Cloud) / Medium (self-hosted) | Use one instance per team: organizations within one instance don't isolate users from each other (see the [comparison](./auth-providers.md#zitadel)). |
 | **Self-hosted Authentik** | Yes | `amr:mfa` | **Yes** (when hosted on-prem/EU cloud) | Hosting cost / labor | Medium | MFA must be required in the authentication flow (Authentik can't be asked for MFA on demand). |
-| **Self-hosted Keycloak** | Yes | `acr:<value>` | **Yes** (when hosted on-prem/EU cloud) | Hosting cost / labor | Medium | Map the acr value to a level of authentication that requires 2FA. |
+| **Self-hosted Keycloak** | Yes | `amr:mfa` | **Yes** (when hosted on-prem/EU cloud) | Hosting cost / labor | Medium | Add the AMR mapper (a client scope), with a reference value (`pwd` or `mfa`) on each authenticator; our realm files are an example (`deploy/keycloak/realms/`). |
 
 A self-hosted provider is only as secure as its maintenance: someone has to keep it updated and handle account recovery.
 

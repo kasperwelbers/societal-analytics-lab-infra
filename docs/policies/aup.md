@@ -17,7 +17,7 @@ The services are provided for research and education. Use them only for these pu
 
 * Your account is personal. Don't share it, or your API keys, with others.
 * Protect your password and your second factor (passkey or authenticator app). Keep your recovery codes in a safe place.
-* Report a lost second factor, a leaked API key, or any suspected misuse of your account immediately to ==TODO: lab contact email==, or to your organization's admin for the shared OIDC provider.
+* Report a lost second factor, a leaked API key, or any suspected misuse of your account immediately to ==TODO: lab contact email==.
 
 ## Data
 

@@ -12,8 +12,8 @@ graph TD
     User((Researcher))
     
     %% Authentication
-    subgraph Auth [Cloud or physical server 2]
-        IdP{Lab OIDC Provider - to be decided}
+    subgraph Auth [Keycloak VM]
+        IdP{Keycloak: lab and idp realms}
     end
     User -.->|OIDC Handshake| IdP
     IdP -.->|JWT w/ 2FA Claim| User
@@ -60,8 +60,8 @@ graph TD
 | **SciCloud** | **[AmCAT](./amcat.md)** | Public / Authenticated | Web Application & API for storing, managing and sharing data |
 | **Data Storage** | **ElasticSearch**, **S3** | Internal Only | Backend storage for text and large files. |
 | **LabServices** | **Whisper**, **Ollama** | Authenticated | GPU-accelerated AI inference & transcription. |
-| ==TODO: depends on decision== | **Lab OIDC provider** (to be decided: SRAM, or a self-hosted provider, see the [comparison](./auth-providers.md)) | Lab members and collaborators | Identity provider for lab services, with 2FA. See [Lab authentication](./lab-auth.md). |
-| ==TODO: depends on decision== | **Shared OIDC provider** (under review, see the [comparison](./auth-providers.md)) | Public (self-registration) | [Shared provider](./auth-install.md#option-1-our-shared-oidc-provider) for other teams hosting AmCAT or AnnoTinder without sensitive data. Kept separate from the lab OIDC provider. |
+| **Keycloak VM** | **Keycloak**: the `lab` realm | Lab members and collaborators (by invitation) | Identity provider for lab services, with mandatory 2FA. See [Keycloak setup](./keycloak.md) and [Lab authentication](./lab-auth.md). |
+| **Keycloak VM** | **Keycloak**: the `idp` realm, and the [app registration site](./app-registration.md) | Public (self-registration) | [Shared provider](./auth-install.md#option-1-our-shared-oidc-provider) for other teams hosting AmCAT or AnnoTinder without sensitive data, best effort. A separate realm, isolated from `lab`. |
 
 ---
 

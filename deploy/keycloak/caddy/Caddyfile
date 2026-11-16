@@ -78,7 +78,7 @@ import email-tiers.caddy
 			window {$EMAIL_LIMIT_PER_IP_WINDOW:1h}
 			events {$EMAIL_LIMIT_PER_IP:200}
 		}
-		# Per app (client ID, per realm), in tiers (see email-tiers.caddy)
+		# Per app (client ID), only in the idp realm, in tiers (see email-tiers.caddy)
 		import email_tier_limits
 		# Log each refused request with its key (the IP address, or the client ID)
 		log_key
@@ -112,8 +112,9 @@ import email-tiers.caddy
 }
 
 # Admin hostname: the admin consoles and the admin API.
-# Optional restrictions (IP ranges, exceptions per realm) are set in admin-access.caddy,
-# a local file that is not in the repository (copied from admin-access.example.caddy).
+# Restrictions (the university's IP ranges for all realms; optional exceptions per realm) are
+# set in admin-access.caddy, a local file that is not in the repository (copied from
+# admin-access.example.caddy).
 {$KC_HOSTNAME_ADMIN} {
 	import admin-access.caddy
 	handle {

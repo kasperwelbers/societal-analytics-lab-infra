@@ -16,21 +16,21 @@ Our software works with any OIDC provider that meets the [provider requirements]
 
 ## Choosing an OIDC provider
 
-There are two options. Both require 2FA; they differ in who manages the provider, who handles account recovery, and which data is allowed. See the [Installation guide](./auth-install.md) for details.
+There are two options. With both, our software requires 2FA for sensitive actions (see [Two-factor authentication](#two-factor-authentication-2fa)); they differ in who manages the provider, who handles account recovery, and which data is allowed. See the [Installation guide](./auth-install.md) for details.
 
 | | Option 1: our shared OIDC provider | Option 2: your own OIDC provider |
 | --- | --- | --- |
 | **For** | Servers without sensitive data, such as teaching and pilots | Any server, required for sensitive research data |
-| **Provider** | Run by the lab. ==Under review:== see the [OIDC provider comparison](./auth-providers.md). | Ideally your institution's identity provider (see the [Installation guide](./auth-install.md#option-2-your-own-oidc-provider)) |
+| **Provider** | Run by the lab: the `idp` realm of our Keycloak (see [Keycloak setup](./keycloak.md)). | Ideally your institution's identity provider (see the [Installation guide](./auth-install.md#option-2-your-own-oidc-provider)) |
 | **Maintained by** | The lab, with best effort | A security team (recommended) |
-| **Account recovery** | ==TODO: depends on the provider choice== (see the [Installation guide](./auth-install.md#option-1-our-shared-oidc-provider)) | The provider's helpdesk (recommended) |
+| **Account recovery** | Users reset their own password by email; the lab helps with lost second factors, best effort (see the [Installation guide](./auth-install.md#option-1-our-shared-oidc-provider)) | The provider's helpdesk (recommended) |
 | **Cost** | Free | Depends on the provider |
 
 **Why our shared provider is not for sensitive data**
 
 * **No security team.** Nobody ensures the provider is always up to date. If it is compromised, your data is at risk.
 * **The lab could access your data.** As the operator, the lab could in principle log in as any of its users. This will not fly with your institution's security team and data stewards.
-* **No helpdesk.** If a user loses their second factor, your own organization admin has to help them.
+* **No helpdesk.** If a user loses their second factor, only the lab can help, on a best-effort basis.
 
 Names and email addresses of users (e.g. students) are personal data too, so any server must be used according to your institution's rules. Moving from our shared provider to your own is a [migration](./auth-migration.md).
 

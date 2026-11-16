@@ -132,7 +132,7 @@ Instead of DCR, apps are registered through our own [app registration site](./ap
 - [x] Self-registration with required email verification.
 - [x] `amr` for password, password plus TOTP, and password plus passkey or security key: `pwd`, and `pwd` + `mfa`. (Passkey login without a password is not enabled, see the findings.)
 - [x] Step-up: `max_age` triggers a new login, and `auth_time` is updated (tested with `max_age=5`).
-- [ ] Requesting 2FA with `acr_values`: a user without a second factor is asked to set one up. Our server checks the returned `acr`.
+- [ ] Requesting 2FA with `acr_values`: a user without a second factor is asked to set one up. Our server checks the returned `acr`. (Not used: our setup signals 2FA in `amr`, and our software does step-up with `max_age`.)
 - [ ] Users can't add login methods (e.g. link other accounts) unless we allow it.
 
 **Sessions**

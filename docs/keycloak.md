@@ -18,7 +18,7 @@ A realm in Keycloak is a separate login: its own users, apps, settings and admin
 
 **How users log in.** In all realms, the email address is the username, and it is verified before it can be used; users can change it, and the new address must be confirmed too. A second factor is an authenticator app (OTP), a passkey or security key, or recovery codes. It is mandatory in master and lab, because these accounts give access to our infrastructure. In idp it is optional, to keep the barrier low: the token tells each server whether a second factor was used (`amr`), so a server decides itself when to require it, e.g. for sensitive actions (see [Two-factor authentication](./auth.md#two-factor-authentication-2fa) in the standard).
 
-The realms are set up from realm files in the repository (`deploy/keycloak/realms/`), which Keycloak imports itself on its first start. They document the configuration, including the login flows, and make it easy to set up the realms again (see [Realms](./keycloak-deploy.md#7-realms) in the runbook).
+The realms are set up from realm files in the repository (`deploy/keycloak/realms/`), which Keycloak imports itself when it starts, for realms that don't exist yet. They document the configuration, including the login flows, and make it easy to set up the realms again (see [Realms](./keycloak-deploy.md#7-realms) in the runbook).
 
 ## The idp realm: open to everyone, best effort
 
@@ -32,7 +32,7 @@ The realms are set up from realm files in the repository (`deploy/keycloak/realm
 * for a larger pilot;
 * to bridge the time needed to move to another OIDC provider when its user base suddenly grows.
 
-Logins are never limited, only the emails. How the limits work: [Email limits](./keycloak-deploy.md#10-maintenance).
+Logins are never limited, only the emails. How the limits work: [Email limits](./keycloak-deploy.md#email-limits).
 
 ## More realms
 
@@ -41,7 +41,7 @@ New realms are cheap, and isolated from each other:
 * **Isolated realms for our own servers,** e.g. one per AmCAT or AnnoTinder server we host, so that their users don't share accounts with other servers.
 * **A realm for a lab member** (or their team), with its own admin, who manages it in the admin console of that realm only.
 
-Every realm can send email through our email relay out of the box. That is safe to share: the relay holds the credentials of the email provider, so a realm admin never sees them and can't send them elsewhere, and the relay caps the email of the whole installation.
+Every new realm can send email through our email relay (host `mail-relay`, port 587, no login, our sender address). That is safe to share: the relay holds the credentials of the email provider, so a realm admin never sees them and can't send them elsewhere, and the relay caps the email of the whole installation.
 
 ## Security in short
 

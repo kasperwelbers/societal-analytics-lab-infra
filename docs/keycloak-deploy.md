@@ -1,6 +1,6 @@
 # Keycloak deployment
 
-This runbook sets up Keycloak on a single VM, with PostgreSQL and Caddy (TLS via Let's Encrypt), using the files in [`deploy/keycloak/`](https://github.com/kasperwelbers/societal-analytics-lab-infra/tree/main/deploy/keycloak). It takes about an hour. For an overview of the setup (the realms, the open idp realm with its tiers, and the security measures), see [Keycloak setup](./keycloak.md). Why Keycloak is being evaluated is explained in the [OIDC provider comparison](./auth-providers.md); what to test after the setup is in its [test checklist](./auth-providers.md#keycloak-test-checklist).
+This runbook sets up Keycloak on a single VM, with PostgreSQL and Caddy (TLS via Let's Encrypt), using the files in [`deploy/keycloak/`](https://github.com/kasperwelbers/societal-analytics-lab-infra/tree/main/deploy/keycloak). It takes about an hour. For an overview of the setup (the realms, the open idp realm with its tiers, and the security measures), see [Keycloak setup](./keycloak.md). Why we chose Keycloak is explained in the [OIDC provider comparison](./auth-providers.md); what to test after the setup is in its [test checklist](./auth-providers.md#keycloak-test-checklist).
 
 !!! info "Placeholders"
     This page uses `auth.example.org` (public hostname), `auth-admin.example.org` (admin hostname) and `apps.example.org` (app registration). The real hostnames, IP ranges and secrets are only stored on the VM (`.env`, and `caddy/admin-access.caddy` and `caddy/email-tiers.caddy`).
@@ -10,7 +10,7 @@ This runbook sets up Keycloak on a single VM, with PostgreSQL and Caddy (TLS via
 | Component | Role |
 | --- | --- |
 | **Caddy** | Public TLS certificates via Let's Encrypt. Forwards only the paths that need to be public to Keycloak, over a second TLS connection (re-encrypt). Built with a rate limit module, to limit requests that make Keycloak send emails. |
-| **Keycloak** | An optimized image (built from the official image), started with `start --optimized`. Creates the realms from `realms/` on its first start. Only accepts HTTPS, with an internal certificate that only Caddy trusts. |
+| **Keycloak** | An optimized image (built from the official image), started with `start --optimized`. Creates the realms from `realms/` when it starts, if they don't exist yet. Only accepts HTTPS, with an internal certificate that only Caddy trusts. |
 | **tls-init** | A one-off service that creates the internal certificate on the first start (and does nothing on later starts). |
 | **PostgreSQL** | The database, only reachable by Keycloak. |
 | **mail-relay** | Sends all email of the realms to the email provider; the only place with the provider's password ([step 7](#email-the-relay)). |
@@ -24,7 +24,7 @@ Two TLS connections:
 Three hostnames:
 
 * **`auth.example.org`** (public): logins, OIDC endpoints and static resources (`/realms/`, `/resources/`, `/.well-known/`). Everything else returns 404, including the admin console and the admin realm (`master`).
-* **`auth-admin.example.org`** (admin): the admin consoles of all realms, the admin API, and the logins of the administrative `master` realm. Without further settings it is reachable from anywhere, behind Keycloak's login and 2FA. Restricting it to IP ranges is recommended (see [step 4](#4-restrict-admin-access-recommended)).
+* **`auth-admin.example.org`** (admin): the admin consoles of all realms, the admin API, and the logins of the administrative `master` realm. Restricted to the university's IP ranges, for all realms ([step 4](#4-restrict-admin-access)): app owners use the [app registration site](./app-registration.md), not the admin console.
 * **`apps.example.org`** (app registration): the [app registration site](./app-registration.md).
 
 | File | Contents |
@@ -32,14 +32,14 @@ Three hostnames:
 | `docker-compose.yml` | The services, pinned versions, memory limits, health checks, and two networks (the database network has no internet access) |
 | `Dockerfile` | The optimized Keycloak image (`kc.sh build` with PostgreSQL and health endpoints) |
 | `Caddy.Dockerfile` | Caddy with the [rate limit module](https://github.com/mholt/caddy-ratelimit) |
-| `realms/` | The realms (`master`, `lab`, `idp`) as Keycloak realm files, imported on the first start ([step 7](#7-realms)); `realms/README.md` explains what we changed |
+| `realms/` | The realms (`master`, `lab`, `idp`) as Keycloak realm files, imported when a realm doesn't exist yet ([step 7](#7-realms)); `realms/README.md` explains what we changed |
 | `check-realms.py` | Checks `realms/` for mistakes that Keycloak accepts silently (run it after every change) |
 | `app-registration/` | The [app registration site](./app-registration.md) |
 | `internal-tls.sh` | Creates the internal certificate (run by the tls-init service) |
 | `admin-cli.sh` | Runs Keycloak's admin command-line tool (`kcadm.sh`) inside the container, over the internal TLS connection |
 | `caddy/` | Everything for Caddy, mounted into its container: |
 | `caddy/Caddyfile` | The public and admin hostnames, and the email limits |
-| `caddy/admin-access.example.caddy`, `caddy/email-tiers.example.caddy` | Templates for the local Caddy settings `caddy/admin-access.caddy` and `caddy/email-tiers.caddy` (copied in step 2, never committed): restrictions of the admin hostname ([step 4](#4-restrict-admin-access-recommended)) and the email limits per app ([Email limits](#10-maintenance)). |
+| `caddy/admin-access.example.caddy`, `caddy/email-tiers.example.caddy` | Templates for the local Caddy settings `caddy/admin-access.caddy` and `caddy/email-tiers.caddy` (copied in step 2, never committed): restrictions of the admin hostname ([step 4](#4-restrict-admin-access)) and the email limits per app ([Email limits](#email-limits)). |
 | `caddy/init.sh` | Run by the caddy-init service before Caddy starts: creates a missing local Caddy setting from its template, so that Caddy can always start |
 | `.env.example` | All settings. Copied to `.env`, which holds the secrets and is never committed. |
 | `backup.sh` | A database dump, for a daily cron job |
@@ -163,7 +163,7 @@ Fill in the other values in `.env`: the three hostnames (without `https://`), `A
 sudo -u keycloak nano .env
 ```
 
-Create the local Caddy settings in `caddy/`, from the templates there: `admin-access.caddy` restricts the admin hostname ([step 4](#4-restrict-admin-access-recommended)), and `email-tiers.caddy` holds the [email limits](#10-maintenance) per app. These copies are not in the repository, so `git pull` never changes them.
+Create the local Caddy settings in `caddy/`, from the templates there: `admin-access.caddy` restricts the admin hostname ([step 4](#4-restrict-admin-access)), and `email-tiers.caddy` holds the [email limits](#email-limits) per app. These copies are not in the repository, so `git pull` never changes them.
 
 ```bash
 sudo -u keycloak cp caddy/admin-access.example.caddy caddy/admin-access.caddy
@@ -173,7 +173,7 @@ sudo -u keycloak cp caddy/admin-access.example.caddy caddy/admin-access.caddy
 sudo -u keycloak cp caddy/email-tiers.example.caddy caddy/email-tiers.caddy
 ```
 
-Set up the admin restriction now, so the admin hostname is restricted from the first start: find your IP ranges and edit `caddy/admin-access.caddy` as described in [step 4](#4-restrict-admin-access-recommended). The email tiers can stay as they are.
+Set up the admin restriction now, so the admin hostname is restricted from the first start: find your IP ranges and edit `caddy/admin-access.caddy` as described in [step 4](#4-restrict-admin-access). The email tiers can stay as they are.
 
 If one of these files is missing when the stack starts, it is created from its template (Caddy doesn't start without them): unchanged, the templates add no admin restriction and give every app the default email limit.
 
@@ -219,7 +219,7 @@ sudo ./admin-cli.sh update realms/master -s attributes.frontendUrl=https://auth-
 
 This changes the issuer of `master`, so the admin tool's login is no longer valid afterwards: run `sudo ./admin-cli.sh login` again for further commands.
 
-## 4. Restrict admin access (recommended)
+## 4. Restrict admin access
 
 Keycloak recommends not exposing the administration interfaces to the public internet, and in particular restricting the administrative `master` realm to internal access (see [Configuring Keycloak for production](https://www.keycloak.org/server/configuration-production) and the [exposed path recommendations](https://www.keycloak.org/server/reverseproxy#_exposed_path_recommendations)). With this step, everything on the admin hostname (the admin consoles, the admin API and the `master` realm) is only reachable from the IP ranges you choose, e.g. the university network and its VPN. The public hostname, where users log in, is not affected.
 
@@ -278,6 +278,8 @@ curl -s -o /dev/null -w '%{http_code}\n' https://auth-admin.example.org/realms/m
 
 ### Exceptions for specific realms
 
+The `idp` realm gets no exception: its users and app owners never need the admin console (apps are managed on the [app registration site](./app-registration.md)).
+
 A realm can have admins who are not on your network, e.g. a research group outside the university that manages its own realm (see [Isolated OIDC providers](./auth-providers.md#use-cases)). For such a realm, add an exception **above** the restriction, in the same file. It makes the admin console of that realm, and only that realm, reachable from another range (or from anywhere, without the `remote_ip` line):
 
 ```
@@ -321,7 +323,7 @@ curl -s -o /dev/null -w '%{http_code}\n' https://auth.example.org/realms/master/
 Following [Bootstrapping and recovering an admin account](https://www.keycloak.org/server/bootstrap-admin-recovery): the bootstrap account is temporary, and must be replaced by a permanent admin with 2FA. The `master` realm is for administrators only; users never go in `master`.
 
 1. Open `https://auth-admin.example.org/admin/` (from an allowed network, if you restricted admin access) and log in as `temp-admin`. A yellow banner says you are using a temporary admin account.
-2. In the `master` realm, go to **Users → Add user**. Fill in a username and your email address, turn on **Email verified**, and under **Required user actions** choose **Configure OTP**. Click **Create**.
+2. In the `master` realm, go to **Users → Add user**. Fill in your email address (it is the username), turn on **Email verified**, and under **Required user actions** choose **Configure OTP**. Click **Create**.
 3. On the **Credentials** tab, click **Set password**, and turn off **Temporary**.
 4. On the **Role mapping** tab, click **Assign role**, filter by realm roles, and assign **admin**.
 5. Open a private browser window, go to the admin console, and log in as the new admin. Keycloak shows **Mobile Authenticator Setup**: scan the QR code with an authenticator app. Check that you can use the admin console.
@@ -342,7 +344,7 @@ The realms are in `realms/` as complete Keycloak realm files (`master-realm.json
 
 In all realms:
 
-* **2FA:** OTP (authenticator app), passkeys or security keys, and recovery codes count as a second factor. With mandatory 2FA, users without a second factor are asked to set up OTP when they log in. Google and GitHub replace only the password: the second factor is asked after them, in the same way.
+* **2FA:** OTP (authenticator app), passkeys or security keys, and recovery codes count as a second factor. With mandatory 2FA, users without a second factor are asked to set up OTP when they log in. In `idp`, Google and GitHub replace only the password: the second factor is asked after them, in the same way.
 * **The `amr` claim** in tokens contains `mfa` when a second factor was used, and `pwd` for a password (for our software: `OIDC_MFA_CLAIM=amr:mfa`, see the [Authentication standard](./auth.md)).
 * **Passwords:** at least 10 characters, with an uppercase letter and a digit, not equal to the username or email.
 * **Login action timeout** 15 minutes (time for e.g. setting up 2FA), brute force detection, and login and admin events kept for 90 days.
@@ -371,7 +373,7 @@ All email of the `lab` and `idp` realms goes through the email relay (`mail-rela
 
 * **Only the relay has the provider's password.** Keycloak sends to the relay without a password, and only Keycloak can reach the relay (on its own internal network). A realm admin who points the realm's email settings elsewhere gets no password.
 * **Only one sender address:** the relay refuses emails from any other address than `SMTP_FROM`.
-* **A cap for the whole Keycloak instance:** at most `EMAIL_RELAY_LIMIT` emails per `EMAIL_RELAY_LIMIT_PERIOD` (default 400 per hour). Above it, the relay refuses emails until the period ends, and users see an error that the email could not be sent. It protects the monthly quota of the email provider; see [Email limits](#10-maintenance). Apply a change with `sudo docker compose up -d mail-relay`.
+* **A cap for the whole Keycloak instance:** at most `EMAIL_RELAY_LIMIT` emails per `EMAIL_RELAY_LIMIT_PERIOD` (default 400 per hour). Above it, the relay refuses emails until the period ends, and users see an error that the email could not be sent. It protects the monthly quota of the email provider; see [Email limits](#email-limits). Apply a change with `sudo docker compose up -d mail-relay`.
 * **Queueing:** when the provider is unreachable, the relay keeps the emails and retries.
 
 Fill in `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM` and `SMTP_FROM_NAME` in `.env`. The relay requires TLS to the provider: use port 587 (STARTTLS). For Scaleway Transactional Email: host `smtp.tem.scaleway.com`, user your Scaleway project ID, and as password an API secret key with only the permission to send email.
@@ -518,7 +520,9 @@ sudo docker compose build --pull && sudo docker compose up -d
 
 **The app registration site:** after `git pull`, rebuild it with `sudo docker compose up -d --build app-registration`.
 
-**Email limits.** Keycloak has no limit on the emails it sends. Without limits, anyone could use the registration and "forgot password" forms to send many emails: to bomb someone's inbox, or to use up the monthly quota of the email provider (after which nobody gets a verification or reset email until the next month). There are three limits:
+### Email limits
+
+Keycloak has no limit on the emails it sends. Without limits, anyone could use the registration and "forgot password" forms to send many emails: to bomb someone's inbox, or to use up the monthly quota of the email provider (after which nobody gets a verification or reset email until the next month). There are three limits:
 
 | Limit | Where | Default | Counts | Above the limit |
 | --- | --- | --- | --- | --- |
@@ -581,7 +585,9 @@ sudo docker compose logs mail-relay | grep -E 'rate limit exceeded|reject'
 
 The counts are kept in memory: a restart of Caddy or the relay resets them (a Caddy reload doesn't).
 
-**Recovering admin access** (e.g. a lost authenticator app, or no admin left), following the [recovery guide](https://www.keycloak.org/server/bootstrap-admin-recovery). This requires access to the VM, which is the break-glass route. Stop Keycloak and create a temporary admin (you are prompted for a password):
+### Recovering admin access
+
+Recovering admin access (e.g. a lost authenticator app, or no admin left), following the [recovery guide](https://www.keycloak.org/server/bootstrap-admin-recovery). This requires access to the VM, which is the break-glass route. Stop Keycloak and create a temporary admin (you are prompted for a password):
 
 ```bash
 sudo docker compose stop keycloak
@@ -605,7 +611,7 @@ Log in to the admin console as `recovery-admin`, fix the problem (e.g. delete th
 | `permission denied while trying to connect to the Docker daemon socket` | The command was run without `sudo` (see [Users and permissions](#users-and-permissions)). |
 | `sudo: ... is not in the sudoers file` while logged in as `keycloak` | Docker commands are run from your own admin account, not as `keycloak`. |
 | No certificate, or browser warnings | The DNS record doesn't point to the VM yet, or port 80 is blocked. Check `sudo docker compose logs caddy`. |
-| Admin console stays on a loading spinner | Step 3 (frontend URL of the `master` realm) was skipped or has a typo. |
+| Admin console stays on a loading spinner | The frontend URL of `master` is wrong: check `KC_HOSTNAME_ADMIN` in `.env`, or, on an installation from before the realm files, step 3. |
 | Admin hostname returns 403 while on the VPN | Your IP address is not in the ranges in `caddy/admin-access.caddy`. Check `curl -4 https://ifconfig.me` on your device. After changing the file, run `sudo docker compose exec caddy caddy reload --config /etc/caddy/Caddyfile`. |
 | A reload of Caddy fails, or Caddy doesn't start after a restart | A mistake in `caddy/admin-access.caddy` or `caddy/email-tiers.caddy`: the error message names the file and line. Fix it and reload again (`sudo docker compose up -d caddy` if Caddy is not running). |
 | The admin console of a realm with an exception stays on "Loading", or shows a permission error | The exception is missing `/resources/*` or `/admin/serverinfo`, or the realm name in the paths is misspelled (see step 4). |
@@ -613,13 +619,13 @@ Log in to the admin console as `recovery-admin`, fix the problem (e.g. delete th
 | Requests through Caddy return 403 Forbidden | `KC_PROXY_HEADERS` is not set to `xforwarded`, so Keycloak's origin checks fail (see the reverse proxy guide). |
 | Keycloak doesn't start: `Missing in .env: ...` | A value used in the realm files is not set in `.env` (see [step 7](#7-realms)). |
 | Keycloak doesn't start on the first start: `invalidPasswordMinUpperCaseCharsMessage` (or a similar password message) | `KC_BOOTSTRAP_ADMIN_PASSWORD` doesn't meet the password policy of `master` (at least 10 characters, an uppercase letter and a digit). Generate a new one (step 2), and remove the database volume of this failed first start: `sudo docker compose down -v` (only on a new installation: this deletes all data). |
-| Locked out of the admin console after turning on **Verify email** in `master` | `master` has no email server, so the verification email never arrives. Don't turn it on (the realm configuration keeps it off). To recover, follow [Recovering admin access](#10-maintenance), but create a service account (`bootstrap-admin service --optimized --client-id recovery`) instead of a user, because a new user would also have to verify their email. Log in to the admin tool with `sudo ./admin-cli.sh config credentials --server https://localhost:8443 --realm master --client recovery --secret <secret>` (after `sudo ./admin-cli.sh login` has set up the truststore; its password prompt may fail), turn verification off with `sudo ./admin-cli.sh update realms/master -s verifyEmail=false`, and delete the `recovery` client. |
+| Locked out of the admin console after turning on **Verify email** in `master` | `master` has no email server, so the verification email never arrives. Don't turn it on (the realm configuration keeps it off). To recover, follow [Recovering admin access](#recovering-admin-access), but create a service account (`bootstrap-admin service --optimized --client-id recovery`) instead of a user, because a new user would also have to verify their email. Log in to the admin tool with `sudo ./admin-cli.sh config credentials --server https://localhost:8443 --realm master --client recovery --secret <secret>` (after `sudo ./admin-cli.sh login` has set up the truststore; its password prompt may fail), turn verification off with `sudo ./admin-cli.sh update realms/master -s verifyEmail=false`, and delete the `recovery` client. |
 | After renaming a realm, the account console or admin console of that realm doesn't load | Keycloak doesn't update the URLs of the built-in clients (`account`, `account-console`, `security-admin-console`): fix their root and redirect URLs by hand, or create the realm again with the new name. |
 | `admin-cli.sh login` fails with `Account is not fully set up` | The account has no email address, while the realm uses email addresses as usernames and has the required action **Update email** turned on. The realm configuration keeps **Update email** off in `master` for this reason; check **Authentication → Required actions** in `master`. |
 | A login flow asks for OTP twice, or not at all | A "Condition - sub-flow executed" refers to a flow name that doesn't exist (e.g. after copying a flow). Run `python3 check-realms.py`. |
 | Users see that an email could not be sent | The relay refused or couldn't deliver it. `sudo docker compose logs mail-relay` shows why, e.g. the cap was reached (`Message delivery request rate limit exceeded`), a wrong sender address in a realm (`Sender address rejected`), or a login or TLS problem with the provider. |
-| The app registration site restarts continuously | The `idp` realm doesn't exist yet (apply the realm configuration), or a value is missing in `.env`: check `sudo docker compose logs app-registration`. |
-| Users see "Please try again later" | An email limit was reached (see [Email limits](#10-maintenance)). The message says which: their network, or the app. |
+| The app registration site restarts continuously | The `idp` realm doesn't exist yet (Keycloak imports it when it starts: check `sudo docker compose logs keycloak | grep -i import`), or a value is missing in `.env`: check `sudo docker compose logs app-registration`. |
+| Users see "Please try again later" | An email limit was reached (see [Email limits](#email-limits)). The message says which: their network, or the app. |
 | `WARN ... configured to build using Bake, but buildx isn't installed` | Harmless: Compose falls back to the classic build. To remove the warning, install the buildx plugin (`sudo apt install docker-buildx-plugin`, with Docker from Docker's own repository). |
 
 ## Why it is set up this way
@@ -637,7 +643,7 @@ Log in to the admin console as `recovery-admin`, fix the problem (e.g. delete th
 * **Realm files imported by Keycloak itself:** the realms are set up once from complete realm files, with Keycloak's own import (no extra tools with admin rights). They document how the realms are configured, and make it easy to set them up again; later changes are made in the admin console. (An earlier version used keycloak-config-cli, a third-party tool that applies changes again and again; that needs an admin client with a secret on the server, for a workflow we don't use.)
 * **An email relay instead of Keycloak's own SMTP login:** Keycloak would send its SMTP password to whatever server a realm admin enters. With the relay, Keycloak has no password to give away, and the relay adds a cap, a fixed sender address and a queue. (An earlier version kept secrets in Keycloak's [file vault](https://www.keycloak.org/server/vault): that keeps them out of the database, but a realm admin can use a vault reference anywhere, and so send the secret to their own server. Tested, so we don't use it.)
 * **The idp's Google and GitHub secrets in the database:** Keycloak masks them, and requires them again when a provider is pointed elsewhere, so a realm admin can't send them to their own server.
-* **Email limits in Caddy and the relay:** Keycloak has no limit on how many emails it sends; brute force detection only covers logins. Caddy blocks only the requests that send an email, so a limit never breaks logins or the sessions of an app, and the limit per app keeps one app (or someone abusing its login page) from using up everything. The cap on all email is in the relay, because only the relay counts emails that were actually sent (see [Email limits](#10-maintenance)).
+* **Email limits in Caddy and the relay:** Keycloak has no limit on how many emails it sends; brute force detection only covers logins. Caddy blocks only the requests that send an email, so a limit never breaks logins or the sessions of an app, and the limit per app keeps one app (or someone abusing its login page) from using up everything. The cap on all email is in the relay, because only the relay counts emails that were actually sent (see [Email limits](#email-limits)).
 * **2FA with OTP as the default to set up:** OTP works on every device and doesn't depend on a particular platform; passkeys and security keys can be added in the account console.
 * **Temporary bootstrap admin, replaced by a permanent admin with 2FA:** see [Bootstrapping and recovering an admin account](https://www.keycloak.org/server/bootstrap-admin-recovery).
 
