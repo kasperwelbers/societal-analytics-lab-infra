@@ -1,0 +1,50 @@
+# Realm files
+
+`master-realm.json`, `lab-realm.json` and `idp-realm.json` are complete realm files in Keycloak's own export format. Keycloak imports them when it starts (`--import-realm`), but only realms that don't exist yet: an existing realm is never changed. See runbook step 7 in `docs/keycloak-deploy.md`, and the overview in `docs/keycloak.md`.
+
+* **Values from `.env`** are written as placeholders: `${SMTP_FROM}`, `${SMTP_FROM_NAME}`, `${APPS_HOSTNAME}`, `${APP_REGISTRATION_CLIENT_SECRET}`, and `${IDP_GOOGLE_CLIENT_ID}`, `${IDP_GOOGLE_CLIENT_SECRET}`, `${IDP_GITHUB_CLIENT_ID}`, `${IDP_GITHUB_CLIENT_SECRET}`. Keycloak doesn't start while one of them is missing. (Lower-case placeholders, e.g. `${role_admin}`, are Keycloak's own texts.)
+* **Not in the files:** users (except the service account of the app registration site), signing keys and IDs. Keycloak creates them on import.
+* **After a change:** run `python3 check-realms.py` (from `deploy/keycloak`). It catches flow mistakes that Keycloak accepts silently.
+
+Most of each file is Keycloak's defaults. What we changed:
+
+## All realms
+
+| Setting | Value | Why |
+| --- | --- | --- |
+| `registrationEmailAsUsername`, `loginWithEmailAllowed` | true | The email address is the username |
+| `passwordPolicy` | `length(10) and upperCase(1) and digits(1) and notUsername and notEmail` | At least 10 characters, an uppercase letter and a digit |
+| `accessCodeLifespanUserAction` | 900 | "Login action timeout": 15 minutes, e.g. to set up 2FA |
+| `ssoSessionIdleTimeout`, `ssoSessionMaxLifespan` | 1800 (master: 1800 and 28800) | Sessions at Keycloak; applications keep their own |
+| `bruteForceProtected`, `eventsEnabled`, `adminEventsEnabled` | true; events kept 90 days | |
+| `rememberMe` | false | |
+| client scope `amr` | added to the default scopes | The `amr` claim: `pwd` for a password, `mfa` for a second factor |
+
+## Flows
+
+Each step that counts as a login method has an `amr` setting (`default.reference.value`: `pwd` or `mfa`). Recovery codes, OTP and passkeys/security keys count as a second factor.
+
+* **`browser-2fa-required`** (master, lab): cookie → external provider redirect → `browser-2fa-required-forms`: password, then the conditional sub-flow `browser-2fa-required-2fa` (only for users with a second factor: OTP, passkey/security key or recovery code), then `browser-2fa-required-setup-otp`, which asks users without a second factor to set up OTP ("Condition - sub-flow executed": the 2FA sub-flow was not executed). This is the pattern "Conditional 2FA sub-flow with OTP default" from the Keycloak documentation.
+* **`browser-2fa-optional`** (idp): the same, without the OTP setup: users with a second factor are asked for it, others are not.
+* **`post-login-2fa-optional`** (idp): after a login with Google or GitHub, which replaces only the password: the second factor, if the user has one. The final "Allow access" step is needed, because a flow in which nothing runs counts as failed.
+
+Copying a flow in the admin console keeps the old flow name in "Condition - sub-flow executed". `check-realms.py` checks these names in the files.
+
+## master
+
+* No email server, no external login providers, no registration, no "forgot password": admin access doesn't depend on an inbox or anyone's Google account. Recovery goes through the VM.
+* `verifyEmail` false: without an email server, verification would lock admins out.
+* Required action **Update email** off: together with email as username, it would make accounts without an email address (the temporary admin, recovery admins) "not fully set up", and `admin-cli.sh` could no longer log in with them.
+
+## lab
+
+* By invitation only (`registrationAllowed` false), with institutional email addresses: no Google or GitHub login.
+* `verifyEmail`, `resetPasswordAllowed`: true.
+* Email through the relay (`smtpServer`: host `mail-relay`, port 587, no login).
+* Required action **Update email** on, and `editUsernameAllowed` true (needed for the "Update email" button in the account console): users change their address there, and it only changes after they confirm the new address.
+
+## idp
+
+* Open registration (`registrationAllowed` true), `verifyEmail`, `resetPasswordAllowed`, email through the relay, and **Update email** as in lab.
+* **Google** (`trustEmail` true, PKCE) and **GitHub** (`trustEmail` false: Keycloak verifies the address itself), with the default first broker login flow and `post-login-2fa-optional`.
+* **App registration:** the client `app-registration` (login for the site, and a service account with only the role `manage-clients`), the realm role `client-self-service` (held by that service account), and the client profile and policy `self-service-clients`: every change the site makes to an app gets consent and PKCE, and refuses unsafe redirect URIs (https, or http only on localhost; no wildcards). See `docs/app-registration.md`.

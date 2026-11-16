@@ -15,6 +15,6 @@ Then continue with step 3 of the runbook (pointing the admin realm to the admin 
 
 | Folder or file | |
 | --- | --- |
-| `realms/` | Realm configuration (`master`, `lab`, `idp`), applied with `sudo docker compose run --rm keycloak-config` (runbook step 7). Check changes with `python3 check-realms.py`. |
+| `realms/` | The realms (`master`, `lab`, `idp`) as Keycloak realm files, imported by Keycloak on start when a realm doesn't exist yet (runbook step 7, and `realms/README.md`). Check changes with `python3 check-realms.py`. |
 | `local/` | Local Caddy settings: admin restrictions (step 4) and email limits per app. Created from the `*.example.caddy` templates on the first start (never committed). |
 | `app-registration/` | The app registration site ([docs/app-registration.md](../../docs/app-registration.md)). |

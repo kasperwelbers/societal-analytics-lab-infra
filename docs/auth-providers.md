@@ -55,7 +55,7 @@ These follow from the use cases and the [Authentication standard](./auth.md).
 
 ### Keycloak
 
-The most complete fit for our use cases, and the most battle-tested. Its main cost is complexity: Keycloak has many settings, and a misconfiguration is a bigger risk than the code itself. We manage that by keeping the configuration in files in this repository (realm export, or a tool such as [keycloak-config-cli](https://github.com/adorsys/keycloak-config-cli)), so that it is reviewable and reproducible.
+The most complete fit for our use cases, and the most battle-tested. Its main cost is complexity: Keycloak has many settings, and a misconfiguration is a bigger risk than the code itself. We manage that by keeping the realm configuration in files in this repository, which Keycloak imports itself (see [step 7 of the runbook](./keycloak-deploy.md#7-realms)), so that it is reviewable and reproducible.
 
 * **Realms** give us strong isolation on one server: a realm for the shared pool, a realm for the lab, and a realm per power user.
 * **Consent** is stored per client. The consent screen is skipped only when the user already approved everything the client asks for.
@@ -143,7 +143,7 @@ Instead of DCR, apps are registered through our own [app registration site](./ap
 **Operations**
 
 - [x] Production setup with `start`, PostgreSQL and our reverse proxy (hostname and proxy headers): see the [Keycloak deployment](./keycloak-deploy.md) runbook.
-- [x] Configuration as code with keycloak-config-cli (see [step 7 of the runbook](./keycloak-deploy.md#7-configuration-as-code)).
+- [x] Realms set up from files with Keycloak's own import (see [step 7 of the runbook](./keycloak-deploy.md#7-realms)).
 - [ ] Upgrade from one 26.x release to the next.
 - [x] Backups of the database, and a restore test.
 - [ ] oauth2-proxy in front of a service without its own login (the AuthWall).
@@ -165,7 +165,7 @@ Tested with Keycloak 26.8 (locally, with the realm configuration of the runbook)
 * **Passkeys:** a passkey or security key works as a second factor after the password (`amr`: `pwd` + `mfa`), and is offered as such in the account console. Logging in with only a passkey (no password) is not enabled: the login page doesn't offer it, and a passwordless passkey registered through a direct link is not used.
 * **Re-login (`max_age`)** shows the username as text and asks only for the password.
 * **Secrets and realm admins:** the file vault keeps secrets out of the database, backups and the admin console (the console shows the reference, e.g. `${vault.smtpPassword}`). But a realm admin can reuse the reference: after pointing the realm's SMTP host to another server, Keycloak sent the SMTP password there; a new login provider with `${vault.googleClientSecret}` as its secret sent the Google client secret to its token URL. Secrets stored in the database are better protected: the console masks them, and changing a provider's token URL without entering the secret again is refused ("Client secret must be re-entered ..."). Keycloak's SMTP password has no such protection, so email goes through a relay that holds the provider's password, and Keycloak has none to give away (all tested).
-* **keycloak-config-cli** substitutes variables inside comments too, skips unchanged files unless its cache is turned off, and deletes things it doesn't manage unless set to `no-delete`.
+* **Realm import:** Keycloak's own import (`--import-realm`) only creates realms that don't exist yet, and only fills in its defaults for parts that are missing from the file entirely: a file with only our own flows gets none of the built-in flows, and a file with one client scope gets none of the default scopes. So the realm files are complete exports (a default realm plus our changes). `master` is imported too on a new installation, before the temporary admin is created, whose password must then meet the imported password policy. Placeholders for missing environment variables are imported as text. (We first used keycloak-config-cli, a third-party tool that applies changes to existing realms; it needs an admin client with a secret on the server.)
 
 ==TODO: real Google and GitHub logins, and the remaining items above.==
 

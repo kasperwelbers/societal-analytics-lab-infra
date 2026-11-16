@@ -1,23 +1,24 @@
 #!/usr/bin/env python3
-"""Check the realm configuration in realms/*.yaml for mistakes Keycloak doesn't report.
+"""Check the realm files in realms/*-realm.json for mistakes Keycloak doesn't report.
 
 Keycloak accepts these silently, and the login flows then do something else than intended:
 - a "Condition - sub-flow executed" that refers to a sub-flow that doesn't exist (always
   "not executed", so e.g. users with 2FA get a second OTP prompt);
 - an execution that refers to a sub-flow or setting (authenticatorConfig) that doesn't exist;
 - a sub-flow that is defined but never used, or used in more than one place;
-- keycloak-config-cli placeholders in comments (it substitutes those too, and fails).
-It also checks that flows with the same name are identical in all realm files.
+- a placeholder (dollar, {NAME}) for a value that docker-compose.yml doesn't pass to Keycloak
+  (Keycloak would import the placeholder text itself).
+It also checks that our own flows (not Keycloak's built-in ones) are identical in all realm files.
 
-Usage: python3 check-realms.py [realms folder]   (requires PyYAML)
+Usage: python3 check-realms.py [realms folder]
 Exit code 0 when everything is fine, 1 otherwise.
 """
 
+import json
+import re
 import sys
 from collections import defaultdict
 from pathlib import Path
-
-import yaml
 
 errors: list[str] = []
 
@@ -40,14 +41,14 @@ def flow_shape(flow: dict) -> list:
     ]
 
 
-def check_file(path: Path, shapes: dict) -> None:
+def check_file(path: Path, shapes: dict, compose: str) -> None:
     text = path.read_text()
-    for number, line in enumerate(text.splitlines(), start=1):
-        comment = line.split("#", 1)[1] if "#" in line else ""
-        if "$(" in comment:
-            err(path, f"line {number}: placeholder in a comment (keycloak-config-cli substitutes it)")
+    # Our placeholders are upper case; Keycloak's own message keys (e.g. role_admin) are not
+    for name in sorted(set(re.findall(r"\$\{([A-Z][A-Z0-9_]*)\}", text))):
+        if f"{name}: " not in compose:
+            err(path, f"placeholder {name} is not passed to Keycloak in docker-compose.yml")
 
-    realm = yaml.safe_load(text)
+    realm = json.loads(text)
     flows = {f["alias"]: f for f in realm.get("authenticationFlows", [])}
     configs = {c["alias"]: c for c in realm.get("authenticatorConfig", [])}
     used_subflows: dict[str, int] = defaultdict(int)
@@ -86,7 +87,8 @@ def check_file(path: Path, shapes: dict) -> None:
     for alias, flow in flows.items():
         if not flow.get("topLevel") and used_subflows[alias] != 1:
             err(path, f"sub-flow '{alias}' is used {used_subflows[alias]} times (expected once)")
-        shapes[alias].append((path.name, flow_shape(flow)))
+        if not flow.get("builtIn"):
+            shapes[alias].append((path.name, flow_shape(flow)))
 
     for alias in configs:
         if alias not in used_configs:
@@ -108,13 +110,14 @@ BUILT_IN_FLOWS = {"browser", "first broker login", "direct grant", "registration
 
 def main() -> int:
     folder = Path(sys.argv[1]) if len(sys.argv) > 1 else Path(__file__).parent / "realms"
-    files = sorted(folder.glob("*.yaml"))
+    files = sorted(folder.glob("*-realm.json"))
+    compose = (Path(__file__).parent / "docker-compose.yml").read_text()
     if not files:
         print(f"No realm files in {folder}")
         return 1
     shapes: dict[str, list] = defaultdict(list)
     for path in files:
-        check_file(path, shapes)
+        check_file(path, shapes, compose)
     for alias, variants in shapes.items():
         first_file, first_shape = variants[0]
         for other_file, other_shape in variants[1:]:

@@ -18,7 +18,7 @@ A realm in Keycloak is a separate login: its own users, apps, settings and admin
 
 **How users log in.** In all realms, the email address is the username, and it is verified before it can be used; users can change it, and the new address must be confirmed too. A second factor is an authenticator app (OTP), a passkey or security key, or recovery codes. It is mandatory in master and lab, because these accounts give access to our infrastructure. In idp it is optional, to keep the barrier low: the token tells each server whether a second factor was used (`amr`), so a server decides itself when to require it, e.g. for sensitive actions (see [Two-factor authentication](./auth.md#two-factor-authentication-2fa) in the standard).
 
-The realms are configured as code (`deploy/keycloak/realms/`), so their settings are reviewed in the repository and can be rebuilt (see [Configuration as code](./keycloak-deploy.md#7-configuration-as-code)).
+The realms are set up from realm files in the repository (`deploy/keycloak/realms/`), which Keycloak imports itself on its first start. They document the configuration, including the login flows, and make it easy to set up the realms again (see [Realms](./keycloak-deploy.md#7-realms) in the runbook).
 
 ## The idp realm: open to everyone, best effort
 
