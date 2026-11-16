@@ -8,8 +8,8 @@
   "accessTokenLifespanForImplicitFlow": 900,
   "ssoSessionIdleTimeout": 1800,
   "ssoSessionMaxLifespan": 1800,
-  "ssoSessionIdleTimeoutRememberMe": 0,
-  "ssoSessionMaxLifespanRememberMe": 0,
+  "ssoSessionIdleTimeoutRememberMe": 604800,
+  "ssoSessionMaxLifespanRememberMe": 2592000,
   "offlineSessionIdleTimeout": 2592000,
   "offlineSessionMaxLifespanEnabled": false,
   "offlineSessionMaxLifespan": 5184000,
@@ -21,14 +21,14 @@
   "accessCodeLifespanUserAction": 1800,
   "accessCodeLifespanLogin": 1800,
   "actionTokenGeneratedByAdminLifespan": 43200,
-  "actionTokenGeneratedByUserLifespan": 300,
+  "actionTokenGeneratedByUserLifespan": 1800,
   "oauth2DeviceCodeLifespan": 600,
   "oauth2DevicePollingInterval": 5,
   "enabled": true,
   "sslRequired": "external",
   "registrationAllowed": false,
   "registrationEmailAsUsername": true,
-  "rememberMe": false,
+  "rememberMe": true,
   "verifyEmail": true,
   "loginWithEmailAllowed": true,
   "duplicateEmailsAllowed": false,
@@ -397,10 +397,14 @@
   ],
   "localizationTexts": {
     "en": {
+      "loginAccountTitle": "Sign in with your lab account",
+      "email": "Email address (usually your VU address)",
       "doForgotPassword": "First time, or forgot your password?",
-      "emailForgotTitle": "Set your password",
+      "emailForgotTitle": "Set your lab password",
+      "emailInstruction": "Enter your email address. If it is known to the lab, you will get an email with a link to set your password.",
       "updatePasswordTitle": "Choose a password",
-      "resetPasswordMessage": "Choose a password for your account."
+      "resetPasswordMessage": "Choose a password for your lab account.",
+      "passwordResetSubject": "Set your lab password"
     }
   },
   "webAuthnPolicyRpEntityName": "keycloak",
@@ -2429,36 +2433,121 @@
       ]
     },
     {
-      "alias": "reset-credentials-login-again",
-      "description": "Forgot password: after the new password, log in again with the browser flow (and the second factor). No OTP reset.",
+      "alias": "reset-credentials-2fa-required",
+      "description": "Forgot password / first time: email link, the second factor (if the user has one), a new password, and OTP setup for users without a second factor. Then logged in.",
       "providerId": "basic-flow",
       "topLevel": true,
       "builtIn": false,
       "authenticationExecutions": [
         {
-          "authenticator": "reset-credentials-choose-user",
           "authenticatorFlow": false,
           "requirement": "REQUIRED",
           "priority": 10,
           "autheticatorFlow": false,
-          "userSetupAllowed": false
+          "userSetupAllowed": false,
+          "authenticator": "reset-credentials-choose-user"
         },
         {
-          "authenticator": "reset-credential-email",
           "authenticatorFlow": false,
           "requirement": "REQUIRED",
           "priority": 20,
           "autheticatorFlow": false,
           "userSetupAllowed": false,
-          "authenticatorConfig": "reset-credentials-login-again-force-login"
+          "authenticator": "reset-credential-email"
         },
         {
-          "authenticator": "reset-password",
+          "authenticatorFlow": true,
+          "requirement": "CONDITIONAL",
+          "priority": 30,
+          "autheticatorFlow": true,
+          "userSetupAllowed": false,
+          "flowAlias": "reset-credentials-2fa-required-2fa"
+        },
+        {
           "authenticatorFlow": false,
           "requirement": "REQUIRED",
+          "priority": 40,
+          "autheticatorFlow": false,
+          "userSetupAllowed": false,
+          "authenticator": "reset-password"
+        },
+        {
+          "authenticatorFlow": true,
+          "requirement": "CONDITIONAL",
+          "priority": 50,
+          "autheticatorFlow": true,
+          "userSetupAllowed": false,
+          "flowAlias": "reset-credentials-2fa-required-setup-otp"
+        }
+      ]
+    },
+    {
+      "alias": "reset-credentials-2fa-required-2fa",
+      "description": "Users with a second factor: asked for it before they can set a new password",
+      "providerId": "basic-flow",
+      "topLevel": false,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "authenticatorFlow": false,
+          "requirement": "REQUIRED",
+          "priority": 10,
+          "autheticatorFlow": false,
+          "userSetupAllowed": false,
+          "authenticator": "conditional-user-configured"
+        },
+        {
+          "authenticatorFlow": false,
+          "requirement": "ALTERNATIVE",
+          "priority": 20,
+          "autheticatorFlow": false,
+          "userSetupAllowed": false,
+          "authenticator": "auth-otp-form",
+          "authenticatorConfig": "reset-credentials-2fa-required-amr-otp"
+        },
+        {
+          "authenticatorFlow": false,
+          "requirement": "ALTERNATIVE",
           "priority": 30,
           "autheticatorFlow": false,
-          "userSetupAllowed": false
+          "userSetupAllowed": false,
+          "authenticator": "webauthn-authenticator",
+          "authenticatorConfig": "reset-credentials-2fa-required-amr-webauthn"
+        },
+        {
+          "authenticatorFlow": false,
+          "requirement": "ALTERNATIVE",
+          "priority": 40,
+          "autheticatorFlow": false,
+          "userSetupAllowed": false,
+          "authenticator": "auth-recovery-authn-code-form",
+          "authenticatorConfig": "reset-credentials-2fa-required-amr-recovery"
+        }
+      ]
+    },
+    {
+      "alias": "reset-credentials-2fa-required-setup-otp",
+      "description": "Users without a second factor: set up OTP (mandatory 2FA)",
+      "providerId": "basic-flow",
+      "topLevel": false,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "authenticatorFlow": false,
+          "requirement": "REQUIRED",
+          "priority": 10,
+          "autheticatorFlow": false,
+          "userSetupAllowed": false,
+          "authenticator": "conditional-sub-flow-executed",
+          "authenticatorConfig": "reset-credentials-2fa-required-if-no-2fa"
+        },
+        {
+          "authenticatorFlow": false,
+          "requirement": "REQUIRED",
+          "priority": 20,
+          "autheticatorFlow": false,
+          "userSetupAllowed": false,
+          "authenticator": "auth-otp-form"
         }
       ]
     }
@@ -2550,9 +2639,31 @@
       }
     },
     {
-      "alias": "reset-credentials-login-again-force-login",
+      "alias": "reset-credentials-2fa-required-amr-otp",
       "config": {
-        "force-login": "true"
+        "default.reference.value": "mfa",
+        "default.reference.maxAge": "1800"
+      }
+    },
+    {
+      "alias": "reset-credentials-2fa-required-amr-webauthn",
+      "config": {
+        "default.reference.value": "mfa",
+        "default.reference.maxAge": "1800"
+      }
+    },
+    {
+      "alias": "reset-credentials-2fa-required-amr-recovery",
+      "config": {
+        "default.reference.value": "mfa",
+        "default.reference.maxAge": "1800"
+      }
+    },
+    {
+      "alias": "reset-credentials-2fa-required-if-no-2fa",
+      "config": {
+        "flow_to_check": "reset-credentials-2fa-required-2fa",
+        "check_result": "not-executed"
       }
     }
   ],
@@ -2572,7 +2683,7 @@
       "providerId": "UPDATE_PROFILE",
       "enabled": true,
       "defaultAction": false,
-      "priority": 40,
+      "priority": 53,
       "config": {}
     },
     {
@@ -2601,7 +2712,7 @@
       "providerId": "UPDATE_PASSWORD",
       "enabled": true,
       "defaultAction": false,
-      "priority": 57,
+      "priority": 51,
       "config": {}
     },
     {
@@ -2637,7 +2748,7 @@
       "providerId": "VERIFY_PROFILE",
       "enabled": true,
       "defaultAction": false,
-      "priority": 100,
+      "priority": 52,
       "config": {}
     },
     {
@@ -2664,7 +2775,7 @@
       "providerId": "CONFIGURE_RECOVERY_AUTHN_CODES",
       "enabled": true,
       "defaultAction": false,
-      "priority": 130,
+      "priority": 55,
       "config": {}
     },
     {
@@ -2689,7 +2800,7 @@
   "browserFlow": "browser-2fa-required",
   "registrationFlow": "registration",
   "directGrantFlow": "direct grant",
-  "resetCredentialsFlow": "reset-credentials-login-again",
+  "resetCredentialsFlow": "reset-credentials-2fa-required",
   "clientAuthenticationFlow": "clients",
   "dockerAuthenticationFlow": "docker auth",
   "firstBrokerLoginFlow": "first broker login",

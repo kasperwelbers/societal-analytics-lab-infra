@@ -2434,7 +2434,7 @@
       "providerId": "UPDATE_PROFILE",
       "enabled": true,
       "defaultAction": false,
-      "priority": 40,
+      "priority": 53,
       "config": {}
     },
     {
@@ -2463,7 +2463,7 @@
       "providerId": "UPDATE_PASSWORD",
       "enabled": true,
       "defaultAction": false,
-      "priority": 57,
+      "priority": 51,
       "config": {}
     },
     {
@@ -2499,7 +2499,7 @@
       "providerId": "VERIFY_PROFILE",
       "enabled": true,
       "defaultAction": false,
-      "priority": 100,
+      "priority": 52,
       "config": {}
     },
     {
@@ -2526,7 +2526,7 @@
       "providerId": "CONFIGURE_RECOVERY_AUTHN_CODES",
       "enabled": true,
       "defaultAction": false,
-      "priority": 130,
+      "priority": 55,
       "config": {}
     },
     {

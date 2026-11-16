@@ -345,11 +345,11 @@ The realms are in `realms/` as complete Keycloak realm files (`master-realm.json
 In all realms:
 
 * **2FA:** OTP (authenticator app), passkeys or security keys, and recovery codes count as a second factor. Users can also sign in with only a passkey ("Sign in with Passkey" on the login page), which counts as 2FA, also where 2FA is mandatory. With mandatory 2FA, users without a second factor are asked to set up OTP when they log in. After setting up OTP, users set up recovery codes. In `idp`, Google and GitHub replace only the password: the second factor is asked after them, in the same way. All login paths, and why: [How users log in](./keycloak.md#how-users-log-in).
-* **Forgot password** (`lab`, `idp`): after the new password, users log in again, with their second factor. The email link never replaces the second factor.
+* **Forgot password, or first time** (`lab`, `idp`): after the email link (valid 30 minutes), users with a second factor enter it, then choose a new password, and are logged in. The email link never replaces the second factor. In `lab`, users without a second factor set one up in the same go.
 * **The `amr` claim** in tokens contains `mfa` when a second factor was used, and `pwd` for a password (for our software: `OIDC_MFA_CLAIM=amr:mfa`, see the [Authentication standard](./auth.md)).
 * **Passwords:** at least 10 characters, with an uppercase letter and a digit, not equal to the username or email.
 * **Login action timeout** 30 minutes for each page of the login (e.g. setting up 2FA, saving the recovery codes), brute force detection, and login and admin events kept for 90 days.
-* **Sessions** at Keycloak last 30 minutes in `lab` and `idp` (applications keep their own sessions), and up to 8 hours in `master`.
+* **Sessions** at Keycloak last 30 minutes in `lab` and `idp` (applications keep their own sessions), and up to 8 hours in `master`. In `lab`, **Remember me** on the login page keeps users logged in on that device for up to 30 days (7 days idle).
 * **The email address is the username**, and users log in with it. In `lab` and `idp`, users change their address in the account console (**Personal info → Update email**): the address, and with it the username, only changes after they confirm the new address with a link sent to it. The user stays the same (same `sub`), also for users who log in with Google or GitHub. In `master`, which has no email server, admins change an address in the admin console. Existing usernames without an email address (`temp-admin`, a recovery admin) keep working.
 * **Registration** (in `idp`) asks only for email and name: users choose their password after verifying their email address. This is Keycloak's default when email verification is on, so that nobody can set a password for an address they don't own.
 
@@ -537,7 +537,7 @@ Keycloak has no limit on the emails it sends. Without limits, anyone could use t
 | **Per app** (client ID), only in `idp` | Caddy; `caddy/email-tiers.caddy` | 25 per 30 minutes; tier2 100, tier3 500 | Requests that can send an email, through that app | That person sees "This app has reached its limit for sign-ups and password resets" |
 | **All email** | The relay; `.env`: `EMAIL_RELAY_LIMIT` per `EMAIL_RELAY_LIMIT_PERIOD` | 400 per hour | Emails actually sent | Keycloak can't send email; users see that the email could not be sent |
 
-The requests that can send an email are the first visit to the "verify your email" page (after registering, or when a user with an unverified email address logs in) and submitting "forgot password". Logins (with password, OTP, passkey, Google or GitHub), token requests and refresh grants, and finishing a password reset from an email that was already sent are never limited.
+The requests that can send an email are the first visit to the "verify your email" page (after registering, or when a user with an unverified email address logs in) and submitting "forgot password". Logins (with password, OTP, passkey, Google or GitHub), token requests and refresh grants, and choosing the new password after the email link are never limited. (Users with a second factor enter it on the reset page after the link, which counts once more: a reset counts 1, or 2 with a second factor.)
 
 **How they count:**
 
@@ -594,7 +594,7 @@ The counts are kept in memory: a restart of Caddy or the relay resets them (a Ca
 
 ### Adding lab members
 
-`lab` has no registration form: only people we add can use it. We add them without a password and without sending anything. When they want to use a lab service, they click **First time, or forgot your password?** on the login page. Keycloak then emails them a link (only if they are a member, and the message is the same for everyone), and they choose a password and fill in their name. At their first login, they set up an authenticator app and save their recovery codes.
+`lab` has no registration form: only people we add can use it. We add them without a password and without sending anything. When they want to use a lab service, they click **First time, or forgot your password?** on the login page. Keycloak then emails them a link (only if they are a member; the page says the same to everyone). After the link, in one go, they choose a password, fill in their name, set up an authenticator app and save their recovery codes, and they are logged in.
 
 1. Write the members to a file, e.g. `members.json`. An import doesn't fill anything in by itself, so each user needs a username (the email address) and the realm's default roles (`default-roles-lab`). Without these roles, users can log in, but the account page shows "Sorry, an unexpected error has occurred" (its requests are refused with 401):
 
@@ -608,13 +608,13 @@ The counts are kept in memory: a restart of Caddy or the relay resets them (a Ca
     ```
 
 2. In the admin console of `lab`: **Realm settings → Action** (top right) **→ Partial import**, choose the file, tick **Users**, choose **Skip** for existing users, and click **Import**. If it fails, the reason is in the log: `sudo docker compose logs --since 10m keycloak | grep -E "WARN|ERROR"`.
-3. Tell the members, e.g.: *"Go to <a lab service>, click 'First time, or forgot your password?', and enter your VU email address. You'll get an email to choose a password. You'll also need an authenticator app on your phone."*
+3. Tell the members, e.g.: *"Go to <a lab service, or https://auth.example.org/realms/lab/account>, click 'First time, or forgot your password?', and enter your VU email address. You'll get an email with a link to set your lab password (not your VU password). You'll also need an authenticator app on your phone, e.g. Microsoft Authenticator."*
 
 One member at a time: **Users → Add user**, with the email address (and **Email verified** on); users added this way get the default roles automatically.
 
 Members imported without `default-roles-lab`: import the file again with the roles and **Overwrite** (this recreates them, so members who already set a password start again with "First time?"), or give one user the role in **Users → the user → Role mapping → Assign role** (filter by realm roles).
 
-The texts "First time, or forgot your password?" and "Set your password" are realm overrides in `realms/lab-realm.json`. On a `lab` realm created before they were added, add them in **Realm settings → Localization → Realm overrides → Add translation** (English): `doForgotPassword` = `First time, or forgot your password?`, `emailForgotTitle` = `Set your password`, `updatePasswordTitle` = `Choose a password`, `resetPasswordMessage` = `Choose a password for your account.`
+The texts on the login pages and the email subject ("Sign in with your lab account", "First time, or forgot your password?", "Set your lab password", ...) are realm overrides (`localizationTexts`) in `realms/lab-realm.json`; change them in **Realm settings → Localization → Realm overrides**.
 
 ### A user lost their second factor
 
