@@ -346,7 +346,7 @@ All email of the `lab` and `idp` realms goes through the email relay (`mail-rela
 
 * **Only the relay has the provider's password.** Keycloak sends to the relay without a password, and only Keycloak can reach the relay (on its own internal network). A realm admin who points the realm's email settings elsewhere gets no password.
 * **Only one sender address:** the relay refuses emails from any other address than `SMTP_FROM`.
-* **A cap for the whole Keycloak instance:** at most `EMAIL_RELAY_LIMIT` emails per `EMAIL_RELAY_LIMIT_PERIOD` (default 250 per 15 minutes). Above it, the relay refuses emails until the period has passed, and users see an error that the email could not be sent. This is a safety net under the [email limits](#10-maintenance) in Caddy, and also covers emails that admins trigger. Apply a change with `sudo docker compose up -d mail-relay`.
+* **A cap for the whole Keycloak instance:** at most `EMAIL_RELAY_LIMIT` emails per `EMAIL_RELAY_LIMIT_PERIOD` (default 400 per hour). Above it, the relay refuses emails until the period ends, and users see an error that the email could not be sent. It protects the monthly quota of the email provider; see [Email limits](#10-maintenance). Apply a change with `sudo docker compose up -d mail-relay`.
 * **Queueing:** when the provider is unreachable, the relay keeps the emails and retries.
 
 Fill in `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM` and `SMTP_FROM_NAME` in `.env`. The relay requires TLS to the provider: use port 587 (STARTTLS). For Scaleway Transactional Email: host `smtp.tem.scaleway.com`, user your Scaleway project ID, and as password an API secret key with only the permission to send email.
@@ -507,14 +507,29 @@ sudo docker compose build --pull && sudo docker compose up -d
 
 **The app registration site:** after `git pull`, rebuild it with `sudo docker compose up -d --build app-registration`.
 
-**Email limits.** Keycloak has no limit on the emails it sends, so Caddy limits the requests that make it send one: the first visit to the "verify your email" page (after registering, or when a user with an unverified email address logs in) and submitting "forgot password". Logins (with password, OTP, passkey, Google or GitHub), token requests and refresh grants, and finishing a password reset from an email that was already sent are never limited. Above a limit, Caddy shows a page "Please try again later", only to the person who ran into it, and Keycloak doesn't send the email. There are two limits:
+**Email limits.** Keycloak has no limit on the emails it sends. Without limits, anyone could use the registration and "forgot password" forms to send many emails: to bomb someone's inbox, or to use up the monthly quota of the email provider (after which nobody gets a verification or reset email until the next month). There are three limits:
 
-| Limit | Where | Default | Message |
-| --- | --- | --- | --- |
-| **Per IP address** | `.env`: `EMAIL_LIMIT_PER_IP` per `EMAIL_LIMIT_PER_IP_WINDOW`. Apply with `sudo docker compose up -d caddy` (resets the counts). | 30 per 10 minutes. Also counts registrations and first logins with Google or GitHub. | "Too many attempts from your network" |
-| **Per app** (client ID) | `local/email-tiers.caddy`: the tiers, and which apps have a higher tier | 25 per 30 minutes; tier2 100, tier3 500 | "This app has reached its limit for sign-ups and password resets" |
+| Limit | Where | Default | Counts | Above the limit |
+| --- | --- | --- | --- | --- |
+| **Per IP address** | Caddy; `.env`: `EMAIL_LIMIT_PER_IP` per `EMAIL_LIMIT_PER_IP_WINDOW` | 200 per hour | Requests that can send an email, plus registrations and first logins with Google or GitHub | That person sees "Too many attempts from your network" |
+| **Per app** (client ID) | Caddy; `local/email-tiers.caddy` | 25 per 30 minutes; tier2 100, tier3 500 | Requests that can send an email, through that app | That person sees "This app has reached its limit for sign-ups and password resets" |
+| **All email** | The relay; `.env`: `EMAIL_RELAY_LIMIT` per `EMAIL_RELAY_LIMIT_PERIOD` | 400 per hour | Emails actually sent | Keycloak can't send email; users see that the email could not be sent |
 
-`local/email-tiers.caddy` (created from `email-tiers.example.caddy` on the first start) holds both the tiers and the list of apps with a higher tier, e.g.:
+The requests that can send an email are the first visit to the "verify your email" page (after registering, or when a user with an unverified email address logs in) and submitting "forgot password". Logins (with password, OTP, passkey, Google or GitHub), token requests and refresh grants, and finishing a password reset from an email that was already sent are never limited.
+
+**How they count:**
+
+* **Caddy (per IP, per app): a sliding window.** A request is allowed if fewer than the maximum were allowed in the last period, so spots free up one by one, each exactly one period after the request that took it. Refused requests are not counted, so trying again doesn't make the wait longer. The error page sends the wait time as `Retry-After`.
+* **The relay (all email): a fixed period.** The count starts at the first email and is reset when the period ends. Above the cap, all email is refused until then (from seconds to the whole period), after which the full number is available again. Refused emails are not queued: users have to try again.
+* **Why the limit on all email is only in the relay:** Caddy counts requests, and anyone can send requests that make Keycloak send nothing (e.g. reloading a page, or invalid requests). A limit on all requests together in Caddy could be used up by one person, and would block sign-ups for everyone. The relay only counts emails that were actually sent, which one person can't do in large numbers, because of the limit per IP address. So the cap on all email is only reached by an attack from many addresses, or by email that doesn't pass Caddy (e.g. emails that admins trigger).
+
+**Choosing the numbers:**
+
+* **All email** protects the provider's monthly quota (check it in the provider's console; for Scaleway under the project's quotas). Keep the cap well below it: an attack that keeps going sends at most the cap per period, e.g. 400 × 24 = 9,600 per day. Set up a usage alert at the provider (e.g. at half the monthly quota) if it offers one: an attack that stays below the cap is only visible in the usage, and in the logs below.
+* **Per IP address** is generous, because many people can share one address (e.g. a class on a campus network): 200 per hour is about 100 sign-ups per hour from one address. It must stay well below the cap on all email, so that one address can't use that up.
+* **Per app:** apps that are used for teaching, or otherwise many sign-ups at once, get a higher tier once (see below). Nobody has to remember to raise a limit before a session.
+
+**Tiers per app.** `local/email-tiers.caddy` (created from `email-tiers.example.caddy` on the first start) holds both the tiers and the list of apps with a higher tier, e.g.:
 
 ```
 (email_tier_limits) {
@@ -524,7 +539,7 @@ sudo docker compose build --pull && sudo docker compose up -d
 }
 
 (email_tier_apps) {
-	survey-tool-1890fa   tier2   # raised for a course, until June
+	survey-tool-1890fa   tier2   # used in a course
 }
 ```
 
@@ -537,11 +552,21 @@ sudo docker compose exec caddy caddy reload --config /etc/caddy/Caddyfile
 If the file contains a mistake, the reload fails with an error message and Caddy keeps running with the previous settings: fix the file before Caddy is restarted (e.g. by a reboot), because Caddy doesn't start with an invalid file.
 
 * **New apps** are not added anywhere: apps that are not listed get `default`. Tiers are only assigned by hand.
-* **Teaching sessions:** many people can share one IP address (e.g. a campus network). When a whole class registers at once, raise `EMAIL_LIMIT_PER_IP` beforehand, and lower it again afterwards. If they all use one app, put that app in a higher tier for the session too.
 * **More tiers:** add a line to `email_tier_limits` (a name, a number, a period), and use the name in `email_tier_apps`.
 * An app is identified by its client ID; the same client ID in another realm gets the same tier.
 * **The limit per app can't be avoided** by leaving out or changing the client ID in the URL: Keycloak then refuses the request and sends nothing (tested). Someone can use up an app's limit on purpose, but then only sign-ups and password resets through that app pause; its logins keep working.
-* The counters are kept in memory: a restart of Caddy resets them.
+
+**Is a limit being hit?** Caddy logs every refused request, with the limit (`zone`) and what was counted (`key`: the IP address, or realm/client ID), and the relay logs every refused email:
+
+```bash
+sudo docker compose logs caddy | grep 'rate limit exceeded'
+```
+
+```bash
+sudo docker compose logs mail-relay | grep -E 'rate limit exceeded|reject'
+```
+
+The counts are kept in memory: a restart of Caddy or the relay resets them (a Caddy reload doesn't).
 
 **Recovering admin access** (e.g. a lost authenticator app, or no admin left), following the [recovery guide](https://www.keycloak.org/server/bootstrap-admin-recovery). This requires access to the VM, which is the break-glass route. Stop Keycloak and create a temporary admin (you are prompted for a password):
 
@@ -599,7 +624,7 @@ Log in to the admin console as `recovery-admin`, fix the problem (e.g. delete th
 * **Configuration as code with keycloak-config-cli:** the realm settings are reviewed and versioned like code, and a realm can be rebuilt. It never deletes what it doesn't manage (`IMPORT_MANAGED_*=no-delete`), so things added in the admin console, and apps registered by users, are safe. It applies every file on every run (`IMPORT_CACHE_ENABLED=false`), so changes made in the admin console to managed settings don't silently persist.
 * **An email relay instead of Keycloak's own SMTP login:** Keycloak would send its SMTP password to whatever server a realm admin enters. With the relay, Keycloak has no password to give away, and the relay adds a cap, a fixed sender address and a queue. (An earlier version kept secrets in Keycloak's [file vault](https://www.keycloak.org/server/vault): that keeps them out of the database, but a realm admin can use a vault reference anywhere, and so send the secret to their own server. Tested, so we don't use it.)
 * **The idp's Google and GitHub secrets in the database:** Keycloak masks them, and requires them again when a provider is pointed elsewhere, so a realm admin can't send them to their own server.
-* **Email limits in Caddy:** Keycloak has no limit on how many emails it sends; brute force detection only covers logins. Without a limit, anyone could use the registration and password reset forms to send many emails, which costs money and damages the sender reputation of our domain. Caddy blocks only the requests that send an email, so a limit never breaks logins or the sessions of an app; the limit per app keeps one app (or someone abusing its login page) from using up everything.
+* **Email limits in Caddy and the relay:** Keycloak has no limit on how many emails it sends; brute force detection only covers logins. Caddy blocks only the requests that send an email, so a limit never breaks logins or the sessions of an app, and the limit per app keeps one app (or someone abusing its login page) from using up everything. The cap on all email is in the relay, because only the relay counts emails that were actually sent (see [Email limits](#10-maintenance)).
 * **2FA with OTP as the default to set up:** OTP works on every device and doesn't depend on a particular platform; passkeys and security keys can be added in the account console.
 * **Temporary bootstrap admin, replaced by a permanent admin with 2FA:** see [Bootstrapping and recovering an admin account](https://www.keycloak.org/server/bootstrap-admin-recovery).
 

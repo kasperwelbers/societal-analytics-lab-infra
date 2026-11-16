@@ -200,11 +200,12 @@ services:
       # Only the sender address of the realms (domain checks are replaced by this exact check)
       ALLOW_EMPTY_SENDER_DOMAINS: "true"
       POSTFIX_smtpd_sender_restrictions: "check_sender_access inline:{ ${SMTP_FROM:-}=OK }, reject"
-      # The cap: at most EMAIL_RELAY_LIMIT emails per EMAIL_RELAY_LIMIT_PERIOD from Keycloak.
-      # Above it, the relay refuses new emails until the period has passed (Keycloak shows an
+      # The cap: at most EMAIL_RELAY_LIMIT emails per EMAIL_RELAY_LIMIT_PERIOD from Keycloak, in
+      # a fixed period that starts with the first email (Postfix resets the count after each
+      # period). Above it, the relay refuses emails until the period ends (Keycloak shows an
       # error). Postfix exempts its own networks from limits by default: not here.
-      POSTFIX_smtpd_client_message_rate_limit: ${EMAIL_RELAY_LIMIT:-250}
-      POSTFIX_anvil_rate_time_unit: ${EMAIL_RELAY_LIMIT_PERIOD:-15m}
+      POSTFIX_smtpd_client_message_rate_limit: ${EMAIL_RELAY_LIMIT:-400}
+      POSTFIX_anvil_rate_time_unit: ${EMAIL_RELAY_LIMIT_PERIOD:-1h}
       POSTFIX_smtpd_client_event_limit_exceptions: 127.0.0.1/32
     volumes:
       # The queue survives restarts
@@ -252,8 +253,8 @@ services:
       APPS_HOSTNAME: ${APPS_HOSTNAME:?set APPS_HOSTNAME in .env}
       ACME_EMAIL: ${ACME_EMAIL:?set ACME_EMAIL in .env}
       # Email limit per IP address (the limits per app are in local/email-tiers.caddy)
-      EMAIL_LIMIT_PER_IP: ${EMAIL_LIMIT_PER_IP:-30}
-      EMAIL_LIMIT_PER_IP_WINDOW: ${EMAIL_LIMIT_PER_IP_WINDOW:-10m}
+      EMAIL_LIMIT_PER_IP: ${EMAIL_LIMIT_PER_IP:-200}
+      EMAIL_LIMIT_PER_IP_WINDOW: ${EMAIL_LIMIT_PER_IP_WINDOW:-1h}
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       # Local settings, not in the repository (prepared by caddy-init): restrictions of the

@@ -57,21 +57,28 @@ import local/email-tiers.caddy
 		import email_tier_apps
 		default default
 	}
+	# The limits per IP address and per app use a sliding window: a request is allowed if fewer
+	# than the maximum were allowed in the last period, so spots free up one by one. Refused
+	# requests are not counted. They count requests, not emails, so there is deliberately no
+	# limit for all requests together here: anyone could use that up with requests that send
+	# nothing. The limit on all emails is in the email relay, which counts emails actually sent.
 	rate_limit {
 		# Per IP address. Also counts registrations and first logins with Google or GitHub
-		# (account creation, and the email to confirm linking an existing account). Many people
-		# can share one address (e.g. a campus network): raise it for teaching sessions.
+		# (account creation, and the email to confirm linking an existing account). Generous,
+		# because many people can share one address (e.g. a class on a campus network).
 		zone email_per_ip {
 			match {
 				expression `(({method} == "GET" && {path}.matches("^/realms/[^/]+/login-actions/required-action$") && {query.execution} == "VERIFY_EMAIL") || ({method} == "POST" && {path}.matches("^/realms/[^/]+/login-actions/reset-credentials$"))) || ({method} == "POST" && {path}.matches("^/realms/[^/]+/login-actions/(registration|first-broker-login)$"))`
 			}
 			key {remote_host}
 			ipv6_prefix 64
-			window {$EMAIL_LIMIT_PER_IP_WINDOW:10m}
-			events {$EMAIL_LIMIT_PER_IP:30}
+			window {$EMAIL_LIMIT_PER_IP_WINDOW:1h}
+			events {$EMAIL_LIMIT_PER_IP:200}
 		}
 		# Per app (client ID, per realm), in tiers (see local/email-tiers.caddy)
 		import email_tier_limits
+		# Log each refused request with its key (the IP address, or realm/client ID)
+		log_key
 	}
 	handle_errors 429 {
 		@per_app expression `{http.rate_limit.exceeded.name}.startsWith("email_per_app")`
