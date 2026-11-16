@@ -596,13 +596,13 @@ The counts are kept in memory: a restart of Caddy or the relay resets them (a Ca
 
 `lab` has no registration form: only people we add can use it. We add them without a password and without sending anything. When they want to use a lab service, they click **First time, or forgot your password?** on the login page. Keycloak then emails them a link (only if they are a member, and the message is the same for everyone), and they choose a password and fill in their name. At their first login, they set up an authenticator app and save their recovery codes.
 
-1. Write the members to a file, e.g. `members.json`. The username must be the email address (an import doesn't fill it in by itself):
+1. Write the members to a file, e.g. `members.json`. An import doesn't fill anything in by itself, so each user needs a username (the email address) and the realm's default roles (`default-roles-lab`). Without these roles, users can log in, but the account page shows "Sorry, an unexpected error has occurred" (its requests are refused with 401):
 
     ```json
     {
       "users": [
-        {"username": "j.doe@example.org", "email": "j.doe@example.org", "enabled": true, "emailVerified": true},
-        {"username": "a.smith@example.org", "email": "a.smith@example.org", "enabled": true, "emailVerified": true}
+        {"username": "j.doe@example.org", "email": "j.doe@example.org", "enabled": true, "emailVerified": true, "realmRoles": ["default-roles-lab"]},
+        {"username": "a.smith@example.org", "email": "a.smith@example.org", "enabled": true, "emailVerified": true, "realmRoles": ["default-roles-lab"]}
       ]
     }
     ```
@@ -610,7 +610,9 @@ The counts are kept in memory: a restart of Caddy or the relay resets them (a Ca
 2. In the admin console of `lab`: **Realm settings → Action** (top right) **→ Partial import**, choose the file, tick **Users**, choose **Skip** for existing users, and click **Import**. If it fails, the reason is in the log: `sudo docker compose logs --since 10m keycloak | grep -E "WARN|ERROR"`.
 3. Tell the members, e.g.: *"Go to <a lab service>, click 'First time, or forgot your password?', and enter your VU email address. You'll get an email to choose a password. You'll also need an authenticator app on your phone."*
 
-One member at a time: **Users → Add user**, with the email address (and **Email verified** on).
+One member at a time: **Users → Add user**, with the email address (and **Email verified** on); users added this way get the default roles automatically.
+
+Members imported without `default-roles-lab`: import the file again with the roles and **Overwrite** (this recreates them, so members who already set a password start again with "First time?"), or give one user the role in **Users → the user → Role mapping → Assign role** (filter by realm roles).
 
 The texts "First time, or forgot your password?" and "Set your password" are realm overrides in `realms/lab-realm.json`. On a `lab` realm created before they were added, add them in **Realm settings → Localization → Realm overrides → Add translation** (English): `doForgotPassword` = `First time, or forgot your password?`, `emailForgotTitle` = `Set your password`, `updatePasswordTitle` = `Choose a password`, `resetPasswordMessage` = `Choose a password for your account.`
 
