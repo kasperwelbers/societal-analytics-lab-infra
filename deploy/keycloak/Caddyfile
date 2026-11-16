@@ -50,7 +50,7 @@
 }
 
 # The tiers, and which apps have a higher tier: a local file that is not in the repository
-# (created from email-tiers.example.caddy on the first start, see caddy-init.sh)
+# (copied from email-tiers.example.caddy during setup; created from it if missing, see caddy-init.sh)
 import local/email-tiers.caddy
 
 # Public hostname: logins, OIDC endpoints, static resources
@@ -113,7 +113,7 @@ import local/email-tiers.caddy
 
 # Admin hostname: the admin consoles and the admin API.
 # Optional restrictions (IP ranges, exceptions per realm) are set in local/admin-access.caddy,
-# a local file that is not in the repository (created from admin-access.example.caddy).
+# a local file that is not in the repository (copied from admin-access.example.caddy).
 {$KC_HOSTNAME_ADMIN} {
 	import local/admin-access.caddy
 	handle {

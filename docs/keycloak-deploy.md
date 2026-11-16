@@ -163,7 +163,23 @@ Fill in the other values in `.env`: the three hostnames (without `https://`), `A
 sudo -u keycloak nano .env
 ```
 
-The local Caddy settings (`local/admin-access.caddy` for [step 4](#4-restrict-admin-access-recommended), and `local/email-tiers.caddy` for the [email limits](#10-maintenance)) are created from the templates on the first start. Unchanged, they add no admin restrictions, and give every app the default email limit.
+Create the local Caddy settings in the folder `local/`, from the templates: `admin-access.caddy` restricts the admin hostname ([step 4](#4-restrict-admin-access-recommended)), and `email-tiers.caddy` holds the [email limits](#10-maintenance) per app. These copies are not in the repository, so `git pull` never changes them.
+
+```bash
+sudo -u keycloak mkdir -m 750 local
+```
+
+```bash
+sudo -u keycloak cp admin-access.example.caddy local/admin-access.caddy
+```
+
+```bash
+sudo -u keycloak cp email-tiers.example.caddy local/email-tiers.caddy
+```
+
+Set up the admin restriction now, so the admin hostname is restricted from the first start: find your IP ranges and edit `local/admin-access.caddy` as described in [step 4](#4-restrict-admin-access-recommended). The email tiers can stay as they are.
+
+If one of these files is missing when the stack starts, the `caddy-init` service creates it from its template (Caddy doesn't start without them): unchanged, the templates add no admin restriction and give every app the default email limit. It never changes an existing file.
 
 ### Build and start
 
@@ -211,7 +227,13 @@ This changes the issuer of `master`, so the admin tool's login is no longer vali
 
 Keycloak recommends not exposing the administration interfaces to the public internet, and in particular restricting the administrative `master` realm to internal access (see [Configuring Keycloak for production](https://www.keycloak.org/server/configuration-production) and the [exposed path recommendations](https://www.keycloak.org/server/reverseproxy#_exposed_path_recommendations)). With this step, everything on the admin hostname (the admin consoles, the admin API and the `master` realm) is only reachable from the IP ranges you choose, e.g. the university network and its VPN. The public hostname, where users log in, is not affected.
 
-**How it works.** The admin hostname reads the rules in `local/admin-access.caddy`, from top to bottom; the first rule that matches a request decides. Requests that match no rule go to Keycloak. The file is local to the VM: it is not in the repository, so `git pull` never changes it.
+**How it works.** The admin hostname reads the rules in `local/admin-access.caddy` (copied from `admin-access.example.caddy` in [step 2](#files-and-settings)), from top to bottom; the first rule that matches a request decides. Requests that match no rule go to Keycloak. The file is local to the VM: it is not in the repository, so `git pull` never changes it.
+
+Set this up before the first start (step 2), so the admin hostname is never open; you can also do it later. After a change while Caddy runs, apply it with a reload, which checks the file first: if it contains a mistake, the reload fails with an error message, and Caddy keeps running with the previous settings.
+
+```bash
+sudo docker compose exec caddy caddy reload --config /etc/caddy/Caddyfile
+```
 
 ### Find your IP ranges
 
@@ -227,11 +249,17 @@ Then look up the range that address belongs to (the `whois` port is blocked on s
 curl -s https://rdap.db.ripe.net/ip/<your IP> | grep -E '"(name|startAddress|endAddress)"'
 ```
 
-Check that `name` belongs to your institution, and write the range in CIDR notation, with zeros in the free part: `startAddress 192.0.2.0` to `endAddress 192.0.2.255` is `192.0.2.0/24`, and `192.0.0.0` to `192.0.255.255` is `192.0.0.0/16`. Repeat on campus without VPN if you also want access from there. A whole institutional range includes everyone on that network: it is an extra layer, admin accounts still need 2FA.
+Check that `name` belongs to your institution, and write the range in CIDR notation. This command calculates it from `startAddress` and `endAddress`:
+
+```bash
+python3 -c "import ipaddress as i; print(*i.summarize_address_range(i.ip_address('START'), i.ip_address('END')))"
+```
+
+For example, `192.0.2.0` to `192.0.2.255` is `192.0.2.0/24`. The VPN and the campus network may use different ranges: repeat this on campus without VPN (wired and Wi-Fi) if you also want access from there, and list every range you find. The university's IT department can tell you the official ranges. A whole institutional range includes everyone on that network: it is an extra layer, admin accounts still need 2FA.
 
 ### Restrict the admin hostname
 
-Edit the file:
+Edit the file (in step 2, or later):
 
 ```bash
 sudo -u keycloak nano local/admin-access.caddy
@@ -246,13 +274,7 @@ handle @not_allowed {
 }
 ```
 
-Apply it. A reload checks the file first: if it contains a mistake, the reload fails with an error message, and Caddy keeps running with the previous settings.
-
-```bash
-sudo docker compose exec caddy caddy reload --config /etc/caddy/Caddyfile
-```
-
-Check, from your own device. On the VPN this shows the `master` realm's issuer; **without the VPN** (e.g. on a phone hotspot) it should return `403`:
+If Caddy is already running, apply it with the reload above. Check, from your own device (once the stack runs). On the VPN this shows the `master` realm's issuer; **without the VPN** (e.g. on a phone hotspot) it should return `403`:
 
 ```bash
 curl -s -o /dev/null -w '%{http_code}\n' https://auth-admin.example.org/realms/master/.well-known/openid-configuration
@@ -522,7 +544,7 @@ The requests that can send an email are the first visit to the "verify your emai
 * **Per IP address** is generous, because many people can share one address (e.g. a class on a campus network): 200 per hour is about 100 sign-ups per hour from one address. It must stay well below the cap on all email, so that one address can't use that up.
 * **Per app, only in `idp`:** anyone can register there, and register apps, so each app has its own limit: one app (or someone abusing its login page) can't use up the email for all others. Other realms have no limits per app, only the limit per IP address and the cap on all email.
 
-**Tiers per app (idp).** Every app gets `default`. Give a higher tier to apps whose owners you trust (e.g. because they asked for more, and you know them). `local/email-tiers.caddy` (created from `email-tiers.example.caddy` on the first start) holds both the tiers and the list of apps with a higher tier, e.g.:
+**Tiers per app (idp).** Every app gets `default`. Give a higher tier to apps whose owners you trust (e.g. because they asked for more, and you know them). `local/email-tiers.caddy` (copied from `email-tiers.example.caddy` in step 2) holds both the tiers and the list of apps with a higher tier, e.g.:
 
 ```
 (email_tier_limits) {
