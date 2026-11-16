@@ -1,8 +1,17 @@
 # OIDC provider comparison
 
-**Status: under evaluation.** Keycloak is being tested hands-on (see the [test checklist](#keycloak-test-checklist), and the [Keycloak deployment](./keycloak-deploy.md) runbook). Until a decision is made, the shared OIDC provider described in the [Installation guide](./auth-install.md#option-1-our-shared-oidc-provider) is not available.
+**Status: decided. We use Keycloak** (see [Keycloak setup](./keycloak.md)). This page records the options we considered and why we chose Keycloak, followed by the original comparison and the test checklist. It is only about the provider that the lab runs itself: our software works with any provider that meets the [provider requirements](./auth.md#oidc-provider-requirements).
 
-This page compares three self-hosted OIDC providers for the lab: **Keycloak**, **Authentik** and **ZITADEL**. It lists what we need, how each provider fits, and what still needs to be tested. Our software works with any provider that meets the [provider requirements](./auth.md#oidc-provider-requirements); this page is only about the provider that the lab runs itself.
+## Decision
+
+| Option | Considered for | Outcome | Main reasons |
+| --- | --- | --- | --- |
+| **Keycloak** | Everything: the lab, the shared identity provider, isolated pools | **Chosen** | Realms isolate the lab, the shared provider and teams on one server; consent per client, enforced for registered apps by client policies; `amr`, step-up and requesting 2FA; realm export with user IDs and password hashes, for migrations; backed by Red Hat and the CNCF; one container. Tested hands-on (see the [test checklist](#keycloak-test-checklist)). |
+| **ZITADEL** | The shared identity provider | Not chosen | No consent screen: any registered app receives the data of a signed-in user without asking. Organizations don't isolate users: apps in one organization can obtain users of another, depending on settings that the instance admin can't enforce. |
+| **Authentik** | The lab (our current provider) | Not chosen | No isolated pools within one installation (multi-tenancy was removed), can't request 2FA, and depends on a small company. Its forward auth is replaced by oauth2-proxy. |
+| **SURF SRAM** | Lab authentication with institutional logins | Not now | Less control (we can't reset 2FA or recover accounts ourselves), depends on approval by the university, and not suitable as a provider for servers run by others. It can be added later as a login option of the `lab` realm (see [Lab authentication](./lab-auth.md)). |
+
+The sections below are the comparison as it was made before the decision.
 
 ## What we need
 
