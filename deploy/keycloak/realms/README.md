@@ -43,6 +43,7 @@ Copying a flow in the admin console keeps the old flow name in "Condition - sub-
 ## lab
 
 * By invitation only (`registrationAllowed` false), with institutional email addresses: no Google or GitHub login.
+* New members are imported without a password, and set one themselves with "forgot password". For them, `localizationTexts` (realm overrides) rename the link to "First time, or forgot your password?", and the pages to "Set your password" and "Choose a password" (keys `doForgotPassword`, `emailForgotTitle`, `updatePasswordTitle`, `resetPasswordMessage`).
 * `verifyEmail`, `resetPasswordAllowed`: true.
 * Email through the relay (`smtpServer`: host `mail-relay`, port 587, no login).
 * Required action **Update email** on, and `editUsernameAllowed` true (needed for the "Update email" button in the account console): users change their address there, and it only changes after they confirm the new address.

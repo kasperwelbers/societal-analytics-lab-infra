@@ -395,7 +395,14 @@
     "totpAppGoogleName",
     "totpAppMicrosoftAuthenticatorName"
   ],
-  "localizationTexts": {},
+  "localizationTexts": {
+    "en": {
+      "doForgotPassword": "First time, or forgot your password?",
+      "emailForgotTitle": "Set your password",
+      "updatePasswordTitle": "Choose a password",
+      "resetPasswordMessage": "Choose a password for your account."
+    }
+  },
   "webAuthnPolicyRpEntityName": "keycloak",
   "webAuthnPolicySignatureAlgorithms": [
     "ES256",

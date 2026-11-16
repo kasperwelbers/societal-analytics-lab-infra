@@ -1,6 +1,6 @@
 # Lab authentication
 
-**Status: decided.** The lab uses the `lab` realm of our Keycloak: invitation only, institutional email addresses, password and mandatory 2FA, no Google or GitHub (see [Keycloak setup](./keycloak.md)). Institutional login (SURF SRAM) may be added later as a login option of that realm.
+**Status: decided.** The lab uses the `lab` realm of our Keycloak: members added by us, institutional email addresses, password and mandatory 2FA, no Google or GitHub (see [Keycloak setup](./keycloak.md)). Institutional login (SURF SRAM) may be added later as a login option of that realm.
 
 This page is about authentication for the lab's own infrastructure: our own AmCAT and AnnoTinder servers, and the AuthWall in front of services without their own login (Whisper, Ollama). It is not about the [shared OIDC provider](./auth-install.md#option-1-our-shared-oidc-provider) for other teams: that is the `idp` realm on the same Keycloak, a separate realm that is open to the public and isolated from `lab`.
 
@@ -8,7 +8,7 @@ This page is about authentication for the lab's own infrastructure: our own AmCA
 
 * **Meets our [Authentication standard](./auth.md):** verified email (`email_verified`), a 2FA signal (`amr`), and step-up (`max_age`, `auth_time`). The `lab` realm provides all three.
 * **Forward auth** for services without their own login (the AuthWall).
-* **External collaborators:** researchers from other institutions, including abroad, and guests without an institutional account. For now, they get an account in the `lab` realm by invitation.
+* **External collaborators:** researchers from other institutions, including abroad, and guests without an institutional account. For now, we add them to the `lab` realm ([Adding lab members](./keycloak-deploy.md#adding-lab-members)).
 * **Little maintenance,** and a clear route for account recovery: lab admins can reset a member's second factor.
 
 Which options were considered, and why we chose Keycloak: see the [decision](./auth-providers.md#decision).

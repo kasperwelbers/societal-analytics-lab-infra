@@ -339,7 +339,7 @@ The realms are in `realms/` as complete Keycloak realm files (`master-realm.json
 | Realm | For | Login | Registration | External login |
 | --- | --- | --- | --- | --- |
 | `master` | Administrators only | Password + mandatory 2FA | No | No (and no email) |
-| `lab` | The lab's own infrastructure | Password + mandatory 2FA | Invitation only | No (institutional addresses) |
+| `lab` | The lab's own infrastructure | Password + mandatory 2FA | Added by us ([Adding lab members](#adding-lab-members)) | No (institutional addresses) |
 | `idp` | The shared login for servers run by others | Password + optional 2FA | Open | Google, GitHub |
 
 In all realms:
@@ -591,6 +591,28 @@ sudo docker compose logs mail-relay | grep -E 'rate limit exceeded|reject'
 ```
 
 The counts are kept in memory: a restart of Caddy or the relay resets them (a Caddy reload doesn't).
+
+### Adding lab members
+
+`lab` has no registration form: only people we add can use it. We add them without a password and without sending anything. When they want to use a lab service, they click **First time, or forgot your password?** on the login page. Keycloak then emails them a link (only if they are a member, and the message is the same for everyone), and they choose a password and fill in their name. At their first login, they set up an authenticator app and save their recovery codes.
+
+1. Write the members to a file, e.g. `members.json`. The username must be the email address (an import doesn't fill it in by itself):
+
+    ```json
+    {
+      "users": [
+        {"username": "j.doe@example.org", "email": "j.doe@example.org", "enabled": true, "emailVerified": true},
+        {"username": "a.smith@example.org", "email": "a.smith@example.org", "enabled": true, "emailVerified": true}
+      ]
+    }
+    ```
+
+2. In the admin console of `lab`: **Realm settings → Action** (top right) **→ Partial import**, choose the file, tick **Users**, choose **Skip** for existing users, and click **Import**. If it fails, the reason is in the log: `sudo docker compose logs --since 10m keycloak | grep -E "WARN|ERROR"`.
+3. Tell the members, e.g.: *"Go to <a lab service>, click 'First time, or forgot your password?', and enter your VU email address. You'll get an email to choose a password. You'll also need an authenticator app on your phone."*
+
+One member at a time: **Users → Add user**, with the email address (and **Email verified** on).
+
+The texts "First time, or forgot your password?" and "Set your password" are realm overrides in `realms/lab-realm.json`. On a `lab` realm created before they were added, add them in **Realm settings → Localization → Realm overrides → Add translation** (English): `doForgotPassword` = `First time, or forgot your password?`, `emailForgotTitle` = `Set your password`, `updatePasswordTitle` = `Choose a password`, `resetPasswordMessage` = `Choose a password for your account.`
 
 ### A user lost their second factor
 

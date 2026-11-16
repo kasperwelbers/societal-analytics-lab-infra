@@ -9,7 +9,7 @@ A realm in Keycloak is a separate login: its own users, apps, settings and admin
 | Realm | For | Login | Who can join |
 | --- | --- | --- | --- |
 | **master** | Administering Keycloak itself | Password + mandatory 2FA | Only the administrators |
-| **lab** | The lab's own infrastructure | Password + mandatory 2FA | By invitation, with an institutional email address |
+| **lab** | The lab's own infrastructure | Password + mandatory 2FA | Added by us, with an institutional email address |
 | **idp** | Logins for servers that run our software, hosted by others | Password, Google or GitHub; 2FA optional | Anyone |
 
 * **master** has no email and no external logins, so admin access never depends on an inbox or someone's Google account. Lost access is recovered via the server.
@@ -40,6 +40,7 @@ In all realms, the email address is the username. A second factor is an authenti
 
 ### Step by step
 
+* **First time (lab):** lab members are added by us, without a password (see [Adding lab members](./keycloak-deploy.md#adding-lab-members)). They click **First time, or forgot your password?** on the login page, get a link by email, choose a password and fill in their name. Then they log in, and set up an authenticator app and recovery codes. Others get no email.
 * **Password:** email address and password, then the second factor if the user has one (**Try another way** offers the user's other second factors, e.g. a recovery code). In master and lab, users without a second factor set up an authenticator app at their first login, and get recovery codes right after: shown once, to save somewhere safe. (The token of that first login has `amr` `pwd` only, because setting up an app doesn't count as using it. A server that requires `mfa` asks for a code once more.)
 * **Passkey:** **Sign in with Passkey** on the login page (or the browser's suggestion in the email field), then the fingerprint, face or PIN. No password and no other factor. Users register a passkey in the account console (**Account security → Signing in**), which offers it twice. A passkey under **Passwordless** is for signing in with only the passkey. A passkey under **Two-factor authentication** is a second factor after the password. Both work.
 * **Google or GitHub (idp only):** the first time, an account is created with the address from Google or GitHub (Keycloak verifies a GitHub address itself). If an account with that address already exists, Keycloak shows **Account already exists**: the user links the two by clicking a link sent to the address, or by entering the account's password (and its second factor; after linking it is asked once more, only this first time). After that, users with a second factor are asked for it after Google or GitHub. `amr` has no `pwd` for these logins: `mfa`, or empty.
