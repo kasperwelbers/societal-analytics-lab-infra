@@ -2380,6 +2380,14 @@
           "requirement": "CONDITIONAL",
           "priority": 20,
           "authenticatorFlow": true
+        },
+        {
+          "authenticatorFlow": true,
+          "requirement": "CONDITIONAL",
+          "priority": 40,
+          "autheticatorFlow": true,
+          "userSetupAllowed": false,
+          "flowAlias": "browser-2fa-optional-passkey"
         }
       ]
     },
@@ -2482,6 +2490,33 @@
           "authenticatorFlow": false
         }
       ]
+    },
+    {
+      "alias": "browser-2fa-optional-passkey",
+      "description": "After a passkey login (which counts as 2FA): record 'mfa' in amr",
+      "providerId": "basic-flow",
+      "topLevel": false,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "authenticatorFlow": false,
+          "requirement": "REQUIRED",
+          "priority": 10,
+          "autheticatorFlow": false,
+          "userSetupAllowed": false,
+          "authenticator": "conditional-credential",
+          "authenticatorConfig": "browser-2fa-optional-if-passkey"
+        },
+        {
+          "authenticatorFlow": false,
+          "requirement": "REQUIRED",
+          "priority": 20,
+          "autheticatorFlow": false,
+          "userSetupAllowed": false,
+          "authenticator": "allow-access-authenticator",
+          "authenticatorConfig": "browser-2fa-optional-amr-passkey"
+        }
+      ]
     }
   ],
   "authenticatorConfig": [
@@ -2559,6 +2594,20 @@
     },
     {
       "alias": "post-login-2fa-optional-amr-recovery",
+      "config": {
+        "default.reference.value": "mfa",
+        "default.reference.maxAge": "1800"
+      }
+    },
+    {
+      "alias": "browser-2fa-optional-if-passkey",
+      "config": {
+        "credentials": "webauthn-passwordless",
+        "included": "true"
+      }
+    },
+    {
+      "alias": "browser-2fa-optional-amr-passkey",
       "config": {
         "default.reference.value": "mfa",
         "default.reference.maxAge": "1800"
@@ -2788,5 +2837,6 @@
         ]
       }
     }
-  ]
+  ],
+  "webAuthnPolicyPasswordlessPasskeysEnabled": true
 }

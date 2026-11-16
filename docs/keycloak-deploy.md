@@ -344,7 +344,7 @@ The realms are in `realms/` as complete Keycloak realm files (`master-realm.json
 
 In all realms:
 
-* **2FA:** OTP (authenticator app), passkeys or security keys, and recovery codes count as a second factor. With mandatory 2FA, users without a second factor are asked to set up OTP when they log in. In `idp`, Google and GitHub replace only the password: the second factor is asked after them, in the same way.
+* **2FA:** OTP (authenticator app), passkeys or security keys, and recovery codes count as a second factor. Users can also sign in with only a passkey ("Sign in with Passkey" on the login page), which counts as 2FA, also where 2FA is mandatory. With mandatory 2FA, users without a second factor are asked to set up OTP when they log in. In `idp`, Google and GitHub replace only the password: the second factor is asked after them, in the same way.
 * **The `amr` claim** in tokens contains `mfa` when a second factor was used, and `pwd` for a password (for our software: `OIDC_MFA_CLAIM=amr:mfa`, see the [Authentication standard](./auth.md)).
 * **Passwords:** at least 10 characters, with an uppercase letter and a digit, not equal to the username or email.
 * **Login action timeout** 15 minutes (time for e.g. setting up 2FA), brute force detection, and login and admin events kept for 90 days.
@@ -407,6 +407,8 @@ sudo docker compose restart keycloak
 ```
 
 After setting up `idp` again, also restart the app registration site (`sudo docker compose restart app-registration`): it still holds a login token of the deleted realm. `master` is only imported on a new installation: on an existing one, it keeps its settings.
+
+**Changes to the realm files after the realms were created** (e.g. passkey login, added later) only reach a new realm. For `lab` and `idp` without users, set them up again as above. `master` keeps its settings: it still works with a password and a second factor, and gets passkey login only on a new installation.
 
 **Updating from the version with keycloak-config-cli:** the `keycloak-config` client in `master` is no longer used, and it has admin rights: delete it (**Clients** → `keycloak-config` → **Action → Delete**), and remove `KEYCLOAK_CONFIG_SECRET` from `.env`. If `lab` and `idp` have no users yet, delete them and restart Keycloak to set them up from the files, as above. (From the version with a vault, also: put the SMTP password in `.env` as `SMTP_PASSWORD`, the idp client secrets as `IDP_GOOGLE_CLIENT_SECRET` and `IDP_GITHUB_CLIENT_SECRET`, set `SMTP_PORT=587`, and delete the `vault/` folder.)
 

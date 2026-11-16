@@ -18,13 +18,15 @@ Most of each file is Keycloak's defaults. What we changed:
 | `ssoSessionIdleTimeout`, `ssoSessionMaxLifespan` | 1800 (master: 1800 and 28800) | Sessions at Keycloak; applications keep their own |
 | `bruteForceProtected`, `eventsEnabled`, `adminEventsEnabled` | true; events kept 90 days | |
 | `rememberMe` | false | |
+| `webAuthnPolicyPasswordlessPasskeysEnabled` | true | "Enable passkeys": users can sign in with only a passkey, which counts as 2FA (see the flows below) |
 | client scope `amr` | added to the default scopes | The `amr` claim: `pwd` for a password, `mfa` for a second factor |
 
 ## Flows
 
-Each step that counts as a login method has an `amr` setting (`default.reference.value`: `pwd` or `mfa`). Recovery codes, OTP and passkeys/security keys count as a second factor.
+Each step that counts as a login method has an `amr` setting (`default.reference.value`: `pwd` or `mfa`). Recovery codes, OTP and passkeys/security keys count as a second factor. A login with only a passkey (on the login page: "Sign in with Passkey", or the browser's suggestion in the email field) counts as 2FA too: a passkey is a device plus fingerprint, face or PIN.
 
 * **`browser-2fa-required`** (master, lab): cookie → external provider redirect → `browser-2fa-required-forms`: password, then the conditional sub-flow `browser-2fa-required-2fa` (only for users with a second factor: OTP, passkey/security key or recovery code), then `browser-2fa-required-setup-otp`, which asks users without a second factor to set up OTP ("Condition - sub-flow executed": the 2FA sub-flow was not executed). This is the pattern "Conditional 2FA sub-flow with OTP default" from the Keycloak documentation.
+* **After a passkey login** (all three realms): the passkey login happens in the step with the password form, so the 2FA sub-flow is skipped ("Condition - credential": a passkey was used), and so is the OTP setup (the same condition). The sub-flow `browser-2fa-required-passkey` (`browser-2fa-optional-passkey` in idp) only runs after a passkey login, and records `mfa` in `amr` (an "Allow access" step with an `amr` setting). So `amr` is `pwd` + `mfa`: `pwd` because the passkey was used in the password form step.
 * **`browser-2fa-optional`** (idp): the same, without the OTP setup: users with a second factor are asked for it, others are not.
 * **`post-login-2fa-optional`** (idp): after a login with Google or GitHub, which replaces only the password: the second factor, if the user has one. The final "Allow access" step is needed, because a flow in which nothing runs counts as failed.
 

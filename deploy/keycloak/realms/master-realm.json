@@ -2218,6 +2218,14 @@
           "requirement": "CONDITIONAL",
           "priority": 30,
           "authenticatorFlow": true
+        },
+        {
+          "authenticatorFlow": true,
+          "requirement": "CONDITIONAL",
+          "priority": 40,
+          "autheticatorFlow": true,
+          "userSetupAllowed": false,
+          "flowAlias": "browser-2fa-required-passkey"
         }
       ]
     },
@@ -2279,11 +2287,47 @@
           "authenticatorFlow": false
         },
         {
+          "authenticatorFlow": false,
+          "requirement": "REQUIRED",
+          "priority": 15,
+          "autheticatorFlow": false,
+          "userSetupAllowed": false,
+          "authenticator": "conditional-credential",
+          "authenticatorConfig": "browser-2fa-required-setup-otp-skip-after-passkey"
+        },
+        {
           "authenticator": "auth-otp-form",
           "authenticatorConfig": "browser-2fa-required-amr-otp-setup",
           "requirement": "REQUIRED",
           "priority": 20,
           "authenticatorFlow": false
+        }
+      ]
+    },
+    {
+      "alias": "browser-2fa-required-passkey",
+      "description": "After a passkey login (which counts as 2FA): record 'mfa' in amr",
+      "providerId": "basic-flow",
+      "topLevel": false,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "authenticatorFlow": false,
+          "requirement": "REQUIRED",
+          "priority": 10,
+          "autheticatorFlow": false,
+          "userSetupAllowed": false,
+          "authenticator": "conditional-credential",
+          "authenticatorConfig": "browser-2fa-required-if-passkey"
+        },
+        {
+          "authenticatorFlow": false,
+          "requirement": "REQUIRED",
+          "priority": 20,
+          "autheticatorFlow": false,
+          "userSetupAllowed": false,
+          "authenticator": "allow-access-authenticator",
+          "authenticatorConfig": "browser-2fa-required-amr-passkey"
         }
       ]
     }
@@ -2359,6 +2403,26 @@
       "config": {
         "default.reference.value": "mfa",
         "default.reference.maxAge": "28800"
+      }
+    },
+    {
+      "alias": "browser-2fa-required-if-passkey",
+      "config": {
+        "credentials": "webauthn-passwordless",
+        "included": "true"
+      }
+    },
+    {
+      "alias": "browser-2fa-required-amr-passkey",
+      "config": {
+        "default.reference.value": "mfa",
+        "default.reference.maxAge": "28800"
+      }
+    },
+    {
+      "alias": "browser-2fa-required-setup-otp-skip-after-passkey",
+      "config": {
+        "credentials": "webauthn-passwordless"
       }
     }
   ],
@@ -2518,5 +2582,6 @@
     "policies": []
   },
   "passwordPolicy": "length(10) and upperCase(1) and digits(1) and notUsername(undefined) and notEmail(undefined)",
-  "eventsExpiration": 7776000
+  "eventsExpiration": 7776000,
+  "webAuthnPolicyPasswordlessPasskeysEnabled": true
 }
