@@ -210,15 +210,14 @@ services:
       KC_HOSTNAME_ADMIN: ${KC_HOSTNAME_ADMIN}
       APPS_HOSTNAME: ${APPS_HOSTNAME:?set APPS_HOSTNAME in .env}
       ACME_EMAIL: ${ACME_EMAIL:?set ACME_EMAIL in .env}
-      # Email limit per IP address (the limits per app are in local/email-tiers.caddy)
+      # Email limit per IP address (the limits per app are in caddy/email-tiers.caddy)
       EMAIL_LIMIT_PER_IP: ${EMAIL_LIMIT_PER_IP:-200}
       EMAIL_LIMIT_PER_IP_WINDOW: ${EMAIL_LIMIT_PER_IP_WINDOW:-1h}
     volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile:ro
-      # Local settings, not in the repository (prepared by caddy-init): restrictions of the
-      # admin hostname, and the email limits per app. A folder, not single files, so that
-      # Caddy always sees the current version of an edited file.
-      - ./local:/etc/caddy/local:ro
+      # The Caddyfile, and the local settings (not in the repository): restrictions of the admin
+      # hostname, and the email limits per app. A folder, not single files, so that Caddy always
+      # sees the current version of an edited file.
+      - ./caddy:/etc/caddy:ro
       - caddy-data:/data
       - caddy-config:/config
       # Only tls.crt is used: the certificate Caddy trusts for its connection to Keycloak
@@ -231,16 +230,16 @@ services:
     networks:
       - web
 
-  # Prepares the local Caddy settings in local/ (see caddy-init.sh), so that Caddy can always
-  # start: creates missing files from the examples, and never changes an existing file.
+  # Creates caddy/admin-access.caddy and caddy/email-tiers.caddy from their templates when they
+  # are missing, so that Caddy can always start (see caddy/init.sh)
   caddy-init:
     image: lab-caddy
     # Built by the caddy service above: never try to download it from a registry
     pull_policy: never
     restart: "no"
-    entrypoint: ["/bin/sh", "/deploy/caddy-init.sh"]
+    entrypoint: ["/bin/sh", "/caddy/init.sh"]
     volumes:
-      - ./:/deploy
+      - ./caddy:/caddy
     network_mode: none
 
 networks:

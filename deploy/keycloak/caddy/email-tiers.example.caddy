@@ -1,8 +1,8 @@
 # Email limits per app (client ID) in the idp realm, in tiers.
 #
-# Copy this file to local/email-tiers.caddy (not in the repository), and edit that copy:
-#   sudo -u keycloak cp email-tiers.example.caddy local/email-tiers.caddy
-#   sudo -u keycloak nano local/email-tiers.caddy
+# Copy this file to email-tiers.caddy in this folder (not in the repository), and edit that copy:
+#   sudo -u keycloak cp caddy/email-tiers.example.caddy caddy/email-tiers.caddy
+#   sudo -u keycloak nano caddy/email-tiers.caddy
 # (If the copy is missing when the stack starts, it is created from this file, unchanged.)
 # Apply changes (keeps the current counts):
 #   sudo docker compose exec caddy caddy reload --config /etc/caddy/Caddyfile

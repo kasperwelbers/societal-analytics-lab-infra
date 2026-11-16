@@ -3,8 +3,8 @@ env
 
 # Secrets and local settings of deployments
 .env
+# the local copies in deploy/keycloak/caddy/ (the *.example.caddy templates are committed)
 admin-access.caddy
 email-tiers.caddy
-local/
 vault/
 node_modules/
