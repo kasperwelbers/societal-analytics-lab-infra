@@ -2,7 +2,7 @@
 
 ## Societal Analytics Lab Infra
 
-This GitHub repo documents the [Infrastructure](https://kasperwelbers.github.io/societal-analytics-lab-infra/) of the Societal Analytics Lab.
+This GitHub repo documents the [Infrastructure](https://vu-societal-analytics.github.io/societal-analytics-lab-infra/) of the Societal Analytics Lab.
 
 
 ## Update
