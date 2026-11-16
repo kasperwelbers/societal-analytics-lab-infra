@@ -1,6 +1,6 @@
 # Keycloak deployment
 
-This runbook sets up Keycloak on a single VM, with PostgreSQL and Caddy (TLS via Let's Encrypt), using the files in [`deploy/keycloak/`](https://github.com/kasperwelbers/societal-analytics-lab-infra/tree/main/deploy/keycloak). It takes about an hour. For an overview of the setup (the realms, the open idp realm with its tiers, and the security measures), see [Keycloak setup](./keycloak.md). Why we chose Keycloak is explained in the [OIDC provider comparison](./auth-providers.md); what to test after the setup is in its [test checklist](./auth-providers.md#keycloak-test-checklist).
+This runbook sets up Keycloak on a single VM, with PostgreSQL and Caddy (TLS via Let's Encrypt), using the files in [`deploy/keycloak/`](https://github.com/vu-societal-analytics/societal-analytics-lab-infra/tree/main/deploy/keycloak). It takes about an hour. For an overview of the setup (the realms, the open idp realm with its tiers, and the security measures), see [Keycloak setup](./keycloak.md). Why we chose Keycloak is explained in the [OIDC provider comparison](./auth-providers.md); what to test after the setup is in its [test checklist](./auth-providers.md#keycloak-test-checklist).
 
 !!! info "Placeholders"
     This page uses `auth.example.org` (public hostname), `auth-admin.example.org` (admin hostname) and `apps.example.org` (app registration). The real hostnames, IP ranges and secrets are only stored on the VM (`.env`, and `caddy/admin-access.caddy` and `caddy/email-tiers.caddy`).
@@ -130,7 +130,7 @@ ls /opt/keycloak
 Get the files onto the VM, as `keycloak`:
 
 ```bash
-sudo -u keycloak git clone https://github.com/kasperwelbers/societal-analytics-lab-infra.git /opt/keycloak/societal-analytics-lab-infra
+sudo -u keycloak git clone https://github.com/vu-societal-analytics/societal-analytics-lab-infra.git /opt/keycloak/societal-analytics-lab-infra
 ```
 
 Go to the deployment folder. All further commands in this runbook are run from here:

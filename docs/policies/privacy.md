@@ -98,4 +98,4 @@ You have the right to access, correct, and delete your personal data, to restric
 
 ## Changes
 
-We may update this privacy statement. The version and date are shown at the top of this page, and the history of changes is available in the [repository of this documentation](https://github.com/kasperwelbers/societal-analytics-lab-infra).
+We may update this privacy statement. The version and date are shown at the top of this page, and the history of changes is available in the [repository of this documentation](https://github.com/vu-societal-analytics/societal-analytics-lab-infra).

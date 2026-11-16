@@ -35,7 +35,7 @@ The email limit counts the emails our login service sends because of your app: t
 
 ### How it works
 
-The site is a small Node.js server ([`deploy/keycloak/app-registration/`](https://github.com/kasperwelbers/societal-analytics-lab-infra/tree/main/deploy/keycloak/app-registration)), deployed with Keycloak ([step 8 of the runbook](./keycloak-deploy.md#8-app-registration)).
+The site is a small Node.js server ([`deploy/keycloak/app-registration/`](https://github.com/vu-societal-analytics/societal-analytics-lab-infra/tree/main/deploy/keycloak/app-registration)), deployed with Keycloak ([step 8 of the runbook](./keycloak-deploy.md#8-app-registration)).
 
 * **Login:** users log in with the client `app-registration` in the `idp` realm (authorization code flow with PKCE). The site keeps a signed session cookie for 8 hours.
 * **Managing apps:** the same client has a service account with one role of the `realm-management` client: `manage-clients`: it can create, change and delete any client in the idp realm (including Keycloak's built-in clients), and nothing else: no access to users, realm settings or login flows. It also holds the realm role `client-self-service`, which only makes the client policy below apply to it. The client and its role are defined in `realms/idp-realm.json`.
