@@ -1,6 +1,6 @@
 # Lab authentication
 
-**Status: open decision.**
+**Status: open decision.** For now, the lab uses the `lab` realm on our Keycloak, with email, password and mandatory 2FA (see [Keycloak setup](./keycloak.md)); institutional login may be added later.
 
 This page is about authentication for the lab's own infrastructure: our own AmCAT and AnnoTinder servers, and the AuthWall in front of services without their own login (Whisper, Ollama). It is not about the [shared OIDC provider](./auth-install.md#option-1-our-shared-oidc-provider) that we offer to other teams. Its provider is under review (see the [OIDC provider comparison](./auth-providers.md)), and it is kept separate from the lab's own identity provider, because it is open to the public.
 

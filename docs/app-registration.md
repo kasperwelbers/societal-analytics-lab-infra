@@ -1,6 +1,6 @@
 # App registration
 
-The app registration site (`https://apps.example.org`) lets people use our login service (the `idp` realm of our [Keycloak](./keycloak-deploy.md)) for their own server or app. They log in, register an app, and get a client ID and secret for OpenID Connect (OIDC). They manage the app's settings on the same site.
+The app registration site (`https://apps.example.org`) lets people use our login service (the `idp` realm of our [Keycloak](./keycloak-deploy.md)) for their own server or app. They log in, register an app, and get a client ID and secret for OpenID Connect (OIDC). They manage the app's settings on the same site. Why the idp realm is open to everyone, and what "best effort" means: [Keycloak setup](./keycloak.md#the-idp-realm-open-to-everyone-best-effort).
 
 !!! info "Placeholders"
     This page uses `apps.example.org` and `auth.example.org` for the real hostnames.
