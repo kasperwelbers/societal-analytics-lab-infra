@@ -20,7 +20,7 @@
   "clientOfflineSessionIdleTimeout": 0,
   "clientOfflineSessionMaxLifespan": 0,
   "accessCodeLifespan": 60,
-  "accessCodeLifespanUserAction": 900,
+  "accessCodeLifespanUserAction": 1800,
   "accessCodeLifespanLogin": 1800,
   "actionTokenGeneratedByAdminLifespan": 43200,
   "actionTokenGeneratedByUserLifespan": 300,
@@ -2297,7 +2297,6 @@
         },
         {
           "authenticator": "auth-otp-form",
-          "authenticatorConfig": "browser-2fa-required-amr-otp-setup",
           "requirement": "REQUIRED",
           "priority": 20,
           "authenticatorFlow": false
@@ -2399,13 +2398,6 @@
       }
     },
     {
-      "alias": "browser-2fa-required-amr-otp-setup",
-      "config": {
-        "default.reference.value": "mfa",
-        "default.reference.maxAge": "28800"
-      }
-    },
-    {
       "alias": "browser-2fa-required-if-passkey",
       "config": {
         "credentials": "webauthn-passwordless",
@@ -2461,7 +2453,9 @@
       "enabled": true,
       "defaultAction": false,
       "priority": 54,
-      "config": {}
+      "config": {
+        "add-recovery-codes": "true"
+      }
     },
     {
       "alias": "UPDATE_PASSWORD",

@@ -25,7 +25,7 @@
 (email_tier_apps) {
 	# Keycloak's own apps, each shared by all users of the realm: the account console (where
 	# users manage their account, and can also register or reset their password)
-	account-console    tier2
+	account-console tier2
 	# the app registration site (everyone who signs up to register an app)
-	app-registration   tier2
+	app-registration tier2
 }

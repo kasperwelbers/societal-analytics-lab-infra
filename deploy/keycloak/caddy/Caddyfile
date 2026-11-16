@@ -1,7 +1,6 @@
 # Caddy: TLS via Let's Encrypt, and only the Keycloak paths that need to be public.
 # Exposed paths follow the Keycloak reverse proxy guide:
 # https://www.keycloak.org/server/reverseproxy#_exposed_path_recommendations
-
 {
 	email {$ACME_EMAIL}
 }

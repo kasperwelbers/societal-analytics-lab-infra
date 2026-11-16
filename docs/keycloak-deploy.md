@@ -322,11 +322,11 @@ curl -s -o /dev/null -w '%{http_code}\n' https://auth.example.org/realms/master/
 
 Following [Bootstrapping and recovering an admin account](https://www.keycloak.org/server/bootstrap-admin-recovery): the bootstrap account is temporary, and must be replaced by a permanent admin with 2FA. The `master` realm is for administrators only; users never go in `master`.
 
-1. Open `https://auth-admin.example.org/admin/` (from an allowed network, if you restricted admin access) and log in as `temp-admin`. A yellow banner says you are using a temporary admin account.
+1. Open `https://auth-admin.example.org/admin/` (from an allowed network, if you restricted admin access) and log in as `temp-admin`. Because 2FA is mandatory in `master`, Keycloak first asks you to set up an authenticator app and recovery codes for `temp-admin` too (it is deleted in step 6). A yellow banner then says you are using a temporary admin account.
 2. In the `master` realm, go to **Users → Add user**. Fill in your email address (it is the username), turn on **Email verified**, and under **Required user actions** choose **Configure OTP**. Click **Create**.
 3. On the **Credentials** tab, click **Set password**, and turn off **Temporary**.
 4. On the **Role mapping** tab, click **Assign role**, filter by realm roles, and assign **admin**.
-5. Open a private browser window, go to the admin console, and log in as the new admin. Keycloak shows **Mobile Authenticator Setup**: scan the QR code with an authenticator app. Check that you can use the admin console.
+5. Open a private browser window, go to the admin console, and log in as the new admin. Keycloak shows **Mobile Authenticator Setup**: scan the QR code with an authenticator app. Then it shows **Recovery Authentication Codes**: save them somewhere safe (e.g. a password manager), apart from the authenticator app. Check that you can use the admin console.
 6. As the new admin, go to **Users**, and delete `temp-admin`.
 7. Remove the value of `KC_BOOTSTRAP_ADMIN_PASSWORD` from `.env`. It is only used on the very first start, but there is no reason to keep it.
 
@@ -344,10 +344,11 @@ The realms are in `realms/` as complete Keycloak realm files (`master-realm.json
 
 In all realms:
 
-* **2FA:** OTP (authenticator app), passkeys or security keys, and recovery codes count as a second factor. Users can also sign in with only a passkey ("Sign in with Passkey" on the login page), which counts as 2FA, also where 2FA is mandatory. With mandatory 2FA, users without a second factor are asked to set up OTP when they log in. In `idp`, Google and GitHub replace only the password: the second factor is asked after them, in the same way.
+* **2FA:** OTP (authenticator app), passkeys or security keys, and recovery codes count as a second factor. Users can also sign in with only a passkey ("Sign in with Passkey" on the login page), which counts as 2FA, also where 2FA is mandatory. With mandatory 2FA, users without a second factor are asked to set up OTP when they log in. After setting up OTP, users set up recovery codes. In `idp`, Google and GitHub replace only the password: the second factor is asked after them, in the same way. All login paths, and why: [How users log in](./keycloak.md#how-users-log-in).
+* **Forgot password** (`lab`, `idp`): after the new password, users log in again, with their second factor. The email link never replaces the second factor.
 * **The `amr` claim** in tokens contains `mfa` when a second factor was used, and `pwd` for a password (for our software: `OIDC_MFA_CLAIM=amr:mfa`, see the [Authentication standard](./auth.md)).
 * **Passwords:** at least 10 characters, with an uppercase letter and a digit, not equal to the username or email.
-* **Login action timeout** 15 minutes (time for e.g. setting up 2FA), brute force detection, and login and admin events kept for 90 days.
+* **Login action timeout** 30 minutes for each page of the login (e.g. setting up 2FA, saving the recovery codes), brute force detection, and login and admin events kept for 90 days.
 * **Sessions** at Keycloak last 30 minutes in `lab` and `idp` (applications keep their own sessions), and up to 8 hours in `master`.
 * **The email address is the username**, and users log in with it. In `lab` and `idp`, users change their address in the account console (**Personal info → Update email**): the address, and with it the username, only changes after they confirm the new address with a link sent to it. The user stays the same (same `sub`), also for users who log in with Google or GitHub. In `master`, which has no email server, admins change an address in the admin console. Existing usernames without an email address (`temp-admin`, a recovery admin) keep working.
 * **Registration** (in `idp`) asks only for email and name: users choose their password after verifying their email address. This is Keycloak's default when email verification is on, so that nobody can set a password for an address they don't own.
@@ -408,7 +409,11 @@ sudo docker compose restart keycloak
 
 After setting up `idp` again, also restart the app registration site (`sudo docker compose restart app-registration`): it still holds a login token of the deleted realm. `master` is only imported on a new installation: on an existing one, it keeps its settings.
 
-**Changes to the realm files after the realms were created** (e.g. passkey login, added later) only reach a new realm. For `lab` and `idp` without users, set them up again as above. `master` keeps its settings: it still works with a password and a second factor, and gets passkey login only on a new installation.
+**Changes to the realm files after the realms were created** only reach a new realm. For `lab` and `idp` without users, set them up again as above. `master` keeps its settings. It still works with a password and a second factor; to bring it in line with the files by hand, in the admin console of `master`:
+
+* **Recovery codes after OTP setup:** **Authentication → Required actions → Configure OTP**, the gear icon, turn on **Add Recovery Codes**.
+* **Login action timeout:** **Realm settings → Sessions → Login action timeout**: 30 minutes.
+* **Passkey login** (optional; it takes more steps, see `realms/README.md`): admins can do without it, and `master` gets it on a new installation.
 
 **Updating from the version with keycloak-config-cli:** the `keycloak-config` client in `master` is no longer used, and it has admin rights: delete it (**Clients** → `keycloak-config` → **Action → Delete**), and remove `KEYCLOAK_CONFIG_SECRET` from `.env`. If `lab` and `idp` have no users yet, delete them and restart Keycloak to set them up from the files, as above. (From the version with a vault, also: put the SMTP password in `.env` as `SMTP_PASSWORD`, the idp client secrets as `IDP_GOOGLE_CLIENT_SECRET` and `IDP_GITHUB_CLIENT_SECRET`, set `SMTP_PORT=587`, and delete the `vault/` folder.)
 
@@ -586,6 +591,12 @@ sudo docker compose logs mail-relay | grep -E 'rate limit exceeded|reject'
 ```
 
 The counts are kept in memory: a restart of Caddy or the relay resets them (a Caddy reload doesn't).
+
+### A user lost their second factor
+
+First check who the user is, not by email alone (the inbox may be the problem): e.g. in person, or by a video call. Then, in the admin console of the realm: **Users** → the user → **Credentials**, and delete the lost credential (e.g. **otp**). In `lab`, the user sets up a new authenticator app (and new recovery codes) at the next login; in `idp`, they can set up a new one in the account console. For an admin in `master`, another admin does the same, or see below.
+
+Users who still have a recovery code don't need us: they log in with it, and set up a new second factor themselves (see [How users log in](./keycloak.md#how-users-log-in)).
 
 ### Recovering admin access
 

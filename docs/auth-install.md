@@ -24,7 +24,7 @@ To make it easy to start, the Societal Analytics Lab offers a shared OIDC provid
 
 * **No sensitive research data.** Names and email addresses of users (e.g. students) are personal data too, so you are responsible for handling those according to your institution's rules.
 * **Best-effort availability.** If the shared provider is down, nobody can log in to your server. Keep this in mind for teaching and exams.
-* **Account recovery.** Users reset their own password by email. For a lost second factor, the lab helps on a best-effort basis; the lab does not provide a helpdesk.
+* **Account recovery.** Users reset their own password by email, and still need their second factor to log in. For a lost second factor, users have recovery codes; without them, the lab helps on a best-effort basis; the lab does not provide a helpdesk. See [How users log in](./keycloak.md#how-users-log-in).
 * **The lab operates the provider.** As the operator, the lab could in principle access every account. This is one of the reasons the shared provider is not for sensitive data.
 
 !!! warning "Is your server getting used for research data?"

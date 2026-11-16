@@ -18,7 +18,7 @@
   "clientOfflineSessionIdleTimeout": 0,
   "clientOfflineSessionMaxLifespan": 0,
   "accessCodeLifespan": 60,
-  "accessCodeLifespanUserAction": 900,
+  "accessCodeLifespanUserAction": 1800,
   "accessCodeLifespanLogin": 1800,
   "actionTokenGeneratedByAdminLifespan": 43200,
   "actionTokenGeneratedByUserLifespan": 300,
@@ -2388,7 +2388,6 @@
         },
         {
           "authenticator": "auth-otp-form",
-          "authenticatorConfig": "browser-2fa-required-amr-otp-setup",
           "requirement": "REQUIRED",
           "priority": 20,
           "authenticatorFlow": false
@@ -2419,6 +2418,40 @@
           "userSetupAllowed": false,
           "authenticator": "allow-access-authenticator",
           "authenticatorConfig": "browser-2fa-required-amr-passkey"
+        }
+      ]
+    },
+    {
+      "alias": "reset-credentials-login-again",
+      "description": "Forgot password: after the new password, log in again with the browser flow (and the second factor). No OTP reset.",
+      "providerId": "basic-flow",
+      "topLevel": true,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "authenticator": "reset-credentials-choose-user",
+          "authenticatorFlow": false,
+          "requirement": "REQUIRED",
+          "priority": 10,
+          "autheticatorFlow": false,
+          "userSetupAllowed": false
+        },
+        {
+          "authenticator": "reset-credential-email",
+          "authenticatorFlow": false,
+          "requirement": "REQUIRED",
+          "priority": 20,
+          "autheticatorFlow": false,
+          "userSetupAllowed": false,
+          "authenticatorConfig": "reset-credentials-login-again-force-login"
+        },
+        {
+          "authenticator": "reset-password",
+          "authenticatorFlow": false,
+          "requirement": "REQUIRED",
+          "priority": 30,
+          "autheticatorFlow": false,
+          "userSetupAllowed": false
         }
       ]
     }
@@ -2490,13 +2523,6 @@
       }
     },
     {
-      "alias": "browser-2fa-required-amr-otp-setup",
-      "config": {
-        "default.reference.value": "mfa",
-        "default.reference.maxAge": "1800"
-      }
-    },
-    {
       "alias": "browser-2fa-required-if-passkey",
       "config": {
         "credentials": "webauthn-passwordless",
@@ -2514,6 +2540,12 @@
       "alias": "browser-2fa-required-setup-otp-skip-after-passkey",
       "config": {
         "credentials": "webauthn-passwordless"
+      }
+    },
+    {
+      "alias": "reset-credentials-login-again-force-login",
+      "config": {
+        "force-login": "true"
       }
     }
   ],
@@ -2552,7 +2584,9 @@
       "enabled": true,
       "defaultAction": false,
       "priority": 54,
-      "config": {}
+      "config": {
+        "add-recovery-codes": "true"
+      }
     },
     {
       "alias": "UPDATE_PASSWORD",
@@ -2648,7 +2682,7 @@
   "browserFlow": "browser-2fa-required",
   "registrationFlow": "registration",
   "directGrantFlow": "direct grant",
-  "resetCredentialsFlow": "reset credentials",
+  "resetCredentialsFlow": "reset-credentials-login-again",
   "clientAuthenticationFlow": "clients",
   "dockerAuthenticationFlow": "docker auth",
   "firstBrokerLoginFlow": "first broker login",

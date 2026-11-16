@@ -23,7 +23,7 @@ There are two options. With both, our software requires 2FA for sensitive action
 | **For** | Servers without sensitive data, such as teaching and pilots | Any server, required for sensitive research data |
 | **Provider** | Run by the lab: the `idp` realm of our Keycloak (see [Keycloak setup](./keycloak.md)). | Ideally your institution's identity provider (see the [Installation guide](./auth-install.md#option-2-your-own-oidc-provider)) |
 | **Maintained by** | The lab, with best effort | A security team (recommended) |
-| **Account recovery** | Users reset their own password by email; the lab helps with lost second factors, best effort (see the [Installation guide](./auth-install.md#option-1-our-shared-oidc-provider)) | The provider's helpdesk (recommended) |
+| **Account recovery** | Users reset their own password by email (the second factor is still needed); recovery codes for a lost second factor, and otherwise the lab, best effort (see the [Installation guide](./auth-install.md#option-1-our-shared-oidc-provider)) | The provider's helpdesk (recommended) |
 | **Cost** | Free | Depends on the provider |
 
 **Why our shared provider is not for sensitive data**

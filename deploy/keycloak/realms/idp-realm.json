@@ -18,7 +18,7 @@
   "clientOfflineSessionIdleTimeout": 0,
   "clientOfflineSessionMaxLifespan": 0,
   "accessCodeLifespan": 60,
-  "accessCodeLifespanUserAction": 900,
+  "accessCodeLifespanUserAction": 1800,
   "accessCodeLifespanLogin": 1800,
   "actionTokenGeneratedByAdminLifespan": 43200,
   "actionTokenGeneratedByUserLifespan": 300,
@@ -2517,6 +2517,40 @@
           "authenticatorConfig": "browser-2fa-optional-amr-passkey"
         }
       ]
+    },
+    {
+      "alias": "reset-credentials-login-again",
+      "description": "Forgot password: after the new password, log in again with the browser flow (and the second factor). No OTP reset.",
+      "providerId": "basic-flow",
+      "topLevel": true,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "authenticator": "reset-credentials-choose-user",
+          "authenticatorFlow": false,
+          "requirement": "REQUIRED",
+          "priority": 10,
+          "autheticatorFlow": false,
+          "userSetupAllowed": false
+        },
+        {
+          "authenticator": "reset-credential-email",
+          "authenticatorFlow": false,
+          "requirement": "REQUIRED",
+          "priority": 20,
+          "autheticatorFlow": false,
+          "userSetupAllowed": false,
+          "authenticatorConfig": "reset-credentials-login-again-force-login"
+        },
+        {
+          "authenticator": "reset-password",
+          "authenticatorFlow": false,
+          "requirement": "REQUIRED",
+          "priority": 30,
+          "autheticatorFlow": false,
+          "userSetupAllowed": false
+        }
+      ]
     }
   ],
   "authenticatorConfig": [
@@ -2612,6 +2646,12 @@
         "default.reference.value": "mfa",
         "default.reference.maxAge": "1800"
       }
+    },
+    {
+      "alias": "reset-credentials-login-again-force-login",
+      "config": {
+        "force-login": "true"
+      }
     }
   ],
   "requiredActions": [
@@ -2649,7 +2689,9 @@
       "enabled": true,
       "defaultAction": false,
       "priority": 54,
-      "config": {}
+      "config": {
+        "add-recovery-codes": "true"
+      }
     },
     {
       "alias": "UPDATE_PASSWORD",
@@ -2745,7 +2787,7 @@
   "browserFlow": "browser-2fa-optional",
   "registrationFlow": "registration",
   "directGrantFlow": "direct grant",
-  "resetCredentialsFlow": "reset credentials",
+  "resetCredentialsFlow": "reset-credentials-login-again",
   "clientAuthenticationFlow": "clients",
   "dockerAuthenticationFlow": "docker auth",
   "firstBrokerLoginFlow": "first broker login",

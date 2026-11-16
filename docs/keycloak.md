@@ -16,9 +16,39 @@ A realm in Keycloak is a separate login: its own users, apps, settings and admin
 * **lab** uses institutional email addresses, so there is no Google or GitHub login. (Institutional login, e.g. via SURF, may come later; see [Lab authentication](./lab-auth.md).)
 * **idp** is the shared login provider that teams can use for their own AmCAT or AnnoTinder server (option 1 in the [Installation guide](./auth-install.md)).
 
-**How users log in.** In all realms, the email address is the username, and it is verified before it can be used; users can change it, and the new address must be confirmed too. A second factor is an authenticator app (OTP), a passkey or security key, or recovery codes. Users can also sign in with only a passkey, which counts as two factors (a device plus fingerprint, face or PIN). It is mandatory in master and lab, because these accounts give access to our infrastructure. In idp it is optional, to keep the barrier low: the token tells each server whether a second factor was used (`amr`), so a server decides itself when to require it, e.g. for sensitive actions (see [Two-factor authentication](./auth.md#two-factor-authentication-2fa) in the standard).
+**How users log in** (password, passkey, Google or GitHub, the second factor, and what to do after losing a password or phone): see [How users log in](#how-users-log-in) below.
 
 The realms are set up from realm files in the repository (`deploy/keycloak/realms/`), which Keycloak imports itself when it starts, for realms that don't exist yet. They document the configuration, including the login flows, and make it easy to set up the realms again (see [Realms](./keycloak-deploy.md#7-realms) in the runbook).
+
+## How users log in
+
+| | master | lab | idp |
+| --- | --- | --- | --- |
+| **Sign in with** | Password, or only a passkey | Password, or only a passkey | Password, only a passkey, Google or GitHub |
+| **Second factor (2FA)** | Mandatory | Mandatory | Optional |
+| **Forgot password** | Not possible (no email): another admin, or the VM | Email link, then log in again with the second factor | Same as lab |
+| **Lost second factor** | Recovery code, another admin, or the VM | Recovery code, or a lab admin | Recovery code, or us (best effort) |
+
+In all realms, the email address is the username. A second factor is an authenticator app (one-time codes, OTP), a passkey or security key, or a recovery code. Tokens contain `amr`: `pwd` for a password, `mfa` for a second factor. Servers that run our software check `mfa` for sensitive actions (see [Two-factor authentication](./auth.md#two-factor-authentication-2fa)).
+
+**Why:**
+
+* **Mandatory 2FA in master and lab,** because these accounts give access to our infrastructure. **Optional in idp,** to keep the barrier low for an open service: each server decides for itself when it requires `mfa`.
+* **A passkey alone counts as two factors:** the device, plus a fingerprint, face or PIN to unlock it. Passkeys can't be phished: they only work on our own domain.
+* **Email never replaces the second factor.** Someone who gets into a user's inbox can reset the password, but still needs the second factor to log in. (Keycloak's default reset also lets the user set up a new authenticator app, so an inbox would be enough to take over an account. We turned that off.)
+* **master has no email and no external logins,** so admin access never depends on an inbox or someone's Google account.
+
+### Step by step
+
+* **Password:** email address and password, then the second factor if the user has one (**Try another way** offers the user's other second factors, e.g. a recovery code). In master and lab, users without a second factor set up an authenticator app at their first login, and get recovery codes right after: shown once, to save somewhere safe. (The token of that first login has `amr` `pwd` only, because setting up an app doesn't count as using it. A server that requires `mfa` asks for a code once more.)
+* **Passkey:** **Sign in with Passkey** on the login page (or the browser's suggestion in the email field), then the fingerprint, face or PIN. No password and no other factor. Users register a passkey in the account console (**Account security → Signing in**), which offers it twice. A passkey under **Passwordless** is for signing in with only the passkey. A passkey under **Two-factor authentication** is a second factor after the password. Both work.
+* **Google or GitHub (idp only):** the first time, an account is created with the address from Google or GitHub (Keycloak verifies a GitHub address itself). If an account with that address already exists, Keycloak shows **Account already exists**: the user links the two by clicking a link sent to the address, or by entering the account's password (and its second factor; after linking it is asked once more, only this first time). After that, users with a second factor are asked for it after Google or GitHub. `amr` has no `pwd` for these logins: `mfa`, or empty.
+* **Setting up 2FA later (idp):** in the account console (**Account security → Signing in**). After setting up an authenticator app, Keycloak asks for recovery codes right away. After adding a passkey it doesn't: users who only use passkeys should set up recovery codes there too, or register a second passkey.
+* **Forgot password (lab, idp):** **Forgot password?** on the login page, then a link by email (valid for 5 minutes), and a new password. Keycloak then shows **Your account has been updated**: the user goes back to the app (**Back to application**, if the app has a home page) and logs in with the new password and the second factor.
+* **Lost second factor:** log in with a recovery code (**Try another way → Recovery Authentication Code**; each code works once). Then, in the account console, set up a new authenticator app or passkey, and new recovery codes. Without recovery codes: in lab, a lab admin removes the lost factor after checking who the user is (not by email alone: the inbox may be the problem); in idp, we can do that on a best-effort basis; in master, another admin, or the VM ([Recovering admin access](./keycloak-deploy.md#recovering-admin-access)). How: [A user lost their second factor](./keycloak-deploy.md#a-user-lost-their-second-factor).
+* **Time:** each page of the login (e.g. setting up the authenticator app, or saving the recovery codes) may take 30 minutes. After that, Keycloak says **Your login attempt timed out** and the login starts again.
+
+The flows behind these steps: `deploy/keycloak/realms/README.md`.
 
 ## The idp realm: open to everyone, best effort
 
