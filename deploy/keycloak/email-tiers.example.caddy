@@ -1,0 +1,23 @@
+# Email limits per app (client ID), in tiers.
+#
+# Created as local/email-tiers.caddy on the first start (not in the repository); edit that copy:
+#   sudo -u keycloak nano local/email-tiers.caddy
+# Apply changes (keeps the current counts):
+#   sudo docker compose exec caddy caddy reload --config /etc/caddy/Caddyfile
+# See "Email limits" in docs/keycloak-deploy.md.
+#
+# Limits count the emails Keycloak sends because of an app: verifying email addresses and
+# resetting passwords. Above its limit, sign-ups and password resets through that app have to
+# wait; logins keep working.
+
+# The tiers: name, number of emails, per period. "default" is for apps that are not listed below.
+(email_tier_limits) {
+	import email_tier default 25 30m
+	import email_tier tier2 100 30m
+	import email_tier tier3 500 30m
+}
+
+# Apps with another tier: client ID, tier. One app per line; a comment after # is allowed.
+(email_tier_apps) {
+	# survey-tool-1890fa  tier2   # e.g. raised for a course, until June
+}

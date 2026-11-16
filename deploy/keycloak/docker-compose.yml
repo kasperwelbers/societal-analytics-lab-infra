@@ -212,27 +212,38 @@ services:
       KC_HOSTNAME_ADMIN: ${KC_HOSTNAME_ADMIN}
       APPS_HOSTNAME: ${APPS_HOSTNAME:?set APPS_HOSTNAME in .env}
       ACME_EMAIL: ${ACME_EMAIL:?set ACME_EMAIL in .env}
-      # Email limits (see the Caddyfile and .env.example)
+      # Email limit per IP address (the limits per app are in local/email-tiers.caddy)
       EMAIL_LIMIT_PER_IP: ${EMAIL_LIMIT_PER_IP:-30}
       EMAIL_LIMIT_PER_IP_WINDOW: ${EMAIL_LIMIT_PER_IP_WINDOW:-10m}
-      EMAIL_LIMIT_WINDOW: ${EMAIL_LIMIT_WINDOW:-30m}
-      EMAIL_LIMIT_PER_APP: ${EMAIL_LIMIT_PER_APP:-25}
-      EMAIL_LIMIT_TIER2: ${EMAIL_LIMIT_TIER2:-100}
-      EMAIL_LIMIT_TIER2_APPS: ${EMAIL_LIMIT_TIER2_APPS:-}
-      EMAIL_LIMIT_TIER3: ${EMAIL_LIMIT_TIER3:-500}
-      EMAIL_LIMIT_TIER3_APPS: ${EMAIL_LIMIT_TIER3_APPS:-}
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
-      # Local restrictions of the admin hostname (copy admin-access.example.caddy first)
-      - ./admin-access.caddy:/etc/caddy/admin-access.caddy:ro
+      # Local settings, not in the repository (prepared by caddy-init): restrictions of the
+      # admin hostname, and the email limits per app. A folder, not single files, so that
+      # Caddy always sees the current version of an edited file.
+      - ./local:/etc/caddy/local:ro
       - caddy-data:/data
       - caddy-config:/config
       # Only tls.crt is used: the certificate Caddy trusts for its connection to Keycloak
       - internal-tls:/internal-tls:ro
     depends_on:
-      - keycloak
+      keycloak:
+        condition: service_started
+      caddy-init:
+        condition: service_completed_successfully
     networks:
       - web
+
+  # Prepares the local Caddy settings in local/ (see caddy-init.sh), so that Caddy can always
+  # start: creates missing files from the examples, and never changes an existing file.
+  caddy-init:
+    image: lab-caddy
+    # Built by the caddy service above: never try to download it from a registry
+    pull_policy: never
+    restart: "no"
+    entrypoint: ["/bin/sh", "/deploy/caddy-init.sh"]
+    volumes:
+      - ./:/deploy
+    network_mode: none
 
 networks:
   # PostgreSQL is only reachable by Keycloak, and has no internet access

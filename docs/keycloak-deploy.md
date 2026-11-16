@@ -3,7 +3,7 @@
 This runbook sets up Keycloak on a single VM, with PostgreSQL and Caddy (TLS via Let's Encrypt), using the files in [`deploy/keycloak/`](https://github.com/kasperwelbers/societal-analytics-lab-infra/tree/main/deploy/keycloak). It takes about an hour. Why Keycloak is being evaluated is explained in the [OIDC provider comparison](./auth-providers.md); what to test after the setup is in its [test checklist](./auth-providers.md#keycloak-test-checklist).
 
 !!! info "Placeholders"
-    This page uses `auth.example.org` (public hostname), `auth-admin.example.org` (admin hostname) and `apps.example.org` (app registration). The real hostnames, IP ranges and secrets are only stored on the VM (`.env`, `vault/` and `admin-access.caddy`).
+    This page uses `auth.example.org` (public hostname), `auth-admin.example.org` (admin hostname) and `apps.example.org` (app registration). The real hostnames, IP ranges and secrets are only stored on the VM (`.env`, `vault/` and `local/`).
 
 ## Overview
 
@@ -37,8 +37,10 @@ Three hostnames:
 | `app-registration/` | The [app registration site](./app-registration.md) |
 | `internal-tls.sh` | Creates the internal certificate (run by the tls-init service) |
 | `admin-cli.sh` | Runs Keycloak's admin command-line tool (`kcadm.sh`) inside the container, over the internal TLS connection |
-| `Caddyfile` | The public and admin hostnames. The admin hostname reads the local restrictions from `admin-access.caddy`. |
-| `admin-access.example.caddy` | Template for restricting the admin hostname. Copied to `admin-access.caddy`, a local file that is never committed. |
+| `Caddyfile` | The public and admin hostnames, and the email limits. Reads the local settings in `local/`. |
+| `admin-access.example.caddy`, `email-tiers.example.caddy` | Templates for the local Caddy settings: restrictions of the admin hostname ([step 4](#4-restrict-admin-access-recommended)) and the email limits per app ([Email limits](#10-maintenance)). |
+| `caddy-init.sh` | Run by the caddy-init service before Caddy starts: creates `local/admin-access.caddy` and `local/email-tiers.caddy` from the templates when they don't exist, and never changes existing files |
+| `local/` | The local Caddy settings. A local folder that is never committed. |
 | `.env.example` | All settings. Copied to `.env`, which holds the secrets and is never committed. |
 | `vault/` | Secrets that Keycloak reads at runtime (SMTP password, Google and GitHub client secrets). A local folder that is never committed. |
 | `backup.sh` | A database dump, for a daily cron job |
@@ -156,11 +158,7 @@ Fill in the other values in `.env`: the three hostnames (without `https://`), an
 sudo -u keycloak nano .env
 ```
 
-Create the local file for restricting the admin hostname. Unchanged, it adds no restrictions; [step 4](#4-restrict-admin-access-recommended) explains how to use it. This file must exist: without it, Caddy doesn't start.
-
-```bash
-sudo -u keycloak cp admin-access.example.caddy admin-access.caddy
-```
+The local Caddy settings (`local/admin-access.caddy` for [step 4](#4-restrict-admin-access-recommended), and `local/email-tiers.caddy` for the [email limits](#10-maintenance)) are created from the templates on the first start. Unchanged, they add no admin restrictions, and give every app the default email limit.
 
 Create the vault folder (filled in [step 7](#7-configuration-as-code)). Keycloak runs as a different user inside its container (uid 1000), with group root, so the folder belongs to `keycloak:root` and is readable for the group:
 
@@ -212,7 +210,7 @@ This changes the issuer of the `master` realm, so the login of the admin tool is
 
 Keycloak recommends not exposing the administration interfaces to the public internet, and in particular restricting the administrative `master` realm to internal access (see [Configuring Keycloak for production](https://www.keycloak.org/server/configuration-production) and the [exposed path recommendations](https://www.keycloak.org/server/reverseproxy#_exposed_path_recommendations)). With this step, everything on the admin hostname (the admin consoles, the admin API and the `master` realm) is only reachable from the IP ranges you choose, e.g. the university network and its VPN. The public hostname, where users log in, is not affected.
 
-**How it works.** The admin hostname reads the rules in `admin-access.caddy`, from top to bottom; the first rule that matches a request decides. Requests that match no rule go to Keycloak. The file is local to the VM: it is not in the repository, so `git pull` never changes it.
+**How it works.** The admin hostname reads the rules in `local/admin-access.caddy`, from top to bottom; the first rule that matches a request decides. Requests that match no rule go to Keycloak. The file is local to the VM: it is not in the repository, so `git pull` never changes it.
 
 ### Find your IP ranges
 
@@ -235,7 +233,7 @@ Check that `name` belongs to your institution, and write the range in CIDR notat
 Edit the file:
 
 ```bash
-sudo -u keycloak nano admin-access.caddy
+sudo -u keycloak nano local/admin-access.caddy
 ```
 
 At the bottom, remove the `#` in front of the restriction, and put your ranges after `remote_ip`, separated by spaces:
@@ -247,10 +245,10 @@ handle @not_allowed {
 }
 ```
 
-Apply it:
+Apply it. A reload checks the file first: if it contains a mistake, the reload fails with an error message, and Caddy keeps running with the previous settings.
 
 ```bash
-sudo docker compose restart caddy
+sudo docker compose exec caddy caddy reload --config /etc/caddy/Caddyfile
 ```
 
 Check, from your own device. On the VPN this shows the `master` realm's issuer; **without the VPN** (e.g. on a phone hotspot) it should return `403`:
@@ -277,7 +275,7 @@ handle @realm_research_group {
 * The paths are what a realm's admin console needs: its console, the admin API for that realm, general server information (`/admin/serverinfo`, behind login), and scripts and styles (`/resources/`).
 * The `master` realm and the other realms stay restricted: their paths are not part of the exception. Admins of the realm can only manage their own realm.
 * Admins of such a realm have an account **in that realm** with the role `realm-admin` of the client `realm-management` (in that realm: **Users → the user → Role mapping → Assign role → filter by clients**). They use the console at `https://auth-admin.example.org/admin/<realm>/console/`. Make 2FA required for them in that realm.
-* Apply it with `sudo docker compose restart caddy`.
+* Apply it with `sudo docker compose exec caddy caddy reload --config /etc/caddy/Caddyfile`.
 
 Tested: with the restriction and an exception, the realm's admin console works from the exception range, while the `master` realm, the console of another realm, and the admin API of other realms are refused (by Caddy, and by Keycloak for the realm admin's own token).
 
@@ -370,6 +368,9 @@ Create each file like this (you are prompted for the secret; it doesn't end up i
 sudo bash -c 'read -rsp "Secret: " s && printf %s "$s" > vault/idp_smtpPassword && chown keycloak:root vault/idp_smtpPassword && chmod 640 vault/idp_smtpPassword'
 ```
 
+!!! warning "The vault doesn't protect secrets against realm admins"
+    Keycloak resolves a vault reference wherever an admin of that realm puts it. A realm admin can point the realm's email settings to another server, or add a login provider that points to their own server with `${vault.googleClientSecret}` as its secret, and Keycloak then sends the secret there (tested). So only people you would trust with these secrets get admin rights in `lab` and `idp`. An admin of another realm can only use that realm's vault files (`<realm>_<name>`): never give such a realm a copy of a shared secret (e.g. the same SMTP password), but its own credentials.
+
 To change a secret, overwrite its file in the same way, and restart Keycloak (`sudo docker compose restart keycloak`). The vault is part of what you need for a restore (see [Backups](#9-backups)).
 
 ### The client for keycloak-config-cli
@@ -443,7 +444,7 @@ echo '15 3 * * * root /opt/keycloak/societal-analytics-lab-infra/deploy/keycloak
 ```
 
 * **The dumps are sensitive:** they contain user data, password hashes, client secrets and the realm signing keys. The backup folder is only readable by root.
-* **Keycloak has no master key:** the database dump (plus `.env`, `vault/` and `admin-access.caddy`) is all you need to restore. The internal certificate is not part of the backup: on a new VM, tls-init creates a new one.
+* **Keycloak has no master key:** the database dump (plus `.env`, `vault/` and `local/`) is all you need to restore. The internal certificate is not part of the backup: on a new VM, tls-init creates a new one.
 * **Keycloak's register of running instances** (the `jgroups_ping` table) is left out of the dump. Restoring old entries would make Keycloak believe another instance is running.
 * ==TODO: encryption and an off-site copy, once the lab's backup strategy is decided. Until then, the dumps are on the same VM, so they don't protect against losing the VM.==
 
@@ -520,15 +521,39 @@ sudo docker compose build --pull && sudo docker compose up -d
 
 **The app registration site:** after `git pull`, rebuild it with `sudo docker compose up -d --build app-registration`.
 
-**Email limits.** Keycloak has no limit on the emails it sends, so Caddy limits the requests that make it send one: the first visit to the "verify your email" page (after registering, or when a user with an unverified email address logs in) and submitting "forgot password". Logins (with password, OTP, passkey, Google or GitHub), token requests and refresh grants, and finishing a password reset from an email that was already sent are never limited. Above a limit, Caddy shows a page "Please try again later", only to the person who ran into it, and Keycloak doesn't send the email. There are two limits, set in `.env` and applied with `sudo docker compose up -d caddy` (which also resets the counters):
+**Email limits.** Keycloak has no limit on the emails it sends, so Caddy limits the requests that make it send one: the first visit to the "verify your email" page (after registering, or when a user with an unverified email address logs in) and submitting "forgot password". Logins (with password, OTP, passkey, Google or GitHub), token requests and refresh grants, and finishing a password reset from an email that was already sent are never limited. Above a limit, Caddy shows a page "Please try again later", only to the person who ran into it, and Keycloak doesn't send the email. There are two limits:
 
-| Limit | Default | Message |
-| --- | --- | --- |
-| **Per IP address** (`EMAIL_LIMIT_PER_IP` per `EMAIL_LIMIT_PER_IP_WINDOW`) | 30 per 10 minutes. Also counts registrations and first logins with Google or GitHub. | "Too many attempts from your network" |
-| **Per app** (client ID, in tiers, per `EMAIL_LIMIT_WINDOW`) | 25 per 30 minutes; apps listed in `EMAIL_LIMIT_TIER2_APPS` 100, in `EMAIL_LIMIT_TIER3_APPS` 500 | "This app has reached its limit for sign-ups and password resets" |
+| Limit | Where | Default | Message |
+| --- | --- | --- | --- |
+| **Per IP address** | `.env`: `EMAIL_LIMIT_PER_IP` per `EMAIL_LIMIT_PER_IP_WINDOW`. Apply with `sudo docker compose up -d caddy` (resets the counts). | 30 per 10 minutes. Also counts registrations and first logins with Google or GitHub. | "Too many attempts from your network" |
+| **Per app** (client ID) | `local/email-tiers.caddy`: the tiers, and which apps have a higher tier | 25 per 30 minutes; tier2 100, tier3 500 | "This app has reached its limit for sign-ups and password resets" |
 
+`local/email-tiers.caddy` (created from `email-tiers.example.caddy` on the first start) holds both the tiers and the list of apps with a higher tier, e.g.:
+
+```
+(email_tier_limits) {
+	import email_tier default 25 30m
+	import email_tier tier2 100 30m
+	import email_tier tier3 500 30m
+}
+
+(email_tier_apps) {
+	survey-tool-1890fa   tier2   # raised for a course, until June
+}
+```
+
+Edit it with `sudo -u keycloak nano local/email-tiers.caddy`, and apply it with a reload, which keeps the current counts:
+
+```bash
+sudo docker compose exec caddy caddy reload --config /etc/caddy/Caddyfile
+```
+
+If the file contains a mistake, the reload fails with an error message and Caddy keeps running with the previous settings: fix the file before Caddy is restarted (e.g. by a reboot), because Caddy doesn't start with an invalid file.
+
+* **New apps** are not added anywhere: apps that are not listed get `default`. Tiers are only assigned by hand.
 * **Teaching sessions:** many people can share one IP address (e.g. a campus network). When a whole class registers at once, raise `EMAIL_LIMIT_PER_IP` beforehand, and lower it again afterwards. If they all use one app, put that app in a higher tier for the session too.
-* **A higher limit for an app:** add its client ID to `EMAIL_LIMIT_TIER2_APPS` or `EMAIL_LIMIT_TIER3_APPS` (client IDs separated by spaces), e.g. `EMAIL_LIMIT_TIER2_APPS=survey-tool-1890fa other-app-ab12cd`. Put an app in one tier only.
+* **More tiers:** add a line to `email_tier_limits` (a name, a number, a period), and use the name in `email_tier_apps`.
+* An app is identified by its client ID; the same client ID in another realm gets the same tier.
 * **The limit per app can't be avoided** by leaving out or changing the client ID in the URL: Keycloak then refuses the request and sends nothing (tested). Someone can use up an app's limit on purpose, but then only sign-ups and password resets through that app pause; its logins keep working.
 * The counters are kept in memory: a restart of Caddy resets them.
 
@@ -557,8 +582,8 @@ Log in to the admin console as `recovery-admin`, fix the problem (e.g. delete th
 | `sudo: ... is not in the sudoers file` while logged in as `keycloak` | Docker commands are run from your own admin account, not as `keycloak`. |
 | No certificate, or browser warnings | The DNS record doesn't point to the VM yet, or port 80 is blocked. Check `sudo docker compose logs caddy`. |
 | Admin console stays on a loading spinner | Step 3 (frontend URL of the `master` realm) was skipped or has a typo. |
-| Admin hostname returns 403 while on the VPN | Your IP address is not in the ranges in `admin-access.caddy`. Check `curl -4 https://ifconfig.me` on your device. After changing the file, run `sudo docker compose restart caddy`. |
-| Caddy doesn't start: `Could not import /etc/caddy/admin-access.caddy: is a directory` | `admin-access.caddy` didn't exist when Caddy started, so Docker created an empty folder with that name. Remove it and create the file: `sudo rmdir admin-access.caddy && sudo -u keycloak cp admin-access.example.caddy admin-access.caddy && sudo docker compose up -d caddy`. |
+| Admin hostname returns 403 while on the VPN | Your IP address is not in the ranges in `local/admin-access.caddy`. Check `curl -4 https://ifconfig.me` on your device. After changing the file, run `sudo docker compose exec caddy caddy reload --config /etc/caddy/Caddyfile`. |
+| A reload of Caddy fails, or Caddy doesn't start after a restart | A mistake in `local/admin-access.caddy` or `local/email-tiers.caddy`: the error message names the file and line. Fix it and reload again (`sudo docker compose up -d caddy` if Caddy is not running). |
 | The admin console of a realm with an exception stays on "Loading", or shows a permission error | The exception is missing `/resources/*` or `/admin/serverinfo`, or the realm name in the paths is misspelled (see step 4). |
 | Requests through Caddy return 502 Bad Gateway | Keycloak is still starting, or Caddy doesn't trust Keycloak's internal certificate (e.g. after `tls-init renew` without restarting Caddy). Run `sudo docker compose restart caddy`, and check `sudo docker compose logs caddy`. |
 | Requests through Caddy return 403 Forbidden | `KC_PROXY_HEADERS` is not set to `xforwarded`, so Keycloak's origin checks fail (see the reverse proxy guide). |
@@ -580,7 +605,8 @@ Log in to the admin console as `recovery-admin`, fix the problem (e.g. delete th
 * **Only `/realms/`, `/resources/` and `/.well-known/` are public:** the exposed paths recommended in the [reverse proxy guide](https://www.keycloak.org/server/reverseproxy#_exposed_path_recommendations). `/admin/` and `/realms/master/` are internal only.
 * **The health endpoint on plain HTTP** (`KC_HTTP_MANAGEMENT_SCHEME=http`): the management port (9000) is only used by the container's health check, and is not exposed (see the [management interface guide](https://www.keycloak.org/server/management-interface)).
 * **A separate admin hostname** (`KC_HOSTNAME_ADMIN`), see the [hostname guide](https://www.keycloak.org/server/hostname). The `hostname-admin` option alone doesn't block the admin API on the public hostname; Caddy does that.
-* **IP restriction of the admin hostname in a local file:** restricting the administration interfaces, and the `master` realm in particular, follows Keycloak's recommendations. The ranges and exceptions are specific to each installation, so they live in `admin-access.caddy` on the VM instead of in the repository.
+* **IP restriction of the admin hostname in a local file:** restricting the administration interfaces, and the `master` realm in particular, follows Keycloak's recommendations. The ranges and exceptions are specific to each installation, so they live in `local/admin-access.caddy` on the VM instead of in the repository.
+* **Local Caddy settings in a folder, created automatically:** Caddy doesn't start when an imported file is missing, so `caddy-init.sh` creates missing files from the templates (with safe defaults) before Caddy starts; a forgotten copy step can't take the logins down. The folder is mounted instead of single files, because Docker keeps showing the old version of a single mounted file after an editor replaces it, so that a reload would silently not apply the change.
 * **Exceptions for specific realms:** not a Keycloak recommendation, but a deliberate choice to let admins outside our network manage their own realm. It makes that realm's admin console reachable for them, behind its own login and 2FA, and keeps the `master` realm restricted.
 * **PostgreSQL 18:** the version Keycloak 26.8 is tested with.
 * **Configuration as code with keycloak-config-cli:** the realm settings are reviewed and versioned like code, and a realm can be rebuilt. It never deletes what it doesn't manage (`IMPORT_MANAGED_*=no-delete`), so things added in the admin console, and apps registered by users, are safe. It applies every file on every run (`IMPORT_CACHE_ENABLED=false`), so changes made in the admin console to managed settings don't silently persist.

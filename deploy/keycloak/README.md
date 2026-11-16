@@ -8,7 +8,6 @@ The files are owned by a `keycloak` system user, and Docker is run with `sudo` f
 
 ```bash
 sudo -u keycloak cp .env.example .env && sudo -u keycloak chmod 600 .env   # then: sudo -u keycloak nano .env
-sudo -u keycloak cp admin-access.example.caddy admin-access.caddy          # optional restrictions, see step 4
 sudo docker compose up -d --build
 ```
 
@@ -18,4 +17,5 @@ Then continue with step 3 of the runbook (pointing the admin realm to the admin 
 | --- | --- |
 | `realms/` | Realm configuration (`master`, `lab`, `idp`), applied with `sudo docker compose run --rm keycloak-config` (runbook step 7). Check changes with `python3 check-realms.py`. |
 | `vault/` | Local folder with secrets that Keycloak reads at runtime (never committed, runbook step 7). |
+| `local/` | Local Caddy settings: admin restrictions (step 4) and email limits per app. Created from the `*.example.caddy` templates on the first start (never committed). |
 | `app-registration/` | The app registration site ([docs/app-registration.md](../../docs/app-registration.md)). |

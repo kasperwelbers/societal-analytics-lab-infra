@@ -1,9 +1,9 @@
 # Restrictions of the admin hostname (optional, recommended).
 #
-# Copy this file to admin-access.caddy (not in the repository), and edit that copy:
-#   sudo -u keycloak cp admin-access.example.caddy admin-access.caddy
+# Created as local/admin-access.caddy on the first start (not in the repository); edit that copy:
+#   sudo -u keycloak nano local/admin-access.caddy
 # Apply changes with:
-#   sudo docker compose restart caddy
+#   sudo docker compose exec caddy caddy reload --config /etc/caddy/Caddyfile
 # See "Restricting admin access" in docs/keycloak-deploy.md.
 #
 # As long as all rules below are commented out, the admin consoles of all realms are

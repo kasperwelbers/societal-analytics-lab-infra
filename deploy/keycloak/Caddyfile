@@ -29,33 +29,49 @@
 # it out or changing it doesn't avoid the limit per app. Logins, token requests and the later
 # steps of a password reset are never limited.
 #
-# A rate limit zone for these requests: {args[0]} = zone name, {args[1]} = key (what is counted
-# separately), {args[2]} = extra condition (starting with && or ||), {args[3]} = window,
-# {args[4]} = number of requests per window
-(email_zone) {
-	zone {args[0]} {
+# The condition for these requests is written out twice below (per IP, and per app in the
+# email_tier snippet): keep both the same.
+#
+# A limit per app (client ID, per realm) for one tier: {args[0]} = tier name, {args[1]} = number
+# of emails, {args[2]} = period. Used in local/email-tiers.caddy. (Written out instead of shared
+# with the limit per IP: Caddy fails on a snippet that imports another snippet more than once.)
+(email_tier) {
+	zone email_per_app_{args[0]} {
 		match {
-			expression `(({method} == "GET" && {path}.matches("^/realms/[^/]+/login-actions/required-action$") && {query.execution} == "VERIFY_EMAIL") || ({method} == "POST" && {path}.matches("^/realms/[^/]+/login-actions/reset-credentials$"))) {args[2]}`
+			expression `(({method} == "GET" && {path}.matches("^/realms/[^/]+/login-actions/required-action$") && {query.execution} == "VERIFY_EMAIL") || ({method} == "POST" && {path}.matches("^/realms/[^/]+/login-actions/reset-credentials$"))) && {query.client_id} != "" && {email_tier} == "{args[0]}"`
 		}
-		key {args[1]}
-		ipv6_prefix 64
-		window {args[3]}
-		events {args[4]}
+		key {http.request.uri.path.1}/{query.client_id}
+		window {args[2]}
+		events {args[1]}
 	}
 }
 
+# The tiers, and which apps have a higher tier: a local file that is not in the repository
+# (created from email-tiers.example.caddy on the first start, see caddy-init.sh)
+import local/email-tiers.caddy
+
 # Public hostname: logins, OIDC endpoints, static resources
 {$KC_HOSTNAME} {
+	# The tier of the app of a request: from the list in local/email-tiers.caddy, otherwise "default"
+	map {query.client_id} {email_tier} {
+		import email_tier_apps
+		default default
+	}
 	rate_limit {
 		# Per IP address. Also counts registrations and first logins with Google or GitHub
 		# (account creation, and the email to confirm linking an existing account). Many people
 		# can share one address (e.g. a campus network): raise it for teaching sessions.
-		import email_zone email_per_ip {remote_host} `|| ({method} == "POST" && {path}.matches("^/realms/[^/]+/login-actions/(registration|first-broker-login)$"))` {$EMAIL_LIMIT_PER_IP_WINDOW:10m} {$EMAIL_LIMIT_PER_IP:30}
-		# Per app (client ID, per realm), in tiers: apps listed in EMAIL_LIMIT_TIER2_APPS or
-		# EMAIL_LIMIT_TIER3_APPS (separated by spaces) get a higher limit, other apps the default
-		import email_zone email_per_app {http.request.uri.path.1}/{query.client_id} `&& {query.client_id} != "" && !(" {$EMAIL_LIMIT_TIER2_APPS} {$EMAIL_LIMIT_TIER3_APPS} ".contains(" " + {query.client_id} + " "))` {$EMAIL_LIMIT_WINDOW:30m} {$EMAIL_LIMIT_PER_APP:25}
-		import email_zone email_per_app_tier2 {http.request.uri.path.1}/{query.client_id} `&& {query.client_id} != "" && " {$EMAIL_LIMIT_TIER2_APPS} ".contains(" " + {query.client_id} + " ")` {$EMAIL_LIMIT_WINDOW:30m} {$EMAIL_LIMIT_TIER2:100}
-		import email_zone email_per_app_tier3 {http.request.uri.path.1}/{query.client_id} `&& {query.client_id} != "" && " {$EMAIL_LIMIT_TIER3_APPS} ".contains(" " + {query.client_id} + " ")` {$EMAIL_LIMIT_WINDOW:30m} {$EMAIL_LIMIT_TIER3:500}
+		zone email_per_ip {
+			match {
+				expression `(({method} == "GET" && {path}.matches("^/realms/[^/]+/login-actions/required-action$") && {query.execution} == "VERIFY_EMAIL") || ({method} == "POST" && {path}.matches("^/realms/[^/]+/login-actions/reset-credentials$"))) || ({method} == "POST" && {path}.matches("^/realms/[^/]+/login-actions/(registration|first-broker-login)$"))`
+			}
+			key {remote_host}
+			ipv6_prefix 64
+			window {$EMAIL_LIMIT_PER_IP_WINDOW:10m}
+			events {$EMAIL_LIMIT_PER_IP:30}
+		}
+		# Per app (client ID, per realm), in tiers (see local/email-tiers.caddy)
+		import email_tier_limits
 	}
 	handle_errors 429 {
 		@per_app expression `{http.rate_limit.exceeded.name}.startsWith("email_per_app")`
@@ -86,10 +102,10 @@
 }
 
 # Admin hostname: the admin consoles and the admin API.
-# Optional restrictions (IP ranges, exceptions per realm) are set in admin-access.caddy,
-# a local file that is not in the repository (copied from admin-access.example.caddy).
+# Optional restrictions (IP ranges, exceptions per realm) are set in local/admin-access.caddy,
+# a local file that is not in the repository (created from admin-access.example.caddy).
 {$KC_HOSTNAME_ADMIN} {
-	import admin-access.caddy
+	import local/admin-access.caddy
 	handle {
 		import keycloak
 	}
