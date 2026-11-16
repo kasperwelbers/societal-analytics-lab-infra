@@ -31,8 +31,6 @@ services:
       # The management interface (health checks, port 9000) stays on plain HTTP; it is not exposed
       KC_HTTP_MANAGEMENT_SCHEME: http
       KC_PROXY_HEADERS: xforwarded
-      # Secrets referenced as ${vault.<name>} in the realm configuration (see realms/)
-      KC_VAULT_DIR: /opt/keycloak/vault
       # Deprecated option that is only useful behind a load balancer (see the reverse proxy guide)
       KC_SPI_STICKY_SESSION_ENCODER__INFINISPAN__SHOULD_ATTACH_ROUTE: "false"
       # Temporary admin, only created on the very first start (when the master realm doesn't exist yet)
@@ -55,7 +53,6 @@ services:
       start_period: 60s
     volumes:
       - internal-tls:/opt/keycloak/conf/internal-tls:ro
-      - ./vault:/opt/keycloak/vault:ro
     depends_on:
       postgres:
         condition: service_healthy
@@ -64,6 +61,7 @@ services:
     networks:
       - db
       - web
+      - mail
 
   # Creates the internal certificate for Caddy -> Keycloak on the first start (see internal-tls.sh)
   tls-init:
@@ -93,8 +91,8 @@ services:
       - >-
         missing="";
         for name in KEYCLOAK_CLIENTSECRET KC_HOSTNAME APPS_HOSTNAME APP_REGISTRATION_CLIENT_SECRET
-        SMTP_HOST SMTP_USER SMTP_FROM LAB_GOOGLE_CLIENT_ID LAB_GITHUB_CLIENT_ID IDP_GOOGLE_CLIENT_ID
-        IDP_GITHUB_CLIENT_ID; do [ -n "$$(printenv $$name)" ] || missing="$$missing $$name"; done;
+        SMTP_FROM IDP_GOOGLE_CLIENT_ID IDP_GOOGLE_CLIENT_SECRET IDP_GITHUB_CLIENT_ID
+        IDP_GITHUB_CLIENT_SECRET; do [ -n "$$(printenv $$name)" ] || missing="$$missing $$name"; done;
         if [ -n "$$missing" ]; then echo "Missing in .env:$$missing" >&2; exit 1; fi;
         exec java $$JAVA_OPTS -jar /app/keycloak-config-cli.jar
     environment:
@@ -125,16 +123,12 @@ services:
       IMPORT_MANAGED_REQUIREDACTION: no-delete
       # Values used in realms/*.yaml as $(env:NAME)
       KC_HOSTNAME: ${KC_HOSTNAME}
-      SMTP_HOST: ${SMTP_HOST:-}
-      SMTP_PORT: ${SMTP_PORT:-465}
-      SMTP_SSL: ${SMTP_SSL:-true}
-      SMTP_USER: ${SMTP_USER:-}
       SMTP_FROM: ${SMTP_FROM:-}
       SMTP_FROM_NAME: ${SMTP_FROM_NAME:-Societal Analytics Lab}
-      LAB_GOOGLE_CLIENT_ID: ${LAB_GOOGLE_CLIENT_ID:-}
-      LAB_GITHUB_CLIENT_ID: ${LAB_GITHUB_CLIENT_ID:-}
       IDP_GOOGLE_CLIENT_ID: ${IDP_GOOGLE_CLIENT_ID:-}
+      IDP_GOOGLE_CLIENT_SECRET: ${IDP_GOOGLE_CLIENT_SECRET:-}
       IDP_GITHUB_CLIENT_ID: ${IDP_GITHUB_CLIENT_ID:-}
+      IDP_GITHUB_CLIENT_SECRET: ${IDP_GITHUB_CLIENT_SECRET:-}
       APPS_HOSTNAME: ${APPS_HOSTNAME:-}
       APP_REGISTRATION_CLIENT_SECRET: ${APP_REGISTRATION_CLIENT_SECRET:-}
     volumes:
@@ -174,6 +168,51 @@ services:
         condition: service_healthy
     networks:
       - web
+
+  # Email relay: Keycloak sends all email here, without a password. Only the relay has the
+  # credentials of the email provider, so realm admins can't redirect them (see the runbook).
+  # It only accepts the sender address SMTP_FROM, caps the number of emails for the whole
+  # Keycloak instance, and queues emails while the provider is unreachable.
+  mail-relay:
+    image: boky/postfix:5.2.1-alpine
+    restart: unless-stopped
+    # Stop with a clear message if a value is missing in .env (checked here, so that other
+    # docker compose commands keep working while these values are not filled in yet)
+    command:
+      - /bin/sh
+      - -c
+      - >-
+        missing=""; for name in SMTP_HOST SMTP_USER SMTP_PASSWORD SMTP_FROM; do
+        [ -n "$$(printenv $$name)" ] || missing="$$missing $$name"; done;
+        if [ -n "$$missing" ]; then echo "Missing in .env:$$missing" >&2; exit 1; fi;
+        exec /scripts/run.sh
+    environment:
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_FROM: ${SMTP_FROM:-}
+      RELAYHOST: "[${SMTP_HOST:-}]:${SMTP_PORT:-587}"
+      RELAYHOST_USERNAME: ${SMTP_USER:-}
+      RELAYHOST_PASSWORD: ${SMTP_PASSWORD:-}
+      # TLS to the provider is required (STARTTLS on port 587)
+      POSTFIX_smtp_tls_security_level: encrypt
+      POSTFIX_myhostname: ${KC_HOSTNAME}
+      # Only the sender address of the realms (domain checks are replaced by this exact check)
+      ALLOW_EMPTY_SENDER_DOMAINS: "true"
+      POSTFIX_smtpd_sender_restrictions: "check_sender_access inline:{ ${SMTP_FROM:-}=OK }, reject"
+      # The cap: at most EMAIL_RELAY_LIMIT emails per EMAIL_RELAY_LIMIT_PERIOD from Keycloak.
+      # Above it, the relay refuses new emails until the period has passed (Keycloak shows an
+      # error). Postfix exempts its own networks from limits by default: not here.
+      POSTFIX_smtpd_client_message_rate_limit: ${EMAIL_RELAY_LIMIT:-250}
+      POSTFIX_anvil_rate_time_unit: ${EMAIL_RELAY_LIMIT_PERIOD:-15m}
+      POSTFIX_smtpd_client_event_limit_exceptions: 127.0.0.1/32
+    volumes:
+      # The queue survives restarts
+      - mail-queue:/var/spool/postfix
+    mem_limit: 256m
+    networks:
+      - mail
+      - mail-out
 
   postgres:
     # Keycloak 26.8 is tested with PostgreSQL 18
@@ -249,11 +288,17 @@ networks:
   # PostgreSQL is only reachable by Keycloak, and has no internet access
   db:
     internal: true
-  # Keycloak and Caddy; Keycloak needs internet access for email (SMTP) and external login providers
+  # Keycloak and Caddy; Keycloak needs internet access for the external login providers
   web: {}
+  # The email relay is only reachable by Keycloak
+  mail:
+    internal: true
+  # The email relay's connection to the email provider
+  mail-out: {}
 
 volumes:
   postgres-data:
+  mail-queue:
   internal-tls:
   caddy-data:
   caddy-config:

@@ -1,10 +1,12 @@
 # Realm "lab": login for the lab's own infrastructure.
 #
+# Users log in with their institutional email address, a password and a second factor. No
+# Google or GitHub login: these accounts are tied to institutional addresses. (Institutional
+# login, e.g. via the university, may be added later.)
+#
 # Applied with keycloak-config-cli: see "Configuration as code" in docs/keycloak-deploy.md.
 # - Values written as "dollar, (env:NAME)" come from .env, substituted by keycloak-config-cli.
 #   (Not written literally here: keycloak-config-cli also substitutes inside comments.)
-# - Values written as "dollar, {vault.name}" are secrets that Keycloak reads from the vault
-#   folder at runtime; they are never stored in the database.
 #
 # Only what is defined here is managed. Settings that are not in this file can still be
 # changed in the admin console; settings that are in this file are reset on the next apply.
@@ -13,7 +15,7 @@ realm: lab
 enabled: true
 
 # --- Login and registration ---------------------------------------------------------------
-registrationAllowed: false          # invitation only; Google/GitHub can only link existing accounts
+registrationAllowed: false          # invitation only
 registrationEmailAsUsername: true
 loginWithEmailAllowed: true
 # Needed for the "Update email" button in the account console when the email address is the
@@ -52,13 +54,13 @@ adminEventsDetailsEnabled: false
 
 # --- Email --------------------------------------------------------------------------------
 smtpServer:
-  host: "$(env:SMTP_HOST)"
-  port: "$(env:SMTP_PORT)"
-  ssl: "$(env:SMTP_SSL)"
+  # The email relay (see docker-compose.yml): it holds the credentials of the email provider,
+  # so Keycloak sends without a password
+  host: mail-relay
+  port: "587"
+  ssl: "false"
   starttls: "false"
-  auth: "true"
-  user: "$(env:SMTP_USER)"
-  password: "${vault.smtpPassword}"
+  auth: "false"
   from: "$(env:SMTP_FROM)"
   fromDisplayName: "$(env:SMTP_FROM_NAME)"
 
@@ -93,39 +95,6 @@ defaultDefaultClientScopes:
   - acr
   - basic
   - amr
-
-# --- External login providers -------------------------------------------------------------
-identityProviders:
-  - alias: google
-    providerId: google
-    enabled: true
-    trustEmail: true
-    storeToken: false
-    addReadTokenRoleOnCreate: false
-    linkOnly: false
-    hideOnLogin: false
-    firstBrokerLoginFlowAlias: first-broker-login-existing-users
-    postBrokerLoginFlowAlias: post-login-2fa-required
-    config:
-      clientId: "$(env:LAB_GOOGLE_CLIENT_ID)"
-      clientSecret: "${vault.googleClientSecret}"
-      syncMode: IMPORT
-      pkceEnabled: "true"
-      pkceMethod: S256
-  - alias: github
-    providerId: github
-    enabled: true
-    trustEmail: false
-    storeToken: false
-    addReadTokenRoleOnCreate: false
-    linkOnly: false
-    hideOnLogin: false
-    firstBrokerLoginFlowAlias: first-broker-login-existing-users
-    postBrokerLoginFlowAlias: post-login-2fa-required
-    config:
-      clientId: "$(env:LAB_GITHUB_CLIENT_ID)"
-      clientSecret: "${vault.githubClientSecret}"
-      syncMode: IMPORT
 
 # --- Authentication flows -----------------------------------------------------------------
 # Mandatory 2FA: users with a second factor (OTP, passkey/security key, recovery codes) use
@@ -217,86 +186,6 @@ authenticationFlows:
         priority: 20
         authenticatorFlow: false
 
-  # After a login with Google or GitHub (which replaces only the password): the same
-  # mandatory second factor.
-  - alias: post-login-2fa-required
-    description: "Mandatory 2FA after login with an external provider"
-    providerId: basic-flow
-    topLevel: true
-    builtIn: false
-    authenticationExecutions:
-      - flowAlias: post-login-2fa-required-2fa
-        requirement: CONDITIONAL
-        priority: 10
-        authenticatorFlow: true
-      - flowAlias: post-login-2fa-required-setup-otp
-        requirement: CONDITIONAL
-        priority: 20
-        authenticatorFlow: true
-  - alias: post-login-2fa-required-2fa
-    description: "Second factor, for users who have one"
-    providerId: basic-flow
-    topLevel: false
-    builtIn: false
-    authenticationExecutions:
-      - authenticator: conditional-user-configured
-        requirement: REQUIRED
-        priority: 10
-        authenticatorFlow: false
-      - authenticator: auth-otp-form
-        authenticatorConfig: post-login-2fa-required-amr-otp
-        requirement: ALTERNATIVE
-        priority: 20
-        authenticatorFlow: false
-      - authenticator: webauthn-authenticator
-        authenticatorConfig: post-login-2fa-required-amr-webauthn
-        requirement: ALTERNATIVE
-        priority: 30
-        authenticatorFlow: false
-      - authenticator: auth-recovery-authn-code-form
-        authenticatorConfig: post-login-2fa-required-amr-recovery
-        requirement: ALTERNATIVE
-        priority: 40
-        authenticatorFlow: false
-  - alias: post-login-2fa-required-setup-otp
-    description: "Users without a second factor must set up OTP"
-    providerId: basic-flow
-    topLevel: false
-    builtIn: false
-    authenticationExecutions:
-      - authenticator: conditional-sub-flow-executed
-        authenticatorConfig: post-login-2fa-required-if-no-2fa
-        requirement: REQUIRED
-        priority: 10
-        authenticatorFlow: false
-      - authenticator: auth-otp-form
-        authenticatorConfig: post-login-2fa-required-amr-otp-setup
-        requirement: REQUIRED
-        priority: 20
-        authenticatorFlow: false
-
-  # First login with Google or GitHub: only for people who already have a lab account (same
-  # email address). The external account is linked after confirmation and verification
-  # (automatic for providers with "trust email", by email for the others). No new accounts.
-  - alias: first-broker-login-existing-users
-    description: "Link an external login to an existing account; never create accounts"
-    providerId: basic-flow
-    topLevel: true
-    builtIn: false
-    authenticationExecutions:
-      - authenticator: idp-detect-existing-broker-user
-        requirement: REQUIRED
-        priority: 10
-        authenticatorFlow: false
-      - authenticator: idp-confirm-link
-        requirement: REQUIRED
-        priority: 20
-        authenticatorFlow: false
-      - authenticator: idp-email-verification
-        requirement: REQUIRED
-        priority: 30
-        authenticatorFlow: false
-
 authenticatorConfig:
   - alias: browser-2fa-required-amr-pwd
     config: { default.reference.value: pwd, default.reference.maxAge: "1800" }
@@ -311,14 +200,4 @@ authenticatorConfig:
   - alias: browser-2fa-required-if-no-2fa
     config: { flow_to_check: browser-2fa-required-2fa, check_result: not-executed }
   - alias: browser-2fa-required-amr-otp-setup
-    config: { default.reference.value: mfa, default.reference.maxAge: "1800" }
-  - alias: post-login-2fa-required-amr-otp
-    config: { default.reference.value: mfa, default.reference.maxAge: "1800" }
-  - alias: post-login-2fa-required-amr-webauthn
-    config: { default.reference.value: mfa, default.reference.maxAge: "1800" }
-  - alias: post-login-2fa-required-amr-recovery
-    config: { default.reference.value: mfa, default.reference.maxAge: "1800" }
-  - alias: post-login-2fa-required-if-no-2fa
-    config: { flow_to_check: post-login-2fa-required-2fa, check_result: not-executed }
-  - alias: post-login-2fa-required-amr-otp-setup
     config: { default.reference.value: mfa, default.reference.maxAge: "1800" }

@@ -146,7 +146,7 @@ These rules apply to programs running **on the VM itself** (e.g. `apt`, `git`, `
 **What this means:**
 
 * **Incoming:** a published port (`ports: - "5432:5432"` in a compose file, or `docker run -p 5432:5432`) is reachable from the internet, even if the firewall doesn't allow port 5432. Accidentally publishing a database port exposes the database.
-* **Outgoing:** containers can connect to any port on the internet, even ports that the `OUTBOUND` rules don't allow. For instance, Keycloak can send email via SMTP on port 465 without a firewall rule. The rules only restrict programs on the VM itself.
+* **Outgoing:** containers can connect to any port on the internet, even ports that the `OUTBOUND` rules don't allow. For instance, the email relay of the Keycloak deployment can send email via SMTP on port 587 without a firewall rule. The rules only restrict programs on the VM itself.
 
 **Rules for running containers on these VMs:**
 

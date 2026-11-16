@@ -3,8 +3,6 @@
 # Applied with keycloak-config-cli: see "Configuration as code" in docs/keycloak-deploy.md.
 # - Values written as "dollar, (env:NAME)" come from .env, substituted by keycloak-config-cli.
 #   (Not written literally here: keycloak-config-cli also substitutes inside comments.)
-# - Values written as "dollar, {vault.name}" are secrets that Keycloak reads from the vault
-#   folder at runtime; they are never stored in the database.
 #
 # Differences with the lab realm: anyone can register (also via Google or GitHub), and 2FA is
 # optional: users who set up a second factor are asked for it, others are not. Servers that
@@ -53,13 +51,13 @@ adminEventsDetailsEnabled: false
 
 # --- Email --------------------------------------------------------------------------------
 smtpServer:
-  host: "$(env:SMTP_HOST)"
-  port: "$(env:SMTP_PORT)"
-  ssl: "$(env:SMTP_SSL)"
+  # The email relay (see docker-compose.yml): it holds the credentials of the email provider,
+  # so Keycloak sends without a password
+  host: mail-relay
+  port: "587"
+  ssl: "false"
   starttls: "false"
-  auth: "true"
-  user: "$(env:SMTP_USER)"
-  password: "${vault.smtpPassword}"
+  auth: "false"
   from: "$(env:SMTP_FROM)"
   fromDisplayName: "$(env:SMTP_FROM_NAME)"
 
@@ -179,7 +177,7 @@ identityProviders:
     postBrokerLoginFlowAlias: post-login-2fa-optional
     config:
       clientId: "$(env:IDP_GOOGLE_CLIENT_ID)"
-      clientSecret: "${vault.googleClientSecret}"
+      clientSecret: "$(env:IDP_GOOGLE_CLIENT_SECRET)"
       syncMode: IMPORT
       pkceEnabled: "true"
       pkceMethod: S256
@@ -195,7 +193,7 @@ identityProviders:
     postBrokerLoginFlowAlias: post-login-2fa-optional
     config:
       clientId: "$(env:IDP_GITHUB_CLIENT_ID)"
-      clientSecret: "${vault.githubClientSecret}"
+      clientSecret: "$(env:IDP_GITHUB_CLIENT_SECRET)"
       syncMode: IMPORT
 
 # --- Authentication flows -----------------------------------------------------------------
