@@ -512,7 +512,7 @@ sudo docker compose build --pull && sudo docker compose up -d
 | Limit | Where | Default | Counts | Above the limit |
 | --- | --- | --- | --- | --- |
 | **Per IP address** | Caddy; `.env`: `EMAIL_LIMIT_PER_IP` per `EMAIL_LIMIT_PER_IP_WINDOW` | 200 per hour | Requests that can send an email, plus registrations and first logins with Google or GitHub | That person sees "Too many attempts from your network" |
-| **Per app** (client ID) | Caddy; `local/email-tiers.caddy` | 25 per 30 minutes; tier2 100, tier3 500 | Requests that can send an email, through that app | That person sees "This app has reached its limit for sign-ups and password resets" |
+| **Per app** (client ID), only in `idp` | Caddy; `local/email-tiers.caddy` | 25 per 30 minutes; tier2 100, tier3 500 | Requests that can send an email, through that app | That person sees "This app has reached its limit for sign-ups and password resets" |
 | **All email** | The relay; `.env`: `EMAIL_RELAY_LIMIT` per `EMAIL_RELAY_LIMIT_PERIOD` | 400 per hour | Emails actually sent | Keycloak can't send email; users see that the email could not be sent |
 
 The requests that can send an email are the first visit to the "verify your email" page (after registering, or when a user with an unverified email address logs in) and submitting "forgot password". Logins (with password, OTP, passkey, Google or GitHub), token requests and refresh grants, and finishing a password reset from an email that was already sent are never limited.
@@ -527,9 +527,9 @@ The requests that can send an email are the first visit to the "verify your emai
 
 * **All email** protects the provider's monthly quota (check it in the provider's console; for Scaleway under the project's quotas). Keep the cap well below it: an attack that keeps going sends at most the cap per period, e.g. 400 × 24 = 9,600 per day. Set up a usage alert at the provider (e.g. at half the monthly quota) if it offers one: an attack that stays below the cap is only visible in the usage, and in the logs below.
 * **Per IP address** is generous, because many people can share one address (e.g. a class on a campus network): 200 per hour is about 100 sign-ups per hour from one address. It must stay well below the cap on all email, so that one address can't use that up.
-* **Per app:** apps that are used for teaching, or otherwise many sign-ups at once, get a higher tier once (see below). Nobody has to remember to raise a limit before a session.
+* **Per app, only in `idp`:** anyone can register there, and register apps, so each app has its own limit: one app (or someone abusing its login page) can't use up the email for all others. Other realms have no limits per app, only the limit per IP address and the cap on all email.
 
-**Tiers per app.** `local/email-tiers.caddy` (created from `email-tiers.example.caddy` on the first start) holds both the tiers and the list of apps with a higher tier, e.g.:
+**Tiers per app (idp).** Every app gets `default`. Give a higher tier to apps whose owners you trust (e.g. because they asked for more, and you know them). `local/email-tiers.caddy` (created from `email-tiers.example.caddy` on the first start) holds both the tiers and the list of apps with a higher tier, e.g.:
 
 ```
 (email_tier_limits) {
@@ -539,7 +539,9 @@ The requests that can send an email are the first visit to the "verify your emai
 }
 
 (email_tier_apps) {
-	survey-tool-1890fa   tier2   # used in a course
+	account-console      tier2
+	app-registration     tier2
+	survey-tool-1890fa   tier2
 }
 ```
 
@@ -552,11 +554,11 @@ sudo docker compose exec caddy caddy reload --config /etc/caddy/Caddyfile
 If the file contains a mistake, the reload fails with an error message and Caddy keeps running with the previous settings: fix the file before Caddy is restarted (e.g. by a reboot), because Caddy doesn't start with an invalid file.
 
 * **New apps** are not added anywhere: apps that are not listed get `default`. Tiers are only assigned by hand.
+* **Keycloak's own apps** are each shared by all users of the realm, so the template gives them tier2: `account-console` (where users manage their account, and can also register or reset their password) and `app-registration` (the app registration site). On an installation whose `local/email-tiers.caddy` was created before they were in the template, add these two lines by hand.
 * **More tiers:** add a line to `email_tier_limits` (a name, a number, a period), and use the name in `email_tier_apps`.
-* An app is identified by its client ID; the same client ID in another realm gets the same tier.
 * **The limit per app can't be avoided** by leaving out or changing the client ID in the URL: Keycloak then refuses the request and sends nothing (tested). Someone can use up an app's limit on purpose, but then only sign-ups and password resets through that app pause; its logins keep working.
 
-**Is a limit being hit?** Caddy logs every refused request, with the limit (`zone`) and what was counted (`key`: the IP address, or realm/client ID), and the relay logs every refused email:
+**Is a limit being hit?** Caddy logs every refused request, with the limit (`zone`) and what was counted (`key`: the IP address, or the client ID), and the relay logs every refused email:
 
 ```bash
 sudo docker compose logs caddy | grep 'rate limit exceeded'

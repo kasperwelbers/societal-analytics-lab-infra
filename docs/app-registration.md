@@ -68,7 +68,7 @@ All commands are run from the deployment folder, after `sudo ./admin-cli.sh logi
 sudo ./admin-cli.sh get clients -r idp -q clientId=<client ID> --fields id,clientId,enabled,attributes
 ```
 
-**A higher email limit for an app:** add a line with its client ID and tier to `email_tier_apps` in `local/email-tiers.caddy` (tier2: 100 per 30 minutes, tier3: 500), and apply it with `sudo docker compose exec caddy caddy reload --config /etc/caddy/Caddyfile` (see [Email limits](./keycloak-deploy.md#10-maintenance)).
+**A higher email limit for an app** (for owners you trust): add a line with its client ID and tier to `email_tier_apps` in `local/email-tiers.caddy` (tier2: 100 per 30 minutes, tier3: 500), and apply it with `sudo docker compose exec caddy caddy reload --config /etc/caddy/Caddyfile` (see [Email limits](./keycloak-deploy.md#10-maintenance)).
 
 **More apps for a user:** register the app for them in the admin console (or let them use a colleague's account), and make them the owner by setting `registration.owner` to their user ID (**Users → the user → Details**, field ID):
 

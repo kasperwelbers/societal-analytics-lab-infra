@@ -32,15 +32,18 @@
 # The condition for these requests is written out twice below (per IP, and per app in the
 # email_tier snippet): keep both the same.
 #
-# A limit per app (client ID, per realm) for one tier: {args[0]} = tier name, {args[1]} = number
-# of emails, {args[2]} = period. Used in local/email-tiers.caddy. (Written out instead of shared
-# with the limit per IP: Caddy fails on a snippet that imports another snippet more than once.)
+# A limit per app (client ID) for one tier: {args[0]} = tier name, {args[1]} = number of
+# emails, {args[2]} = period. Used in local/email-tiers.caddy. Only for the idp realm: the limits
+# per app are part of its open registration (anyone can register, and register apps). Other
+# realms only have the limit per IP address and the cap of the email relay. (Written out
+# instead of shared with the limit per IP: Caddy fails on a snippet that imports another
+# snippet more than once.)
 (email_tier) {
 	zone email_per_app_{args[0]} {
 		match {
-			expression `(({method} == "GET" && {path}.matches("^/realms/[^/]+/login-actions/required-action$") && {query.execution} == "VERIFY_EMAIL") || ({method} == "POST" && {path}.matches("^/realms/[^/]+/login-actions/reset-credentials$"))) && {query.client_id} != "" && {email_tier} == "{args[0]}"`
+			expression `(({method} == "GET" && {path}.matches("^/realms/idp/login-actions/required-action$") && {query.execution} == "VERIFY_EMAIL") || ({method} == "POST" && {path}.matches("^/realms/idp/login-actions/reset-credentials$"))) && {query.client_id} != "" && {email_tier} == "{args[0]}"`
 		}
-		key {http.request.uri.path.1}/{query.client_id}
+		key {query.client_id}
 		window {args[2]}
 		events {args[1]}
 	}
@@ -52,7 +55,7 @@ import local/email-tiers.caddy
 
 # Public hostname: logins, OIDC endpoints, static resources
 {$KC_HOSTNAME} {
-	# The tier of the app of a request: from the list in local/email-tiers.caddy, otherwise "default"
+	# The tier of an idp app: from the list in local/email-tiers.caddy, otherwise "default"
 	map {query.client_id} {email_tier} {
 		import email_tier_apps
 		default default
@@ -77,7 +80,7 @@ import local/email-tiers.caddy
 		}
 		# Per app (client ID, per realm), in tiers (see local/email-tiers.caddy)
 		import email_tier_limits
-		# Log each refused request with its key (the IP address, or realm/client ID)
+		# Log each refused request with its key (the IP address, or the client ID)
 		log_key
 	}
 	handle_errors 429 {
