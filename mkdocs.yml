@@ -1,20 +1,21 @@
 site_name: Lab Infrastructure Registry
 theme:
   name: material
+  features:
+    - navigation.sections
+    - navigation.expand
 
 nav:
   - Home: index.md
   - For IT: it.md
   - Infrastructure:
       - Overview: infrastructure.md
-      - Servers:
-          - Lab server: lab-server.md
-          - University VMs: vm.md
-          - Docker on our servers: docker.md
-      - Login service (Keycloak):
-          - Keycloak setup: keycloak.md
-          - Keycloak deployment: keycloak-deploy.md
-          - Lab authentication: lab-auth.md
+      - Lab server: lab-server.md
+      - University VMs: vm.md
+      - Docker on our servers: docker.md
+      - Keycloak setup: keycloak.md
+      - Keycloak deployment: keycloak-deploy.md
+      - Lab authentication: lab-auth.md
   - Our software:
       - Authentication standard: auth.md
       - AmCAT: amcat.md
