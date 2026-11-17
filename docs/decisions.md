@@ -156,6 +156,24 @@ The cost: lab members have two accounts. `lab` as a login option of `idp` solves
 
 **Dropped:** limits per app, in tiers (only needed while others could register apps), and disabling a client that sends too much email (it would also break the logins and refresh grants of that server, and could be abused to block it).
 
+## The lab server
+
+### One system account, Caddy on the server, Docker with `sudo`
+
+**Chosen:** every app in `/opt/<app>`, owned by the system account `sal` (no login, no home directory); admins are in the `sal` group and work as `sal` with `sudo -u sal` and `sudoedit -u sal`. Caddy runs on the server itself and is the only way in. Admins run Docker with `sudo` ([Lab server](./lab-server.md)).
+
+**Why:** one convention for all apps on a server with many small apps, and no app files owned by root or by an admin's personal account. Caddy in front of everything gives HTTPS and one place to decide what is reachable.
+
+**Dropped:** `sal` in the `docker` group. Membership of that group is effectively root access, and apps that run as `sal` without Docker would get it too.
+
+### The AuthWall: oauth2-proxy, a cookie per app
+
+**Chosen:** apps without their own login sit behind oauth2-proxy with Caddy's `forward_auth`, against the `lab` realm. Each app has its own cookie, and its own exact redirect URI in Keycloak; single sign-on comes from Keycloak's session. An app can be restricted to a Keycloak group.
+
+**Why:** with a cookie for all subdomains, every app on the domain receives everyone's login, including apps with their own login that users can run code in (e.g. Jupyter). It would also need a wildcard redirect URI. A cookie per app costs one line in Keycloak per app, and users still log in once.
+
+**Dropped:** one shared cookie for all subdomains (`COOKIE_DOMAINS`). Authentik's forward auth (we moved from Authentik to Keycloak, see [Keycloak](#keycloak)).
+
 ## Later
 
 * **"Sign in with your lab account" in `idp`:** `lab` as a login option of `idp`, so lab members use one account. A login through `lab` (which always requires 2FA) could count as 2FA in `idp`, if step-up works: `idp` must pass a request for a fresh login (`max_age`) on to `lab`. To be tested.

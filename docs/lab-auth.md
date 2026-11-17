@@ -15,7 +15,7 @@ Which options were considered, and why we chose Keycloak: see [Decisions](./deci
 
 ## The AuthWall
 
-Caddy `forward_auth` with [oauth2-proxy](https://oauth2-proxy.github.io/oauth2-proxy/), which handles the OIDC login against the `lab` realm and the session for services without their own login.
+Caddy `forward_auth` with [oauth2-proxy](https://oauth2-proxy.github.io/oauth2-proxy/), which handles the OIDC login against the `lab` realm and the session for services without their own login. One login covers all apps (through Keycloak's session), each app has its own cookie, and an app can be restricted to a group. How to set it up, and how to add an app: [Lab server](./lab-server.md#the-lab-login-oauth2-proxy).
 
 ## Later: institutional login via SRAM
 
@@ -32,7 +32,7 @@ Later, `lab` itself can become a login option of `idp` ("Sign in with your lab a
 ## Next steps
 
 1. Move the lab's few Authentik users to the `lab` realm, and retire Authentik.
-2. Set up the AuthWall with oauth2-proxy against the `lab` realm.
+2. Set up the AuthWall with oauth2-proxy against the `lab` realm ([Lab server](./lab-server.md)).
 3. Later: test SRAM on its acceptance environment (`acc.sram.surf.nl`), and add it as a login option of the `lab` realm if it meets our standard.
 
 ## Sources

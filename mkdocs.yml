@@ -17,7 +17,9 @@ nav:
   - Background:
       - "2FA: where should it live?": auth-2fa.md
       - Provider comparison: auth-providers.md
-  - University VMs: vm.md
+  - Servers:
+      - Lab server: lab-server.md
+      - University VMs: vm.md
   - Policies:
       - Privacy statement: policies/privacy.md
       - Acceptable use policy: policies/aup.md

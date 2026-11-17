@@ -59,7 +59,7 @@ graph TD
 | :--- | :--- | :--- | :--- |
 | **SciCloud** | **[AmCAT](./amcat.md)** | Public / Authenticated | Web Application & API for storing, managing and sharing data |
 | **Data Storage** | **ElasticSearch**, **S3** | Internal Only | Backend storage for text and large files. |
-| **LabServices** | **Whisper**, **Ollama** | Authenticated | GPU-accelerated AI inference & transcription. |
+| **LabServices** | **Whisper**, **Ollama** | Authenticated (the lab login) | GPU-accelerated AI inference & transcription. How apps are installed: [Lab server](./lab-server.md). |
 | **Keycloak VM** | **Keycloak**: the `lab` realm | Lab members and collaborators (added by us) | Identity provider for the lab's infrastructure, with mandatory 2FA. See [Keycloak setup](./keycloak.md) and [Lab authentication](./lab-auth.md). |
 | **Keycloak VM** | **Keycloak**: the `idp` realm | Anyone can create an account; the servers decide who gets access | One login for the lab's own AmCAT and AnnoTinder servers (and more later), 2FA for sensitive actions. A separate realm, isolated from `lab`. |
 
