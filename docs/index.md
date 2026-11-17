@@ -60,13 +60,13 @@ graph TD
 | **SciCloud** | **[AmCAT](./amcat.md)** | Public / Authenticated | Web Application & API for storing, managing and sharing data |
 | **Data Storage** | **ElasticSearch**, **S3** | Internal Only | Backend storage for text and large files. |
 | **LabServices** | **Whisper**, **Ollama** | Authenticated | GPU-accelerated AI inference & transcription. |
-| **Keycloak VM** | **Keycloak**: the `lab` realm | Lab members and collaborators (by invitation) | Identity provider for lab services, with mandatory 2FA. See [Keycloak setup](./keycloak.md) and [Lab authentication](./lab-auth.md). |
-| **Keycloak VM** | **Keycloak**: the `idp` realm, and the [app registration site](./app-registration.md) | Public (self-registration) | [Shared provider](./auth-install.md#option-1-our-shared-oidc-provider) for other teams hosting AmCAT or AnnoTinder without sensitive data, best effort. A separate realm, isolated from `lab`. |
+| **Keycloak VM** | **Keycloak**: the `lab` realm | Lab members and collaborators (added by us) | Identity provider for the lab's infrastructure, with mandatory 2FA. See [Keycloak setup](./keycloak.md) and [Lab authentication](./lab-auth.md). |
+| **Keycloak VM** | **Keycloak**: the `idp` realm | Anyone can create an account; the servers decide who gets access | One login for the lab's own AmCAT and AnnoTinder servers (and more later), 2FA for sensitive actions. A separate realm, isolated from `lab`. |
 
 ---
 
 ## 🔐 Security Considerations
 * **Edge Security:** No service is exposed via plain HTTP. All traffic is TLS-encrypted.
 * **Identity:** We use a "Zero Trust" approach: services without their own OIDC login sit behind a forward-auth AuthWall, which checks the OIDC session before traffic reaches the service (see [Lab authentication](./lab-auth.md)). Our own software (AmCAT, AnnoTinder) follows the [Authentication standard](./auth.md).
-* **2FA:** Multi-factor authentication is required for all researcher logins via the lab OIDC provider.
+* **2FA:** required for every login to the lab's infrastructure (`lab` realm), and for sensitive actions in our own software (see the [Authentication standard](./auth.md)).
 * **Resilience:** All servers perform daily off-site backups to the University NAS.

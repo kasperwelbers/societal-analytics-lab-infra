@@ -12,6 +12,6 @@ Keycloak themes for the login pages, the account console and emails. Only texts,
 
 * **Texts** are in `messages/messages_en.properties`. The keys are Keycloak's own: see `theme/base/login/messages/messages_en.properties` in the `org.keycloak.keycloak-themes` jar of the Keycloak version in use.
 * **Realm overrides** (**Realm settings → Localization → Realm overrides**) take precedence over the theme: handy for a quick change, but put lasting changes here.
-* **The logo** is in three places, because each theme type (and the app registration site) has its own folder: `sal/login/resources/img/logo.svg`, `sal/account/resources/logo.svg` and `app-registration/src/logo.svg`. `sal/login/resources/img/favicon.ico` is made from it.
+* **The logo** is in two places, because each theme type has its own folder: `sal/login/resources/img/logo.svg` and `sal/account/resources/logo.svg`. `sal/login/resources/img/favicon.ico` is made from it.
 * **After a change:** restart Keycloak (`sudo docker compose restart keycloak`); it caches themes.
 * **After a Keycloak upgrade:** check the login pages. Keys that were renamed fall back to Keycloak's own text.

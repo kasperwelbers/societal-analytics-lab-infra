@@ -48,7 +48,6 @@ We do not receive or store your password or second factor: these stay with the l
 | [Your OIDC provider] | Logging in |
 | [Your hosting provider] | Hosting the server |
 
-[If you use the Societal Analytics Lab's shared OIDC provider: mention that the lab operates the login service, and link to the lab's [privacy statement](./privacy.md#shared-oidc-provider).]
 
 ### Retention
 

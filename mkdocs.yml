@@ -9,12 +9,14 @@ nav:
       - Standard: auth.md
       - Installation guide: auth-install.md
       - Migration guide: auth-migration.md
-      - "2FA: where should it live?": auth-2fa.md
-      - Provider comparison: auth-providers.md
+  - Our Keycloak:
       - Keycloak setup: keycloak.md
       - Keycloak deployment: keycloak-deploy.md
-      - App registration: app-registration.md
-  - Lab authentication: lab-auth.md
+      - Lab authentication: lab-auth.md
+  - Decisions: decisions.md
+  - Background:
+      - "2FA: where should it live?": auth-2fa.md
+      - Provider comparison: auth-providers.md
   - University VMs: vm.md
   - Policies:
       - Privacy statement: policies/privacy.md

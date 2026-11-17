@@ -3,7 +3,7 @@
 `master-realm.json`, `lab-realm.json` and `idp-realm.json` are complete realm files in Keycloak's own export format. Keycloak imports them when it starts (`--import-realm`), but only realms that don't exist yet: an existing realm is never changed. See runbook step 7 in `docs/keycloak-deploy.md`, and the overview in `docs/keycloak.md`.
 
 * **Values from `.env`** are written as placeholders: `${SMTP_FROM}`, `${SMTP_FROM_NAME}`, `${APPS_HOSTNAME}`, `${APP_REGISTRATION_CLIENT_SECRET}`, and `${IDP_GOOGLE_CLIENT_ID}`, `${IDP_GOOGLE_CLIENT_SECRET}`, `${IDP_GITHUB_CLIENT_ID}`, `${IDP_GITHUB_CLIENT_SECRET}`. Keycloak doesn't start while one of them is missing. (Lower-case placeholders, e.g. `${role_admin}`, are Keycloak's own texts.)
-* **Not in the files:** users (except the service account of the app registration site), signing keys and IDs. Keycloak creates them on import.
+* **Not in the files:** users, clients of our deployments (created in the admin console, runbook step 8), signing keys and IDs. Keycloak creates the keys and IDs on import.
 * **After a change:** run `python3 check-realms.py` (from `deploy/keycloak`). It catches flow mistakes that Keycloak accepts silently.
 
 Most of each file is Keycloak's defaults. What we changed:
@@ -56,4 +56,4 @@ Copying a flow in the admin console keeps the old flow name in "Condition - sub-
 
 * Open registration (`registrationAllowed` true), `verifyEmail`, `resetPasswordAllowed`, email through the relay, and **Update email** as in lab.
 * **Google** (`trustEmail` true, PKCE) and **GitHub** (`trustEmail` false: Keycloak verifies the address itself), with the default first broker login flow and `post-login-2fa-optional`.
-* **App registration:** the client `app-registration` (login for the site, and a service account with only the role `manage-clients`), the realm role `client-self-service` (held by that service account), and the client profile and policy `self-service-clients`: every change the site makes to an app gets consent and PKCE, and refuses unsafe redirect URIs (https, or http only on localhost; no wildcards). See `docs/app-registration.md`.
+* **Client policy `deployment-clients`** (profile and policy of the same name): applies to confidential clients that admins create or change (conditions `client-updater-context` = by authenticated user, and `client-access-type` = confidential; Keycloak's public built-in clients are not affected). It turns on consent and PKCE automatically (`auto-configure`), and refuses `http://`, wildcards and other unsafe redirect URIs. PKCE is also checked at every login of these clients. See runbook step 8.

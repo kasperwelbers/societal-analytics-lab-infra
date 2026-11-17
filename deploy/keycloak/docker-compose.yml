@@ -22,7 +22,7 @@ services:
       - /bin/bash
       - -c
       - >-
-        missing=""; for name in SMTP_FROM APPS_HOSTNAME APP_REGISTRATION_CLIENT_SECRET
+        missing=""; for name in SMTP_FROM
         IDP_GOOGLE_CLIENT_ID IDP_GOOGLE_CLIENT_SECRET IDP_GITHUB_CLIENT_ID IDP_GITHUB_CLIENT_SECRET; do
         [ -n "$${!name}" ] || missing="$$missing $$name"; done;
         if [ -n "$$missing" ]; then echo "Missing in .env:$$missing" >&2; exit 1; fi;
@@ -45,8 +45,6 @@ services:
       # Values used in the realm files (realms/*-realm.json)
       SMTP_FROM: ${SMTP_FROM:-}
       SMTP_FROM_NAME: ${SMTP_FROM_NAME:-Societal Analytics Lab}
-      APPS_HOSTNAME: ${APPS_HOSTNAME:-}
-      APP_REGISTRATION_CLIENT_SECRET: ${APP_REGISTRATION_CLIENT_SECRET:-}
       IDP_GOOGLE_CLIENT_ID: ${IDP_GOOGLE_CLIENT_ID:-}
       IDP_GOOGLE_CLIENT_SECRET: ${IDP_GOOGLE_CLIENT_SECRET:-}
       IDP_GITHUB_CLIENT_ID: ${IDP_GITHUB_CLIENT_ID:-}
@@ -99,35 +97,6 @@ services:
       - ./internal-tls.sh:/internal-tls.sh:ro
       - internal-tls:/opt/keycloak/conf/internal-tls
     network_mode: none
-
-  # Site where users register apps (OIDC clients) in the idp realm (see docs/app-registration.md)
-  app-registration:
-    build: ./app-registration
-    image: lab-app-registration
-    pull_policy: never
-    restart: unless-stopped
-    environment:
-      PUBLIC_URL: https://${APPS_HOSTNAME}
-      OIDC_ISSUER: https://${KC_HOSTNAME}/realms/idp
-      KEYCLOAK_INTERNAL_URL: https://keycloak:8443
-      OIDC_CLIENT_ID: app-registration
-      OIDC_CLIENT_SECRET: ${APP_REGISTRATION_CLIENT_SECRET:-}
-      SESSION_SECRET: ${APP_REGISTRATION_SESSION_SECRET:-}
-      MAX_APPS_PER_USER: ${MAX_APPS_PER_USER:-3}
-      CONTACT_EMAIL: ${CONTACT_EMAIL:-}
-      # Trust Keycloak's internal certificate (created by tls-init)
-      NODE_EXTRA_CA_CERTS: /internal-tls/tls.crt
-    volumes:
-      - internal-tls:/internal-tls:ro
-    read_only: true
-    cap_drop: [ALL]
-    security_opt: ["no-new-privileges:true"]
-    mem_limit: 256m
-    depends_on:
-      keycloak:
-        condition: service_healthy
-    networks:
-      - web
 
   # Email relay: Keycloak sends all email here, without a password. Only the relay has the
   # credentials of the email provider, so realm admins can't redirect them (see the runbook).
@@ -210,15 +179,14 @@ services:
     environment:
       KC_HOSTNAME: ${KC_HOSTNAME}
       KC_HOSTNAME_ADMIN: ${KC_HOSTNAME_ADMIN}
-      APPS_HOSTNAME: ${APPS_HOSTNAME:?set APPS_HOSTNAME in .env}
       ACME_EMAIL: ${ACME_EMAIL:?set ACME_EMAIL in .env}
-      # Email limit per IP address (the limits per app are in caddy/email-tiers.caddy)
+      # Email limit per IP address
       EMAIL_LIMIT_PER_IP: ${EMAIL_LIMIT_PER_IP:-200}
       EMAIL_LIMIT_PER_IP_WINDOW: ${EMAIL_LIMIT_PER_IP_WINDOW:-1h}
     volumes:
-      # The Caddyfile, and the local settings (not in the repository): restrictions of the admin
-      # hostname, and the email limits per app. A folder, not single files, so that Caddy always
-      # sees the current version of an edited file.
+      # The Caddyfile, and the local restrictions of the admin hostname (admin-access.caddy, not
+      # in the repository). A folder, not single files, so that Caddy always sees the current
+      # version of an edited file.
       - ./caddy:/etc/caddy:ro
       - caddy-data:/data
       - caddy-config:/config
@@ -232,8 +200,8 @@ services:
     networks:
       - web
 
-  # Creates caddy/admin-access.caddy and caddy/email-tiers.caddy from their templates when they
-  # are missing, so that Caddy can always start (see caddy/init.sh)
+  # Creates caddy/admin-access.caddy from its template when it is missing, so that Caddy can
+  # always start (see caddy/init.sh)
   caddy-init:
     image: lab-caddy
     # Built by the caddy service above: never try to download it from a registry

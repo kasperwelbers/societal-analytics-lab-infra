@@ -1,5 +1,8 @@
 # Two-factor authentication: where should it live?
 
+!!! info "Background"
+    This page is the evaluation behind our choice to keep 2FA at the OIDC provider (November 2026). The decision and its reasons are on the [Decisions](./decisions.md#2fa-lives-at-the-oidc-provider) page. Where this page mentions our shared provider for other teams: that was dropped later. Teams without a provider with 2FA can now use [weaker security settings](./auth.md#weaker-security-teaching-and-low-sensitivity-servers) for teaching servers.
+
 All our software requires a second factor (2FA, MFA) for sensitive actions (see the [Authentication standard](./auth.md)). This page discusses **which component provides that second factor**: the OIDC provider (option A), or a component of our own (option B). It explains the relevant concepts, lists the pros and cons of both options, and ends with a recommendation.
 
 This page is about AmCAT and AnnoTinder, including when other teams host them. The lab's own infrastructure is discussed in [Lab authentication](./lab-auth.md).
@@ -55,7 +58,7 @@ An OIDC provider returns an ID token with claims about the login. The ones that 
 
 * The OIDC provider requires 2FA, and signals it in the ID token. Which claim counts as 2FA is configured per deployment with `OIDC_MFA_CLAIM` (e.g. `amr` containing `mfa`, or a specific `acr` value).
 * For sensitive actions, the server checks the claim and `auth_time`, and redirects to the provider with `max_age` if the login is too old.
-* Teams without a suitable provider can use our [shared OIDC provider](./auth-install.md#option-1-our-shared-oidc-provider) (the `idp` realm of our Keycloak, which signals 2FA in `amr`) for servers without sensitive data.
+* Teams without a suitable provider can use our shared OIDC provider (the `idp` realm of our Keycloak, which signals 2FA in `amr`) for servers without sensitive data.
 
 | Pros | Cons |
 | --- | --- |

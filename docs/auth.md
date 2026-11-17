@@ -4,7 +4,7 @@ All software developed by the Societal Analytics Lab (AmCAT, AnnoTinder) uses th
 
 * [Installation guide](./auth-install.md): choosing and setting up an OIDC provider.
 * [Migration guide](./auth-migration.md): moving to a different OIDC provider.
-* [Two-factor authentication: where should it live?](./auth-2fa.md): why 2FA is handled by the OIDC provider, and what we could add later.
+* [Decisions](./decisions.md): why it is set up this way, and which alternatives we dropped.
 
 ## OpenID Connect (OIDC)
 
@@ -16,37 +16,23 @@ Our software works with any OIDC provider that meets the [provider requirements]
 
 ## Choosing an OIDC provider
 
-There are two options. With both, our software requires 2FA for sensitive actions (see [Two-factor authentication](#two-factor-authentication-2fa)); they differ in who manages the provider, who handles account recovery, and which data is allowed. See the [Installation guide](./auth-install.md) for details.
+The person hosting our software chooses the OIDC provider (see the [Installation guide](./auth-install.md)):
 
-| | Option 1: our shared OIDC provider | Option 2: your own OIDC provider |
-| --- | --- | --- |
-| **For** | Servers without sensitive data, such as teaching and pilots | Any server, required for sensitive research data |
-| **Provider** | Run by the lab: the `idp` realm of our Keycloak (see [Keycloak setup](./keycloak.md)). | Ideally your institution's identity provider (see the [Installation guide](./auth-install.md#option-2-your-own-oidc-provider)) |
-| **Maintained by** | The lab, with best effort | A security team (recommended) |
-| **Account recovery** | Users reset their own password by email (the second factor is still needed); recovery codes for a lost second factor, and otherwise the lab, best effort (see the [Installation guide](./auth-install.md#option-1-our-shared-oidc-provider)) | The provider's helpdesk (recommended) |
-| **Cost** | Free | Depends on the provider |
+* **Your institution's identity provider** (recommended, and the right choice for sensitive research data): managed by a security team, with a helpdesk for account recovery.
+* **Another provider that meets the requirements,** hosted (e.g. ZITADEL Cloud) or self-hosted (e.g. Keycloak). The lab runs its own Keycloak for its own servers; its documentation ([Keycloak setup](./keycloak.md)) can serve as an example.
+* **For teaching and other servers without sensitive data:** a provider that doesn't meet all requirements, with the [weaker security settings](#weaker-security-teaching-and-low-sensitivity-servers) turned on.
 
-**Why our shared provider is not for sensitive data**
-
-* **No security team.** Nobody ensures the provider is always up to date. If it is compromised, your data is at risk.
-* **The lab could access your data.** As the operator, the lab could in principle log in as any of its users. This will not fly with your institution's security team and data stewards.
-* **No helpdesk.** If a user loses their second factor, only the lab can help, on a best-effort basis.
-
-Names and email addresses of users (e.g. students) are personal data too, so any server must be used according to your institution's rules. Moving from our shared provider to your own is a [migration](./auth-migration.md).
-
-The server recognizes our shared provider by its issuer (`OIDC_HOST`). When it is used, the web client shows server admins a **Shared OIDC provider: not for sensitive data** label. This can't be turned off. For other providers, the person hosting the server is responsible for choosing a provider that fits the data.
-
-There is no option without 2FA. For development on a local machine there is a separate [development mode](#development-mode).
+Names and email addresses of users (e.g. students) are personal data, so any server must be used according to your institution's rules. Moving to another provider is a [migration](./auth-migration.md). For development on a local machine there is a separate [development mode](#development-mode).
 
 ## OIDC provider requirements
 
-All three requirements are strict: they can't be disabled.
+By default, the provider must meet all three requirements. The first two can be turned off, for teaching and other servers without sensitive data (see [Weaker security](#weaker-security-teaching-and-low-sensitivity-servers)).
 
 | Requirement | What the provider must do |
 | --- | --- |
 | **Email verification** | Return `"email_verified": true` in the ID token. Our software uses email addresses to assign roles (see [Authorization](#authorization)). |
 | **2FA with a usable signal** | Support 2FA, and signal in the ID token that it was used. Providers do this differently (`amr` containing `mfa`, or a specific `acr` value), so the claim is configured with `OIDC_MFA_CLAIM`. See [Provider support for MFA signals](./auth-2fa.md#provider-support-for-mfa-signals). |
-| **Step-up** | Honour the `max_age` parameter (re-authenticate if the last login is older than N seconds), and return `auth_time` in the ID token. |
+| **Step-up** | Honour the `max_age` parameter (re-authenticate if the last login is older than N seconds), and return `auth_time` in the ID token. This one can't be turned off. |
 
 ## Configuration
 
@@ -62,6 +48,8 @@ All three requirements are strict: they can't be disabled.
 | `OIDC_PREVIOUS_HOST`, `OIDC_PREVIOUS_CLIENT_ID`, `OIDC_PREVIOUS_CLIENT_SECRET`, `OIDC_PREVIOUS_MFA_CLAIM` | no | The previous OIDC provider, only during a [migration](./auth-migration.md#account-linking). |
 | `OIDC_PREVIOUS_UNTIL` | no | Date after which the previous provider is no longer accepted. |
 | `AUTH_DEV_MODE` | no | Enables [development mode](#development-mode). Refused unless the server only listens on localhost. |
+| `AUTH_INSECURE_DISABLE_2FA` | no | `true` turns off the 2FA requirement (see [Weaker security](#weaker-security-teaching-and-low-sensitivity-servers)). |
+| `AUTH_INSECURE_DISABLE_EMAIL_VERIFICATION` | no | `true` turns off the email verification requirement (see [Weaker security](#weaker-security-teaching-and-low-sensitivity-servers)). |
 
 ## Two-factor authentication (2FA)
 
@@ -71,7 +59,38 @@ For sensitive actions (e.g. creating API keys, changing roles) our servers requi
 2. If the claim is missing or too old, the server redirects the user to the OIDC provider with `max_age`.
 3. The server checks the new ID token itself, because providers do not always enforce what was requested.
 
+With `AUTH_INSECURE_DISABLE_2FA`, steps 1 to 3 only check `auth_time`: sensitive actions still need a recent login, but not a second factor.
+
 Account recovery (e.g. a lost phone) is the responsibility of the OIDC provider.
+
+## Weaker security: teaching and low-sensitivity servers
+
+Two requirements can be turned off, each with its own setting. Both are deliberately named `INSECURE`: they make the server less secure, and must never be used for servers with sensitive research data. In `.env`:
+
+```bash
+# Weaker security: only for teaching and other servers without sensitive data.
+# See https://vu-societal-analytics.github.io/societal-analytics-lab-infra/auth/#weaker-security-teaching-and-low-sensitivity-servers
+AUTH_INSECURE_DISABLE_2FA=true
+AUTH_INSECURE_DISABLE_EMAIL_VERIFICATION=true
+```
+
+**`AUTH_INSECURE_DISABLE_2FA=true`**
+
+* Sensitive actions (e.g. creating API keys, changing roles) no longer require a second factor, but still require a recent login (step-up with `max_age` and `auth_time`).
+* The server still records whether a login used 2FA (`has_mfa`, with `OIDC_MFA_CLAIM`), so admins can see who uses it anyway.
+* Risk: anyone who gets hold of a user's password, or their email (to reset it), can perform that user's sensitive actions.
+
+**`AUTH_INSECURE_DISABLE_EMAIL_VERIFICATION=true`**
+
+* Users can log in when the provider doesn't confirm their email address (`email_verified` is `false` or missing). The server records what the provider sent (`email_verified` in the user table).
+* Roles given to an email address (invitations, see [JIT account claiming](#jit-account-claiming)) can still be claimed by a user whose address is not verified. That is the risk: on a provider where people can choose their own address, someone could claim the roles meant for someone else. Only use this setting with a provider that does verify addresses but doesn't send the claim (e.g. some institutional providers).
+* Roles based on the email domain, or on having a verified address ([ABAC](#attribute-based-access-control-abac), `require_email`), still only apply to users with `email_verified` = `true`.
+
+**Both settings:**
+
+* The server logs a warning at every start.
+* The admin page permanently shows them as [hardening warnings](#server-hardening-warnings).
+* Turning a setting off again restores the requirement: users who don't meet it can no longer log in (email) or perform sensitive actions (2FA).
 
 ## API keys
 
@@ -86,8 +105,10 @@ The web client shows server admins a list of warnings for things that make the s
 
 | Warning | Meaning |
 | --- | --- |
-| **Shared OIDC provider** | The server uses our shared OIDC provider, and must not hold sensitive data (see [Choosing an OIDC provider](#choosing-an-oidc-provider)). |
-| **No 2FA signal** | Recent logins did not contain the configured `OIDC_MFA_CLAIM`, so sensitive actions are blocked. Check the provider's 2FA settings and `OIDC_MFA_CLAIM`. |
+| **2FA not required** | `AUTH_INSECURE_DISABLE_2FA` is set: sensitive actions don't need a second factor. Not for sensitive data (see [Weaker security](#weaker-security-teaching-and-low-sensitivity-servers)). |
+| **Email verification not required** | `AUTH_INSECURE_DISABLE_EMAIL_VERIFICATION` is set. Not for sensitive data. |
+| **Roles for unverified email addresses** | Users with roles whose provider did not confirm their email address (`email_verified` = `false`). Check that these are the right people. |
+| **No 2FA signal** | Recent logins did not contain the configured `OIDC_MFA_CLAIM`, so sensitive actions are blocked. Check the provider's 2FA settings and `OIDC_MFA_CLAIM`. (Not shown with `AUTH_INSECURE_DISABLE_2FA`.) |
 | **Migration not finished** | `OIDC_PREVIOUS_HOST` is still configured after `OIDC_PREVIOUS_UNTIL`. |
 
 ## Development mode
@@ -105,8 +126,8 @@ All software developed by the Societal Analytics Lab follows these rules, to ens
 | One session per application | When AmCAT and AnnoTinder are hosted together, each application has its own session. They can share one OIDC client (the same client ID and client secret), so that users consent once per host (see [One client per host](./auth-providers.md#one-client-per-host)). The second login completes without user interaction, because the user is already signed in at the provider. Logging out is per application. |
 | Authorization on the server | The server decides what users may do, not the OIDC provider (see [Authorization](#authorization)). |
 | API keys for other clients | Other clients (e.g. R or Python) can only access the backend via [API keys](#api-keys). |
-| Email verification | The server checks the `email_verified` claim. This cannot be disabled. |
-| 2FA and step-up | The server checks `OIDC_MFA_CLAIM` and `auth_time` for sensitive actions, and performs step-up authentication if needed (see [Two-factor authentication](#two-factor-authentication-2fa)). This cannot be disabled outside development mode. |
+| Email verification | The server checks the `email_verified` claim, unless `AUTH_INSECURE_DISABLE_EMAIL_VERIFICATION` is set (see [Weaker security](#weaker-security-teaching-and-low-sensitivity-servers)). |
+| 2FA and step-up | The server checks `OIDC_MFA_CLAIM` and `auth_time` for sensitive actions, and performs step-up authentication if needed (see [Two-factor authentication](#two-factor-authentication-2fa)). `AUTH_INSECURE_DISABLE_2FA` drops the `OIDC_MFA_CLAIM` check, not the step-up. |
 
 ## Authorization
 
@@ -119,7 +140,7 @@ Authorization is based on roles. A role can be given to a specific user (IBAC), 
 | `role` | What role a user has (e.g. READ, WRITE, ADMIN). |
 | `context` | The context in which the role applies (e.g. project, server). |
 | `user_id` | If not null, the role is linked to a specific user (see [IBAC](#identity-based-access-control-ibac)). |
-| `email_domain` | If not null, the user's verified email must have this domain (see [ABAC](#attribute-based-access-control-abac)). Can be combined with `user_id` to require both. |
+| `email_domain` | If not null, the user's verified email (`email_verified` = `true`) must have this domain (see [ABAC](#attribute-based-access-control-abac)). Can be combined with `user_id` to require both. |
 | `require_email` | If `user_id` and `email_domain` are null: whether any user gets the role (false), or only users with a verified email address (true). |
 | `granted_at` | When the role was granted (created, updated, or restored). |
 
@@ -137,7 +158,8 @@ Any user that signs in is registered, optionally with a form that collects addit
 | --- | --- |
 | `id` | Unique user ID. |
 | `email` | Email address of the user, from the most recent login. |
-| `has_mfa` | Whether the most recent login contained the 2FA signal (`OIDC_MFA_CLAIM`). |
+| `email_verified` | Whether the provider confirmed the email address at the most recent login: `true` only if it sent `email_verified: true`, otherwise `false`. `NULL` for shadow users. Without `AUTH_INSECURE_DISABLE_EMAIL_VERIFICATION`, only users with `true` can log in. |
+| `has_mfa` | Whether the most recent login contained the 2FA signal (`OIDC_MFA_CLAIM`). Shown on the admin page, without a warning: 2FA is only needed for sensitive actions. |
 | `registered_at` | When the user first signed in. `NULL` for shadow users until the account is claimed (see [JIT account claiming](#jit-account-claiming)). |
 | `last_login_at` | When the user last signed in. |
 | `reactivated_at` | First login after 1 year of inactivity. |

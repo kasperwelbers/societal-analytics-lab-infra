@@ -1,8 +1,8 @@
 # Lab authentication
 
-**Status: decided.** The lab uses the `lab` realm of our Keycloak: members added by us, institutional email addresses, password and mandatory 2FA, no Google or GitHub (see [Keycloak setup](./keycloak.md)). Institutional login (SURF SRAM) may be added later as a login option of that realm.
+The lab's infrastructure uses the `lab` realm of our Keycloak: members added by us, institutional email addresses, password and mandatory 2FA, no Google or GitHub (see [Keycloak setup](./keycloak.md)). Institutional login (SURF SRAM) may be added later as a login option of that realm. Why: [Decisions](./decisions.md).
 
-This page is about authentication for the lab's own infrastructure: our own AmCAT and AnnoTinder servers, and the AuthWall in front of services without their own login (Whisper, Ollama). It is not about the [shared OIDC provider](./auth-install.md#option-1-our-shared-oidc-provider) for other teams: that is the `idp` realm on the same Keycloak, a separate realm that is open to the public and isolated from `lab`.
+This page is about authentication for the lab's infrastructure: the AuthWall in front of services without their own login (Whisper, Ollama), and other services for lab members. The lab's AmCAT and AnnoTinder servers use the `idp` realm on the same Keycloak: a separate realm, where anyone can create an account and the servers decide who gets access (see [Keycloak setup](./keycloak.md#the-idp-realm-one-login-for-the-labs-servers)).
 
 ## What we need
 
@@ -11,7 +11,7 @@ This page is about authentication for the lab's own infrastructure: our own AmCA
 * **External collaborators:** researchers from other institutions, including abroad, and guests without an institutional account. For now, we add them to the `lab` realm ([Adding lab members](./keycloak-deploy.md#adding-lab-members)).
 * **Little maintenance,** and a clear route for account recovery: lab admins can reset a member's second factor.
 
-Which options were considered, and why we chose Keycloak: see the [decision](./auth-providers.md#decision).
+Which options were considered, and why we chose Keycloak: see [Decisions](./decisions.md).
 
 ## The AuthWall
 
@@ -25,6 +25,9 @@ Keycloak can offer SRAM as a login option of the `lab` realm (as an external OID
 
 * Does SRAM's ID token include `email_verified`, a 2FA signal (`amr`/`acr`), and `auth_time`, and does it honour `max_age`? If SRAM enforces 2FA but doesn't signal it, the `lab` realm would still ask for its own second factor.
 * SRAM depends on the VU: we may need to request a collaboration, and service registrations are reviewed. Each service needs a privacy policy and an acceptable use policy (AUP) URL. Drafts: [privacy statement](./policies/privacy.md) and [AUP](./policies/aup.md).
+* `lab` fits such a review well: a known list of lab services, for lab members and invited collaborators. (`idp`, behind all our AmCAT and AnnoTinder servers and open to anyone, would be much harder to justify as a login service that passes identities on.)
+
+Later, `lab` itself can become a login option of `idp` ("Sign in with your lab account"), so lab members use one account everywhere, and, with SRAM, log in with their institution. Since `lab` always requires 2FA, a login through it could count as 2FA in `idp`, but step-up must be checked first: `idp` has to pass a request for a fresh login (`max_age`) on to `lab`.
 
 ## Next steps
 

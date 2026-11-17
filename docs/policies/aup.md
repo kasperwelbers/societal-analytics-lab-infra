@@ -5,7 +5,7 @@
 
 **Version:** draft, November 2026
 
-This acceptable use policy (AUP) applies to everyone who uses a service operated by the Societal Analytics Lab: the lab's AmCAT and AnnoTinder servers, Whisper, Ollama, and the shared OIDC provider (see [services covered](./privacy.md#services-covered)). By using these services, you agree to this policy.
+This acceptable use policy (AUP) applies to everyone who uses a service operated by the Societal Analytics Lab: the lab's AmCAT and AnnoTinder servers, Whisper, Ollama, and the lab's login service (see [services covered](./privacy.md#services-covered)). By using these services, you agree to this policy.
 
 It does not apply to AmCAT or AnnoTinder servers hosted by other teams. Those teams set their own policies.
 
@@ -23,7 +23,6 @@ The services are provided for research and education. Use them only for these pu
 
 * Only upload data that you are allowed to use, and handle it according to the agreements that apply to it (e.g. your data management plan, licenses, and consent of research participants).
 * As a project admin, you are responsible for who you give access to your project's data.
-* Servers that use the shared OIDC provider must not hold sensitive research data (see [Choosing an OIDC provider](../auth.md#choosing-an-oidc-provider)).
 
 ## Not allowed
 

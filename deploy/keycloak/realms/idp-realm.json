@@ -79,10 +79,6 @@
         "composite": false,
         "clientRole": false,
         "attributes": {}
-      },
-      {
-        "name": "client-self-service",
-        "description": "Changes to clients made by holders of this role must follow the self-service client policy"
       }
     ],
     "client": {
@@ -744,42 +740,6 @@
         "organization",
         "microprofile-jwt"
       ]
-    },
-    {
-      "clientId": "app-registration",
-      "name": "App registration",
-      "description": "The app registration site, and its service account that manages the registered apps",
-      "enabled": true,
-      "protocol": "openid-connect",
-      "publicClient": false,
-      "secret": "${APP_REGISTRATION_CLIENT_SECRET}",
-      "standardFlowEnabled": true,
-      "directAccessGrantsEnabled": false,
-      "implicitFlowEnabled": false,
-      "serviceAccountsEnabled": true,
-      "consentRequired": false,
-      "fullScopeAllowed": true,
-      "rootUrl": "https://${APPS_HOSTNAME}",
-      "baseUrl": "https://${APPS_HOSTNAME}/",
-      "redirectUris": [
-        "https://${APPS_HOSTNAME}/callback"
-      ],
-      "webOrigins": [],
-      "attributes": {
-        "pkce.code.challenge.method": "S256",
-        "post.logout.redirect.uris": "https://${APPS_HOSTNAME}/"
-      },
-      "defaultClientScopes": [
-        "basic",
-        "profile",
-        "email",
-        "roles",
-        "web-origins",
-        "acr",
-        "amr",
-        "kc-admin-api"
-      ],
-      "optionalClientScopes": []
     }
   ],
   "clientScopes": [
@@ -2875,8 +2835,8 @@
   "clientProfiles": {
     "profiles": [
       {
-        "name": "self-service-clients",
-        "description": "Rules for apps registered through the app registration site",
+        "name": "deployment-clients",
+        "description": "Safe defaults for the apps (clients) of our deployments: consent and PKCE turned on, no unsafe redirect URIs",
         "executors": [
           {
             "executor": "consent-required",
@@ -2895,7 +2855,7 @@
             "configuration": {
               "allow-ipv4-loopback-address": "true",
               "allow-ipv6-loopback-address": "true",
-              "allow-http-scheme": "true",
+              "allow-http-scheme": "false",
               "allow-wildcard-context-path": "false",
               "allow-private-use-uri-scheme": "false",
               "allow-open-redirect": "false"
@@ -2908,44 +2868,36 @@
   "clientPolicies": {
     "policies": [
       {
-        "name": "self-service-clients",
-        "description": "Applies to client changes made by holders of the role client-self-service",
+        "name": "deployment-clients",
+        "description": "Applies to confidential clients that admins create or change (not to Keycloak's public built-in clients)",
         "enabled": true,
         "conditions": [
           {
-            "condition": "client-updater-source-roles",
+            "condition": "client-updater-context",
             "configuration": {
-              "is-negative-logic": "false",
-              "roles": [
-                "client-self-service"
+              "update-client-source": [
+                "ByAuthenticatedUser"
               ]
+            }
+          },
+          {
+            "condition": "client-access-type",
+            "configuration": {
+              "type": [
+                "confidential"
+              ],
+              "is-negative-logic": "false"
             }
           }
         ],
         "profiles": [
-          "self-service-clients"
+          "deployment-clients"
         ]
       }
     ]
   },
   "passwordPolicy": "length(10) and upperCase(1) and digits(1) and notUsername(undefined) and notEmail(undefined)",
   "eventsExpiration": 7776000,
-  "users": [
-    {
-      "username": "service-account-app-registration",
-      "enabled": true,
-      "serviceAccountClientId": "app-registration",
-      "realmRoles": [
-        "default-roles-idp",
-        "client-self-service"
-      ],
-      "clientRoles": {
-        "realm-management": [
-          "manage-clients"
-        ]
-      }
-    }
-  ],
   "webAuthnPolicyPasswordlessPasskeysEnabled": true,
   "loginTheme": "sal-idp",
   "accountTheme": "sal",

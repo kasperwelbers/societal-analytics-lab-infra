@@ -72,15 +72,15 @@ graph TD
 | :--- | :--- |
 | **Data Category** | GDPR Cat 3 (PII & Research Data) |
 | **Exposure Method** | Caddy Proxy (HTTPS) |
-| **Authentication** | External OIDC (Delegated) |
+| **Authentication** | External OIDC (Delegated): the `idp` realm of the lab's Keycloak |
 | **Authorization** | FastAPI backend controls all DB access |
-| **2FA Status** | **Enforced by IdP** (Sufficient for Lab Policy) |
+| **2FA Status** | **Required for sensitive actions** (step-up, see the [Authentication standard](./auth.md#two-factor-authentication-2fa)) |
 | **Storage** | ElasticSearch + S3 |
 | **Backup** | Daily snapshot to University NAS |
 
 ---
 **Technical Notes:** 
 
-* Authentication is verified via JWT tokens. OIDC provider set to enforce 2FA, and Backend checks 2FA claims to verify.
+* Authentication is verified via JWT tokens. For sensitive actions, the backend requires a recent login with 2FA and checks the 2FA claim (`amr`) itself.
 
 * Browser authenticates via session cookie (signed, http-only, samesite lax) and CSRF token (signed double submit pattern)

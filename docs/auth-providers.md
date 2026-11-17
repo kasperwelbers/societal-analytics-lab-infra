@@ -1,17 +1,9 @@
 # OIDC provider comparison
 
-**Status: decided. We use Keycloak** (see [Keycloak setup](./keycloak.md)). This page records the options we considered and why we chose Keycloak, followed by the original comparison and the test checklist. It is only about the provider that the lab runs itself: our software works with any provider that meets the [provider requirements](./auth.md#oidc-provider-requirements).
+!!! info "Background"
+    This page is the evaluation behind our choice of Keycloak (November 2026): the comparison, the hands-on test checklist, and what we found. The decision and its reasons are on the [Decisions](./decisions.md#keycloak) page. Some use cases below were dropped later: a shared provider for other teams' servers (use case 3, now the lab's own `idp`), and client registration by others (use cases 2 and 6).
 
-## Decision
-
-| Option | Considered for | Outcome | Main reasons |
-| --- | --- | --- | --- |
-| **Keycloak** | Everything: the lab, the shared identity provider, isolated pools | **Chosen** | Realms isolate the lab, the shared provider and teams on one server; consent per client, enforced for registered apps by client policies; `amr`, step-up and requesting 2FA; realm export with user IDs and password hashes, for migrations; backed by Red Hat and the CNCF; one container. Tested hands-on (see the [test checklist](#keycloak-test-checklist)). |
-| **ZITADEL** | The shared identity provider | Not chosen | No consent screen: any registered app receives the data of a signed-in user without asking. Organizations don't isolate users: apps in one organization can obtain users of another, depending on settings that the instance admin can't enforce. |
-| **Authentik** | The lab (our current provider) | Not chosen | No isolated pools within one installation (multi-tenancy was removed), can't request 2FA, and depends on a small company. Its forward auth is replaced by oauth2-proxy. |
-| **SURF SRAM** | Lab authentication with institutional logins | Not now | Less control (we can't reset 2FA or recover accounts ourselves), depends on approval by the university, and not suitable as a provider for servers run by others. It can be added later as a login option of the `lab` realm (see [Lab authentication](./lab-auth.md)). |
-
-The sections below are the comparison as it was made before the decision.
+It is only about the provider that the lab runs itself: our software works with any provider that meets the [provider requirements](./auth.md#oidc-provider-requirements).
 
 ## What we need
 
@@ -125,7 +117,7 @@ To be done on a test machine, before migrating anything. Mark items as done, and
 - [ ] Trusted hosts or redirect URI restrictions work as expected.
 - [ ] ==To verify:== whether a policy exists that keeps new clients disabled until an admin enables them.
 
-Instead of DCR, apps are registered through our own [app registration site](./app-registration.md), which uses the admin API with narrow rights. A client policy in Keycloak enforces consent, PKCE and safe redirect URIs for every app it registers or changes (tested). The DCR items above are therefore no longer needed.
+Instead of DCR, apps were first registered through our own app registration site, which used the admin API with narrow rights. Since `idp` is only for the lab's own servers, our admins create the clients, and a client policy turns on consent and PKCE and refuses unsafe redirect URIs (tested, see [step 8 of the runbook](./keycloak-deploy.md#8-clients-for-our-deployments)). The DCR items above are therefore no longer needed.
 
 **Users and 2FA**
 

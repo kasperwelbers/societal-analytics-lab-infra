@@ -1,6 +1,6 @@
 # Keycloak setup
 
-A helicopter view of our Keycloak installation: what it is for, how it is organized, and how it is secured. The details are on other pages: [Keycloak deployment](./keycloak-deploy.md) (the runbook), [App registration](./app-registration.md), and the [Authentication standard](./auth.md) that our software follows.
+A helicopter view of the lab's Keycloak installation: what it is for, how it is organized, and how it is secured. It documents our setup for our own audit and for our IT department, and is an example for research teams that decide to run their own. The details are on other pages: [Keycloak deployment](./keycloak-deploy.md) (the runbook), the [Authentication standard](./auth.md) that our software follows, and [Decisions](./decisions.md) (why it is set up this way).
 
 ## Three realms
 
@@ -10,11 +10,11 @@ A realm in Keycloak is a separate login: its own users, apps, settings and admin
 | --- | --- | --- | --- |
 | **master** | Administering Keycloak itself | Password + mandatory 2FA | Only the administrators |
 | **lab** | The lab's own infrastructure | Password + mandatory 2FA | Added by us, with an institutional email address |
-| **idp** | Logins for servers that run our software, hosted by others | Password, Google or GitHub; 2FA optional | Anyone |
+| **idp** | The lab's own servers (AmCAT, AnnoTinder, and more) | Password, Google or GitHub; 2FA optional | Anyone (an account gives no access by itself) |
 
 * **master** has no email and no external logins, so admin access never depends on an inbox or someone's Google account. Lost access is recovered via the server.
 * **lab** uses institutional email addresses, so there is no Google or GitHub login. (Institutional login, e.g. via SURF, may come later; see [Lab authentication](./lab-auth.md).)
-* **idp** is the shared login provider that teams can use for their own AmCAT or AnnoTinder server (option 1 in the [Installation guide](./auth-install.md)).
+* **idp** is the one login for all of the lab's own servers ([below](#the-idp-realm-one-login-for-the-labs-servers)).
 
 **How users log in** (password, passkey, Google or GitHub, the second factor, and what to do after losing a password or phone): see [How users log in](#how-users-log-in) below.
 
@@ -29,13 +29,13 @@ The realms are set up from realm files in the repository (`deploy/keycloak/realm
 | **Sign in with** | Password, or only a passkey | Password, or only a passkey | Password, only a passkey, Google or GitHub |
 | **Second factor (2FA)** | Mandatory | Mandatory | Optional |
 | **First time, or forgot password** | Not possible (no email): another admin, or the VM | Email link, the second factor (if any), a new password, and in | Same as lab |
-| **Lost second factor** | Recovery code, another admin, or the VM | Recovery code, or a lab admin | Recovery code, or us (best effort) |
+| **Lost second factor** | Recovery code, another admin, or the VM | Recovery code, or a lab admin | Recovery code, or one of our admins |
 
 In all realms, the email address is the username. A second factor is an authenticator app (one-time codes, OTP), a passkey or security key, or a recovery code. Tokens contain `amr`: `pwd` for a password, `mfa` for a second factor. Servers that run our software check `mfa` for sensitive actions (see [Two-factor authentication](./auth.md#two-factor-authentication-2fa)).
 
 **Why:**
 
-* **Mandatory 2FA in master and lab,** because these accounts give access to our infrastructure. **Optional in idp,** to keep the barrier low for an open service: each server decides for itself when it requires `mfa`.
+* **Mandatory 2FA in master and lab,** because these accounts give access to our infrastructure. **Optional in idp,** to keep the barrier low for students and collaborators: our servers require `mfa` for sensitive actions (step-up).
 * **A passkey alone counts as two factors:** the device, plus a fingerprint, face or PIN to unlock it. Passkeys can't be phished: they only work on our own domain.
 * **Email never replaces the second factor.** After the email link, users with a second factor must enter it before they can choose a new password, so someone who gets into their inbox can't get in. (Keycloak's default reset logs the user in after the new password without the second factor, and lets them set up a new authenticator app, so an inbox would be enough to take over an account. We changed that.)
 * **master has no email and no external logins,** so admin access never depends on an inbox or someone's Google account.
@@ -49,24 +49,18 @@ In all realms, the email address is the username. A second factor is an authenti
 * **Setting up 2FA later (idp):** in the account console (**Account security → Signing in**). After setting up an authenticator app, Keycloak asks for recovery codes right away. After adding a passkey it doesn't: users who only use passkeys should set up recovery codes there too, or register a second passkey.
 * **Forgot password (lab, idp):** the same link on the login page, then a link by email (valid for 30 minutes). Users with a second factor enter it first (or a recovery code), then choose a new password, and they are logged in.
 * **Remember me (lab):** users who tick it stay logged in on that device for up to 30 days (7 days without using it). Without it, the session at Keycloak ends after 30 minutes without use. Sensitive actions in our software still ask for the second factor again (step-up).
-* **Lost second factor:** log in with a recovery code (**Try another way → Recovery Authentication Code**; each code works once). Then, in the account console, set up a new authenticator app or passkey, and new recovery codes. Without recovery codes: in lab, a lab admin removes the lost factor after checking who the user is (not by email alone: the inbox may be the problem); in idp, we can do that on a best-effort basis; in master, another admin, or the VM ([Recovering admin access](./keycloak-deploy.md#recovering-admin-access)). How: [A user lost their second factor](./keycloak-deploy.md#a-user-lost-their-second-factor).
+* **Lost second factor:** log in with a recovery code (**Try another way → Recovery Authentication Code**; each code works once). Then, in the account console, set up a new authenticator app or passkey, and new recovery codes. Without recovery codes: in lab, a lab admin removes the lost factor after checking who the user is (not by email alone: the inbox may be the problem); in idp, one of our admins does the same; in master, another admin, or the VM ([Recovering admin access](./keycloak-deploy.md#recovering-admin-access)). How: [A user lost their second factor](./keycloak-deploy.md#a-user-lost-their-second-factor).
 * **Time:** each page of the login (e.g. setting up the authenticator app, or saving the recovery codes) may take 30 minutes. After that, Keycloak says **Your login attempt timed out** and the login starts again.
 
 The flows behind these steps: `deploy/keycloak/realms/README.md`.
 
-## The idp realm: open to everyone, best effort
+## The idp realm: one login for the lab's servers
 
-**Goal:** make it easy for users of our software to set up their own server. Instead of running an identity provider themselves, they register their server as an app on the [app registration site](./app-registration.md), and get a client ID and secret right away. Their users log in with an account in the idp realm, and always see a consent screen before the server gets their data.
+`idp` is the central login of the lab's own servers: our AmCAT and AnnoTinder servers, and other tools later. Users have one account for all of them.
 
-**Best effort.** We run this provider as a service to the community, without guarantees on availability or support. For a server with sensitive data, use your own institution's provider or a hosted OIDC provider instead (see the [Installation guide](./auth-install.md)).
-
-**Tiers.** Because anyone can register, and register apps, the emails Keycloak sends (to verify addresses and reset passwords) are limited per app: one app, or someone abusing its login page, can't use up the email for everyone else. Every app starts in the default tier, so nobody has to ask permission first. When we trust an app's owners, we give it a higher tier, for instance:
-
-* for use in teaching, where a whole class signs up at once;
-* for a larger pilot;
-* to bridge the time needed to move to another OIDC provider when its user base suddenly grows.
-
-Logins are never limited, only the emails. How the limits work: [Email limits](./keycloak-deploy.md#email-limits).
+* **Anyone can create an account,** with an email address, or with Google or GitHub. An account gives no access by itself: each server decides what a user may do, with roles given to an email address or a user (see [Authorization](./auth.md#authorization)). So students and collaborators sign up themselves when a project gives them access, instead of waiting for us.
+* **Only our admins add servers** (clients), in the admin console ([step 8 of the runbook](./keycloak-deploy.md#8-clients-for-our-deployments)). A client policy turns on consent and PKCE, and refuses unsafe redirect URIs, so a client can't be created with a mistake. Users always see a consent screen with the server's name before it gets their name and email address.
+* **Not a service for others.** Teams that host our software themselves use their own provider, ideally their institution's (see the [Installation guide](./auth-install.md)). This documentation describes how we set up ours, for our IT department and as an example for teams that choose to run their own.
 
 ## More realms
 
@@ -75,16 +69,16 @@ New realms are cheap, and isolated from each other:
 * **Isolated realms for our own servers,** e.g. one per AmCAT or AnnoTinder server we host, so that their users don't share accounts with other servers.
 * **A realm for a lab member** (or their team), with its own admin, who manages it in the admin console of that realm only.
 
-Every new realm can send email through our email relay (host `mail-relay`, port 587, no login, our sender address). That is safe to share: the relay holds the credentials of the email provider, so a realm admin never sees them and can't send them elsewhere, and the relay caps the email of the whole installation.
+Every new realm can send email through our email relay (host `mail-relay`, port 587, no login, our sender address). The relay holds the credentials of the email provider: a realm admin can send email through it, but can't read the password or send it to another server, and the relay caps the email of the whole installation.
 
 ## Security in short
 
 * **Two TLS connections ("double certificate"):** browsers connect to Caddy with a public certificate (Let's Encrypt), and Caddy connects to Keycloak with an internal certificate that only Caddy trusts. Traffic is encrypted all the way, and Caddy decides which paths are public.
 * **Only the login paths are public.** The admin consoles, the admin API and the master realm are only on a separate admin hostname.
-* **Admin access from the university network only:** the admin hostname (the admin consoles, the admin API and the master realm) is restricted to VU IP ranges (campus and VPN), for all realms. Nobody outside needs it: owners of apps in idp manage them on the [app registration site](./app-registration.md), not in the admin console. A realm for a team outside the university can get an exception for its own admin console.
-* **The email relay:** Keycloak sends all email through it without a password, the relay only accepts our sender address, and it caps the email for the whole installation. Together with the limits per IP address and per app, this protects the monthly quota of our email provider.
-* **Registered apps can't weaken the login:** the app registration site manages apps with a service account that can only manage the clients of the idp realm (the role `manage-clients`), not users or realm settings. A Keycloak policy enforces consent, PKCE and safe redirect URIs for every change it makes. Each app's owner is recorded on the app itself (`registration.owner`).
-* **Secrets stay put:** the email provider's password is only in the relay, and the Google and GitHub secrets are stored masked in Keycloak, which refuses to send them to another address without entering them again.
+* **Admin access from the university network only:** the admin hostname (the admin consoles, the admin API and the master realm) is restricted to VU IP ranges (campus and VPN), for all realms. A realm for a team outside the university can get an exception for its own admin console.
+* **The email relay:** Keycloak sends all email through it without a password, the relay only accepts our sender address, and it caps the email for the whole installation. Together with the limit per IP address, this protects the monthly quota of our email provider.
+* **Clients with safe defaults:** in `idp`, a client policy turns on consent and PKCE for every client our admins create, and refuses unsafe redirect URIs. It prevents mistakes; it doesn't stop an admin who wants otherwise.
+* **Secrets an admin can use but not take:** the email provider's password is only in the relay, and the Google and GitHub secrets are stored masked in Keycloak, which refuses to send them to another address without entering them again. This is an extra layer, not a wall: admins can send email and use these logins, and a real admin can always replace the secrets, but not read them out.
 * **Brute force detection, a password policy, and login and admin events** in all realms, and daily database backups ([Backups](./keycloak-deploy.md#9-backups)).
 
-Details and reasoning: [Why it is set up this way](./keycloak-deploy.md#why-it-is-set-up-this-way) in the runbook.
+Why it is set up this way: [Decisions](./decisions.md).
