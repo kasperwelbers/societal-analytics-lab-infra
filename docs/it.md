@@ -20,7 +20,7 @@ What we process, why, and for how long: [Privacy statement](./policies/privacy.m
 
 * **Only HTTPS is public.** Every server has one reverse proxy (Caddy) in front of its services, with certificates from Let's Encrypt. Services listen on internal networks or localhost only. Docker containers bypass a server's firewall, so we follow strict rules for them: [Docker on our servers](./docker.md).
 * **Keycloak:** only the login pages are public. The admin consoles and the administrators' realm are on a separate hostname, reachable only from the VU network (campus and VPN). [Keycloak setup: security in short](./keycloak.md#security-in-short)
-* **The lab server:** tools without their own login sit behind the lab login (the AuthWall), which only lets in lab members, optionally only one group. [Lab server](./lab-server.md#the-lab-login-oauth2-proxy)
+* **The lab server:** all lab services are under `lab.` (e.g. `whisper.lab.example.org`). Tools without their own login sit behind the lab login (the AuthWall), which only lets in lab members, optionally only one group. One login, and one sign-out, for all of them; signed out after 2 hours without activity. The login cookie is shared by everything under `lab.`, so only the lab's own services may be put there. [Lab server](./lab-server.md#2-caddy-and-the-lab-login)
 * **The data storage server** is internal only.
 * **SSH** to VMs: keys only, no `root` login, via the university network or the VU SSH gateway. [University VMs](./vm.md#3-secure-ssh-logins)
 
@@ -56,6 +56,6 @@ The choices behind this setup, and the alternatives we dropped: [Decisions](./de
 
 * **Off-site backups:** Keycloak's dumps are still on the same VM. ==TODO: the lab's backup strategy (encrypted, off-site), and confirm the backups of the other servers.==
 * **Privacy statement and acceptable use policy:** drafts, to be reviewed by the VU privacy officer ([Privacy statement](./policies/privacy.md), [AUP](./policies/aup.md)).
-* **The lab server:** ==TODO: operating system updates, and the status of the AuthWall (being set up).==
+* **The lab server:** ==TODO: operating system updates; the move of the services to their addresses under `lab.`.==
 * **The VM firewall:** one check of the firewall together with Docker is still to be done ([University VMs](./vm.md#docker-and-the-vm-firewall)).
 * **Retention** of Whisper and Ollama inputs and outputs: ==TODO== (see the privacy statement).

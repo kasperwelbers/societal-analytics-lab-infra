@@ -52,7 +52,7 @@ graph TD
 | Server | Kind | What runs on it | Reachable | Details |
 | --- | --- | --- | --- | --- |
 | **Keycloak VM** | VM on the VU research cloud | Keycloak (the realms `master`, `lab` and `idp`), Caddy, PostgreSQL, the email relay | The login pages from anywhere; the admin console only from the university network | [Keycloak deployment](./keycloak-deploy.md), [University VMs](./vm.md) |
-| **Lab server** (LabServices, the LLM server) | Physical server | Whisper, Ollama and other tools; Caddy and the lab login (the AuthWall) | Only through Caddy (HTTPS); apps without their own login behind the lab login | [Lab server](./lab-server.md) |
+| **Lab server** (LabServices, the LLM server) | Physical server | The lab's services (Whisper, Ollama and other tools), all under `lab.`, with an overview page at `lab.`; Caddy and the lab login (the AuthWall) | Only through Caddy (HTTPS); services without their own login behind the lab login | [Lab server](./lab-server.md) |
 | **SciCloud** | ==TODO== | AmCAT | From anywhere (HTTPS), with its own login | [AmCAT](./amcat.md) |
 | **Data storage** | Physical server | Elasticsearch, S3 storage | Internal only (for AmCAT) | ==TODO== |
 | ==TODO: AnnoTinder server== | ==TODO== | AnnoTinder | ==TODO== | [AnnoTinder](./annotinder.md) |

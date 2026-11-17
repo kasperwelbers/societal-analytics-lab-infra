@@ -15,7 +15,7 @@ Which options were considered, and why we chose Keycloak: see [Decisions](./deci
 
 ## The AuthWall
 
-Caddy `forward_auth` with [oauth2-proxy](https://oauth2-proxy.github.io/oauth2-proxy/), which handles the OIDC login against the `lab` realm and the session for services without their own login. One login covers all apps (through Keycloak's session), each app has its own cookie, and an app can be restricted to a group. How to set it up, and how to add an app: [Lab server](./lab-server.md#the-lab-login-oauth2-proxy).
+Caddy `forward_auth` with [oauth2-proxy](https://oauth2-proxy.github.io/oauth2-proxy/), which handles the OIDC login against the `lab` realm and the session for services without their own login. All lab services live under `lab.` (e.g. `whisper.lab.example.org`), with one login and one sign-out for all of them, and an overview page at `lab.example.org`. A service can be restricted to a group. How to set it up, and how to add a service: [Lab server](./lab-server.md#2-caddy-and-the-lab-login).
 
 ## Later: institutional login via SRAM
 

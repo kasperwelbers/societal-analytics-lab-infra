@@ -15,7 +15,7 @@ Most of each file is Keycloak's defaults. What we changed:
 | `registrationEmailAsUsername`, `loginWithEmailAllowed` | true | The email address is the username |
 | `passwordPolicy` | `length(10) and upperCase(1) and digits(1) and notUsername and notEmail` | At least 10 characters, an uppercase letter and a digit |
 | `accessCodeLifespanUserAction` | 1800 | "Login action timeout": 30 minutes for each page of the login, e.g. to set up 2FA and save the recovery codes |
-| `ssoSessionIdleTimeout`, `ssoSessionMaxLifespan` | 1800 (master: 1800 and 28800) | Sessions at Keycloak; applications keep their own |
+| `ssoSessionIdleTimeout`, `ssoSessionMaxLifespan` | 1800 and 1800 (master: 1800 and 28800; lab: 7200 and 36000) | Sessions at Keycloak; applications keep their own. lab: signed out after 2 hours without activity, at most 10 hours, because the lab login (oauth2-proxy) checks the Keycloak session every 10 minutes (docs/lab-server.md) |
 | `bruteForceProtected`, `eventsEnabled`, `adminEventsEnabled` | true; events kept 90 days | |
 | `loginTheme`, `accountTheme`, `emailTheme` | `sal-admin` / `sal-lab` / `sal-idp`, account `sal`, email `sal-lab` (lab) | Our themes in `themes/` (logo, colours, texts) |
 | `displayName` | "Societal Analytics Lab" (lab), "... identity provider" (idp), "... administration" (master) | Shown in the browser tab and in emails; `displayNameHtml` is empty (the themes show the logo and name) |

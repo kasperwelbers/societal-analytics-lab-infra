@@ -168,15 +168,24 @@ The cost: lab members have two accounts. `lab` as a login option of `idp` solves
 
 **Dropped:** `sal` in the `docker` group. Membership of that group is effectively root access, and apps that run as `sal` without Docker would get it too.
 
-### The AuthWall: oauth2-proxy, a cookie per app
+### All lab services under `lab.`, with one login cookie for the zone
 
-**Chosen:** apps without their own login sit behind oauth2-proxy with Caddy's `forward_auth`, against the `lab` realm. Each app has its own cookie, and its own exact redirect URI in Keycloak; single sign-on comes from Keycloak's session. An app can be restricted to a Keycloak group.
+**Chosen:** every service the lab runs for its members gets an address under `lab.example.org` (e.g. `whisper.lab.example.org`), with or without its own login, and `lab.example.org` is the overview page. Services without their own login sit behind oauth2-proxy with Caddy's `forward_auth`, against the `lab` realm. oauth2-proxy sets **one login cookie for the zone** (`.lab.example.org`), and every login comes back to one fixed address (`lab.example.org/oauth2/callback`). Signing out ends the login for all services and the Keycloak session (oauth2-proxy's backend logout). oauth2-proxy checks the session with Keycloak every 10 minutes, so inactive users (2 hours, Keycloak's idle time) and removed members are signed out ([Lab server](./lab-server.md#2-caddy-and-the-lab-login)).
 
-**Why:** with a cookie for all subdomains, every app on the domain receives everyone's login, including apps with their own login that users can run code in (e.g. Jupyter). It would also need a wildcard redirect URI. A cookie per app costs one line in Keycloak per app, and users still log in once.
+**Why:** users need one login, and one sign-out that ends everything. oauth2-proxy can't do that with a cookie per service: a browser only lets a site clear its own cookies, and oauth2-proxy doesn't support Keycloak's back-channel logout. A shared cookie is the common way to use oauth2-proxy, but a cookie for the whole domain would also go to the lab's website, which is hosted by GitHub Pages. A zone of its own keeps the cookie within the lab's own services on this server, which could reach each other anyway. The zone also makes the rule visible: everything under `lab.` is a lab service.
+
+**The condition:** only services the lab runs on its own servers may be under `lab.`. A site hosted by someone else would receive a login that works for all services behind the lab login (the cookie isn't bound to one service).
 
 **oauth2-proxy in a Docker network of its own,** with its port published on `127.0.0.1` only, and only the gateway of that network trusted for `X-Forwarded-*` headers. It can't reach the apps on the server's localhost, and no other container can reach it.
 
-**Dropped:** one shared cookie for all subdomains (`COOKIE_DOMAINS`). `network_mode: host` for oauth2-proxy (simpler, but a compromised oauth2-proxy could reach every app on the server's localhost). Authentik's forward auth (we moved from Authentik to Keycloak, see [Keycloak](#keycloak)).
+**Dropped:**
+
+* **A cookie per service:** signing out of one service would leave the others logged in until their next check with Keycloak. (oauth2-proxy also doesn't bind a cookie to a service, so it protected less than it seemed.)
+* **One cookie for the whole domain:** it would be sent to the website on GitHub Pages.
+* **Services under one address, by path** (`lab.example.org/whisper`): all services would share one origin, so their cookies could clash, and a bug in one could read the others' pages; many apps also can't run under a sub-path.
+* **A wildcard redirect URI** (`https://*.lab.example.org/...`): Keycloak doesn't allow a wildcard in the host name (tested). One fixed callback replaces it.
+* **`network_mode: host` for oauth2-proxy** (simpler, but a compromised oauth2-proxy could reach every app on the server's localhost).
+* **A CMS for the website on the lab server:** the public website stays on GitHub Pages (quick updates, nothing to maintain); the overview page of lab services is a static page behind the lab login.
 
 ## Later
 

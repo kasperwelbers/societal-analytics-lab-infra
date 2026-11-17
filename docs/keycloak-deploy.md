@@ -343,7 +343,7 @@ In all realms:
 * **The `amr` claim** in tokens contains `mfa` when a second factor was used, and `pwd` for a password (for our software: `OIDC_MFA_CLAIM=amr:mfa`, see the [Authentication standard](./auth.md)).
 * **Passwords:** at least 10 characters, with an uppercase letter and a digit, not equal to the username or email.
 * **Login action timeout** 30 minutes for each page of the login (e.g. setting up 2FA, saving the recovery codes), brute force detection, and login and admin events kept for 90 days.
-* **Sessions** at Keycloak last 30 minutes in `lab` and `idp` (applications keep their own sessions), and up to 8 hours in `master`. In `lab`, **Remember me** on the login page keeps users logged in on that device for up to 30 days (7 days idle).
+* **Sessions** at Keycloak last 30 minutes in `idp` (applications keep their own sessions), and up to 8 hours in `master`. In `lab`, a session ends after 2 hours without activity, and lasts at most 10 hours: the lab login on the lab server checks it regularly, so this is how long members stay signed in to the lab's services ([Lab server](./lab-server.md#signing-out-and-inactivity)). In `lab`, **Remember me** on the login page keeps users logged in on that device for up to 30 days (7 days idle).
 * **The email address is the username**, and users log in with it. In `lab` and `idp`, users change their address in the account console (**Personal info → Update email**): the address, and with it the username, only changes after they confirm the new address with a link sent to it. The user stays the same (same `sub`), also for users who log in with Google or GitHub. In `master`, which has no email server, admins change an address in the admin console. Existing usernames without an email address (`temp-admin`, a recovery admin) keep working.
 * **Registration** (in `idp`) asks only for email and name: users choose their password after verifying their email address. This is Keycloak's default when email verification is on, so that nobody can set a password for an address they don't own.
 
@@ -403,7 +403,7 @@ sudo docker compose restart keycloak
 
 After setting up `idp` again, create the clients of our deployments again (step 8), with their new secrets. `master` is only imported on a new installation: on an existing one, it keeps its settings.
 
-**Changes to the realm files after the realms were created** only reach a new realm. For `lab` and `idp` without users, set them up again as above. `master` keeps its settings. It still works with a password and a second factor; to bring it in line with the files by hand, in the admin console of `master`:
+**Changes to the realm files after the realms were created** only reach a new realm. (For `lab`, the latest change is its session times: **Realm settings → Sessions → SSO Session Idle** 2 hours, **SSO Session Max** 10 hours, which can be set by hand instead.) For `lab` and `idp` without users, set them up again as above. `master` keeps its settings. It still works with a password and a second factor; to bring it in line with the files by hand, in the admin console of `master`:
 
 * **Recovery codes after OTP setup:** **Authentication → Required actions → Configure OTP**, the gear icon, turn on **Add Recovery Codes**.
 * **Login action timeout:** **Realm settings → Sessions → Login action timeout**: 30 minutes.
