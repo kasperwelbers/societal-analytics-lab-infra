@@ -1415,7 +1415,8 @@
       "protocol": "openid-connect",
       "attributes": {
         "include.in.token.scope": "false",
-        "display.on.consent.screen": "false"
+        "display.on.consent.screen": "true",
+        "consent.screen.text": "${amrScopeConsentText}"
       },
       "protocolMappers": [
         {
@@ -1436,21 +1437,13 @@
     "role_list",
     "saml_organization",
     "AuthnContextClassRef",
-    "profile",
     "email",
-    "roles",
     "web-origins",
     "acr",
     "basic",
     "amr"
   ],
-  "defaultOptionalClientScopes": [
-    "offline_access",
-    "address",
-    "phone",
-    "microprofile-jwt",
-    "organization"
-  ],
+  "defaultOptionalClientScopes": [],
   "browserSecurityHeaders": {
     "contentSecurityPolicyReportOnly": "",
     "xContentTypeOptions": "nosniff",

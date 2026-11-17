@@ -31,7 +31,7 @@ This statement does **not** apply to AmCAT or AnnoTinder servers that are hosted
 
 | Data | Source | Purpose |
 | --- | --- | --- |
-| Name, email address, and whether the email address is verified | The login provider (OIDC) | Identifying users, and assigning access rights |
+| Email address, and whether it is verified | The login provider (OIDC) | Identifying users, and assigning access rights. (Our servers don't receive your name from the login service.) |
 | Login identifier (`iss` + `sub`) | The login provider (OIDC) | Recognizing returning users |
 | Whether two-factor authentication was used, and when the user last logged in | The login provider (OIDC) | Protecting sensitive actions |
 | Roles and access rights | Assigned by project admins | Deciding who may access what |

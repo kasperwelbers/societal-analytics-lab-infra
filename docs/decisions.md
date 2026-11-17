@@ -81,6 +81,8 @@ The cost: lab members have two accounts. `lab` as a login option of `idp` solves
 
 **Why:** students and collaborators sign up themselves when a project gives them access, instead of waiting for an admin. The client policy prevents mistakes, not misuse: admins are trusted.
 
+**Servers get only the email address and the 2FA signal** (and the account ID and login time), not the name or roles. That is all our software uses, and it makes the consent screen something everyone understands: "see your email address; see whether you signed in with two-factor authentication". The cost: our software must request exactly `openid email`, because Keycloak refuses a request for a scope it doesn't offer (e.g. `profile`, which many OIDC libraries request by default).
+
 **Dropped:**
 
 * **`idp` as a public service for other teams' servers**, with the app registration site (where others registered their servers) and email limits per app in tiers. See [Weaker security for teaching](#weaker-security-for-teaching-two-explicit-settings) for why; with only our own servers, these are no longer needed.
