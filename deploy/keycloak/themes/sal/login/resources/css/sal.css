@@ -1,0 +1,83 @@
+/* Societal Analytics Lab: light, with the blue of the logo. Keycloak's own styles.css is loaded first. */
+:root {
+    --sal-blue: #0180c9;
+    --sal-blue-dark: #016aa6;
+    --sal-ink: #1d2733;
+    --sal-muted: #5b6672;
+    --keycloak-card-top-color: var(--sal-blue);
+    --pf-v5-global--primary-color--100: var(--sal-blue);
+    --pf-v5-global--primary-color--200: var(--sal-blue-dark);
+    --pf-v5-global--link--Color: var(--sal-blue);
+    --pf-v5-global--link--Color--hover: var(--sal-blue-dark);
+    --pf-v5-global--active-color--100: var(--sal-blue);
+}
+
+.login-pf body {
+    background: linear-gradient(180deg, #e7f2fa 0%, #f5f8fb 45%, #ffffff 100%) fixed;
+}
+
+/* Header: logo, lab name, subtitle */
+#kc-header {
+    color: var(--sal-ink);
+    padding-top: 2rem;
+}
+#kc-header-wrapper {
+    text-align: center;
+}
+.sal-brand::before {
+    content: "";
+    display: block;
+    width: 84px;
+    height: 96px;
+    margin: 0 auto 0.75rem;
+    background: url("../img/logo.svg") no-repeat center / contain;
+}
+.sal-name {
+    font-size: 1.6rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    color: var(--sal-ink);
+    text-transform: none;
+}
+.sal-sub {
+    margin-top: 0.15rem;
+    font-size: 1rem;
+    color: var(--sal-muted);
+    text-transform: none;
+    letter-spacing: 0.02em;
+}
+
+/* The login box */
+.pf-v5-c-login__main {
+    border-radius: 10px;
+    box-shadow: 0 8px 28px rgba(1, 64, 100, 0.12);
+    overflow: hidden;
+}
+.pf-v5-c-button.pf-m-primary {
+    background-color: var(--sal-blue);
+    border-radius: 6px;
+}
+.pf-v5-c-button.pf-m-primary:hover,
+.pf-v5-c-button.pf-m-primary:focus {
+    background-color: var(--sal-blue-dark);
+}
+.pf-v5-c-button.pf-m-secondary {
+    color: var(--sal-blue);
+    border-radius: 6px;
+}
+.pf-v5-c-button.pf-m-secondary::after {
+    border-color: var(--sal-blue);
+}
+
+/* Footer below the box */
+.sal-footer {
+    text-align: center;
+    padding: 1.25rem 0 0.5rem;
+    font-size: 0.875rem;
+}
+.sal-footer a {
+    color: var(--sal-muted);
+}
+.sal-footer a:hover {
+    color: var(--sal-blue);
+}

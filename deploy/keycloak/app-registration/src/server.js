@@ -54,6 +54,7 @@ app.use(
     contentSecurityPolicy: {
       defaultSrc: ["'none'"],
       styleSrc: ["'unsafe-inline'"],
+      imgSrc: ["'self'"],
       formAction: ["'self'", publicKeycloakOrigin],
       frameAncestors: ["'none'"],
       baseUri: ["'none'"],
@@ -64,6 +65,7 @@ app.use(
 app.use(csrf({ origin: config.publicUrl }));
 
 app.get('/healthz', (c) => c.text('ok'));
+app.get('/logo.svg', (c) => c.body(views.logoSvg, 200, { 'Content-Type': 'image/svg+xml', 'Cache-Control': 'public, max-age=86400' }));
 
 app.get('/login', async (c) => {
   const login = {

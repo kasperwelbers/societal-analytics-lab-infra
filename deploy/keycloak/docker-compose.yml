@@ -74,6 +74,8 @@ services:
     volumes:
       - internal-tls:/opt/keycloak/conf/internal-tls:ro
       - ./realms:/opt/keycloak/data/import:ro
+      # Our themes (login pages, account console, emails): see themes/README.md
+      - ./themes:/opt/keycloak/themes:ro
     depends_on:
       postgres:
         condition: service_healthy

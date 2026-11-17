@@ -2946,5 +2946,9 @@
       }
     }
   ],
-  "webAuthnPolicyPasswordlessPasskeysEnabled": true
+  "webAuthnPolicyPasswordlessPasskeysEnabled": true,
+  "loginTheme": "sal-idp",
+  "accountTheme": "sal",
+  "displayName": "Societal Analytics Lab identity provider",
+  "displayNameHtml": ""
 }

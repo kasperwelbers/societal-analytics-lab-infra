@@ -34,6 +34,7 @@ Three hostnames:
 | `Caddy.Dockerfile` | Caddy with the [rate limit module](https://github.com/mholt/caddy-ratelimit) |
 | `realms/` | The realms (`master`, `lab`, `idp`) as Keycloak realm files, imported when a realm doesn't exist yet ([step 7](#7-realms)); `realms/README.md` explains what we changed |
 | `check-realms.py` | Checks `realms/` for mistakes that Keycloak accepts silently (run it after every change) |
+| `themes/` | Our look and texts for the login pages, the account console and emails (logo, colours, the texts for lab members), mounted into Keycloak ([Themes](#themes)); `themes/README.md` lists them |
 | `app-registration/` | The [app registration site](./app-registration.md) |
 | `internal-tls.sh` | Creates the internal certificate (run by the tls-init service) |
 | `admin-cli.sh` | Runs Keycloak's admin command-line tool (`kcadm.sh`) inside the container, over the internal TLS connection |
@@ -614,7 +615,15 @@ One member at a time: **Users → Add user**, with the email address (and **Emai
 
 Members imported without `default-roles-lab`: import the file again with the roles and **Overwrite** (this recreates them, so members who already set a password start again with "First time?"), or give one user the role in **Users → the user → Role mapping → Assign role** (filter by realm roles).
 
-The texts on the login pages and the email subject ("Sign in with your lab account", "First time, or forgot your password?", "Set your lab password", ...) are realm overrides (`localizationTexts`) in `realms/lab-realm.json`; change them in **Realm settings → Localization → Realm overrides**.
+The texts on the login pages and the email subject ("Sign in with your lab account", "First time, or forgot your password?", "Set your lab password", ...) are in the theme `sal-lab` ([Themes](#themes)).
+
+### Themes
+
+The login pages, the account console and the emails of all realms use our themes in `themes/` (mounted into Keycloak): the lab logo, the blue of the logo, the lab name with a subtitle per realm ("Administration", "Lab account", "Identity provider"), a link to the department page at the bottom, and the texts for lab members. `themes/README.md` lists which realm uses which theme.
+
+* **Changing a text:** edit `messages/messages_en.properties` of the theme (the keys are Keycloak's own), and restart Keycloak (`sudo docker compose restart keycloak`): it caches themes. For a quick change without a restart, a realm override (**Realm settings → Localization → Realm overrides**) takes precedence over the theme.
+* **After a Keycloak upgrade:** look at the login pages of each realm. The themes change no page templates (only texts, CSS, images, and the footer that Keycloak provides for this), so they normally keep working; a renamed text key falls back to Keycloak's own text.
+* **On an existing installation:** realms created before the themes keep Keycloak's look. Set them in **Realm settings → Themes**: `master`: login theme `sal-admin`, account theme `sal`; `lab`: `sal-lab` (login and email), account `sal`; `idp`: `sal-idp`, account `sal`. Also set **Realm settings → General → Display name** (it is shown in the browser tab): "Societal Analytics Lab administration", "Societal Analytics Lab", "Societal Analytics Lab identity provider". On `master`, also empty **HTML Display name** (it holds Keycloak's own logo text).
 
 ### A user lost their second factor
 

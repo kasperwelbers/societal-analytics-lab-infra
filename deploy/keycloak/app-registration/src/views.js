@@ -1,16 +1,22 @@
 // HTML pages. The html`` helper escapes every interpolated value.
 
+import { readFileSync } from 'node:fs';
 import { html, raw } from 'hono/html';
 import { config } from './config.js';
 
+// The lab logo, served at /logo.svg (the same file as in the Keycloak themes)
+export const logoSvg = readFileSync(new URL('./logo.svg', import.meta.url), 'utf8');
+
 const style = raw(`
-  :root { --fg:#1d1d1f; --muted:#5f6368; --line:#d9dce1; --bg:#fff; --accent:#0b57d0; --warn:#b3261e; --ok:#146c2e; --soft:#f4f6f9; }
+  :root { --fg:#1d1d1f; --muted:#5f6368; --line:#d9dce1; --bg:#fff; --accent:#0180c9; --warn:#b3261e; --ok:#146c2e; --soft:#f4f6f9; }
   @media (prefers-color-scheme: dark) { :root { --fg:#e8eaed; --muted:#a0a4ab; --line:#3c4043; --bg:#17181a; --accent:#8ab4f8; --warn:#f28b82; --ok:#81c995; --soft:#222428; } }
   * { box-sizing: border-box; }
   body { margin:0; font:16px/1.5 system-ui, sans-serif; color:var(--fg); background:var(--bg); }
   main { max-width: 760px; margin: 0 auto; padding: 24px 16px 64px; }
   header { display:flex; justify-content:space-between; align-items:center; gap:12px; border-bottom:1px solid var(--line); padding-bottom:12px; margin-bottom:24px; }
   header a { color:var(--fg); text-decoration:none; font-weight:600; }
+  .brand { display:flex; align-items:center; gap:10px; } .brand img { width:34px; height:39px; } .brand small { display:block; font-weight:400; color:var(--muted); font-size:.85rem; }
+  footer { margin-top:48px; font-size:.85rem; text-align:center; } footer a { color:var(--muted); }
   h1 { font-size:1.6rem; margin:0 0 8px; } h2 { font-size:1.2rem; margin:32px 0 8px; }
   a { color:var(--accent); } .muted { color:var(--muted); }
   label { display:block; font-weight:600; margin:16px 0 4px; } .hint { font-weight:400; color:var(--muted); font-size:.9rem; }
@@ -29,14 +35,15 @@ const style = raw(`
 export function page({ title, user, body }) {
   return html`<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>${title} · App registration</title><style>${style}</style></head>
+<title>${title} · App registration</title><link rel="icon" href="/logo.svg" type="image/svg+xml"><style>${style}</style></head>
 <body><main>
-<header><a href="/">App registration</a>
+<header><a class="brand" href="/"><img src="/logo.svg" alt=""><span>Societal Analytics Lab<small>App registration</small></span></a>
 ${user
   ? html`<form class="inline" method="post" action="/logout"><span class="muted">${user.email}</span> <button class="secondary">Log out</button></form>`
   : ''}
 </header>
 ${body}
+<footer><a href="https://vu.nl/en/about-vu/research-institutes/institute-for-societal-resilience/departments/societal-analytics" rel="noopener">Societal Analytics Lab · VU Amsterdam</a></footer>
 </main></body></html>`;
 }
 

@@ -395,18 +395,7 @@
     "totpAppGoogleName",
     "totpAppMicrosoftAuthenticatorName"
   ],
-  "localizationTexts": {
-    "en": {
-      "loginAccountTitle": "Sign in with your lab account",
-      "email": "Email address (usually your VU address)",
-      "doForgotPassword": "First time, or forgot your password?",
-      "emailForgotTitle": "Set your lab password",
-      "emailInstruction": "Enter your email address. If it is known to the lab, you will get an email with a link to set your password.",
-      "updatePasswordTitle": "Choose a password",
-      "resetPasswordMessage": "Choose a password for your lab account.",
-      "passwordResetSubject": "Set your lab password"
-    }
-  },
+  "localizationTexts": {},
   "webAuthnPolicyRpEntityName": "keycloak",
   "webAuthnPolicySignatureAlgorithms": [
     "ES256",
@@ -2827,5 +2816,10 @@
   },
   "passwordPolicy": "length(10) and upperCase(1) and digits(1) and notUsername(undefined) and notEmail(undefined)",
   "eventsExpiration": 7776000,
-  "webAuthnPolicyPasswordlessPasskeysEnabled": true
+  "webAuthnPolicyPasswordlessPasskeysEnabled": true,
+  "loginTheme": "sal-lab",
+  "accountTheme": "sal",
+  "emailTheme": "sal-lab",
+  "displayName": "Societal Analytics Lab",
+  "displayNameHtml": ""
 }

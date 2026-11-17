@@ -7,7 +7,8 @@ Keycloak accepts these silently, and the login flows then do something else than
 - an execution that refers to a sub-flow or setting (authenticatorConfig) that doesn't exist;
 - a sub-flow that is defined but never used, or used in more than one place;
 - a placeholder (dollar, {NAME}) for a value that docker-compose.yml doesn't pass to Keycloak
-  (Keycloak would import the placeholder text itself).
+  (Keycloak would import the placeholder text itself);
+- a login, account or email theme that isn't in themes/ (Keycloak falls back to its own theme).
 It also checks that our own flows (not Keycloak's built-in ones) are identical in all realm files.
 
 Usage: python3 check-realms.py [realms folder]
@@ -104,7 +105,14 @@ def check_file(path: Path, shapes: dict, compose: str) -> None:
             if name and name not in flows and name not in BUILT_IN_FLOWS:
                 err(path, f"identity provider '{idp['alias']}': {setting} '{name}' is not defined")
 
+    for setting, kind in (("loginTheme", "login"), ("accountTheme", "account"), ("emailTheme", "email")):
+        name = realm.get(setting)
+        if name and name not in BUILT_IN_THEMES and not (THEMES / name / kind / "theme.properties").is_file():
+            err(path, f"{setting} '{name}' is not in themes/ (no {name}/{kind}/theme.properties)")
 
+
+BUILT_IN_THEMES = {"base", "keycloak", "keycloak.v2", "keycloak.v3"}
+THEMES = Path(__file__).parent / "themes"
 BUILT_IN_FLOWS = {"browser", "first broker login", "direct grant", "registration", "reset credentials"}
 
 

@@ -18,6 +18,8 @@ A realm in Keycloak is a separate login: its own users, apps, settings and admin
 
 **How users log in** (password, passkey, Google or GitHub, the second factor, and what to do after losing a password or phone): see [How users log in](#how-users-log-in) below.
 
+All realms show the lab logo and name on their login pages, with a subtitle ("Administration", "Lab account", "Identity provider"), so users know whose login this is; apps in `idp` are named on the consent screen. The look and the texts are our Keycloak themes ([Themes](./keycloak-deploy.md#themes)).
+
 The realms are set up from realm files in the repository (`deploy/keycloak/realms/`), which Keycloak imports itself when it starts, for realms that don't exist yet. They document the configuration, including the login flows, and make it easy to set up the realms again (see [Realms](./keycloak-deploy.md#7-realms) in the runbook).
 
 ## How users log in

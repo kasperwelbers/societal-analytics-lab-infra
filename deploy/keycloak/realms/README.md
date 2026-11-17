@@ -17,6 +17,8 @@ Most of each file is Keycloak's defaults. What we changed:
 | `accessCodeLifespanUserAction` | 1800 | "Login action timeout": 30 minutes for each page of the login, e.g. to set up 2FA and save the recovery codes |
 | `ssoSessionIdleTimeout`, `ssoSessionMaxLifespan` | 1800 (master: 1800 and 28800) | Sessions at Keycloak; applications keep their own |
 | `bruteForceProtected`, `eventsEnabled`, `adminEventsEnabled` | true; events kept 90 days | |
+| `loginTheme`, `accountTheme`, `emailTheme` | `sal-admin` / `sal-lab` / `sal-idp`, account `sal`, email `sal-lab` (lab) | Our themes in `themes/` (logo, colours, texts) |
+| `displayName` | "Societal Analytics Lab" (lab), "... identity provider" (idp), "... administration" (master) | Shown in the browser tab and in emails; `displayNameHtml` is empty (the themes show the logo and name) |
 | `rememberMe` | false (lab: true) | lab: **Remember me** on the login page; `ssoSessionIdleTimeoutRememberMe` 7 days, `ssoSessionMaxLifespanRememberMe` 30 days |
 | `actionTokenGeneratedByUserLifespan` | 1800 (lab, idp) | Email links (forgot password, verify email) valid 30 minutes instead of 5 |
 | Required action priorities | `UPDATE_PASSWORD`, `VERIFY_PROFILE`, `UPDATE_PROFILE`, `CONFIGURE_TOTP`, `CONFIGURE_RECOVERY_AUTHN_CODES`: 51-55 | Keycloak runs pending required actions in this order: after the email link, first the password, then the name, then 2FA (by default, OTP setup came before the password) |
@@ -45,7 +47,7 @@ Copying a flow in the admin console keeps the old flow name in "Condition - sub-
 ## lab
 
 * By invitation only (`registrationAllowed` false), with institutional email addresses: no Google or GitHub login.
-* New members are imported without a password, and set one themselves with "forgot password". `localizationTexts` (realm overrides) adapt the texts: `loginAccountTitle` "Sign in with your lab account", `email` "Email address (usually your VU address)", `doForgotPassword` "First time, or forgot your password?", `emailForgotTitle` and `passwordResetSubject` "Set your lab password", `emailInstruction`, `updatePasswordTitle` "Choose a password", `resetPasswordMessage`.
+* New members are imported without a password, and set one themselves with "forgot password". The theme `sal-lab` adapts the texts for them ("Sign in with your lab account", "First time, or forgot your password?", "Set your lab password", ...): see `themes/README.md`.
 * `verifyEmail`, `resetPasswordAllowed`: true.
 * Email through the relay (`smtpServer`: host `mail-relay`, port 587, no login).
 * Required action **Update email** on, and `editUsernameAllowed` true (needed for the "Update email" button in the account console): users change their address there, and it only changes after they confirm the new address.

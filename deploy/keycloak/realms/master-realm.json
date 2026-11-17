@@ -1,7 +1,7 @@
 {
   "realm": "master",
-  "displayName": "Keycloak",
-  "displayNameHtml": "<div class=\"kc-logo-text\"><span>Keycloak</span></div>",
+  "displayName": "Societal Analytics Lab administration",
+  "displayNameHtml": "",
   "notBefore": 0,
   "defaultSignatureAlgorithm": "RS256",
   "revokeRefreshToken": false,
@@ -2577,5 +2577,7 @@
   },
   "passwordPolicy": "length(10) and upperCase(1) and digits(1) and notUsername(undefined) and notEmail(undefined)",
   "eventsExpiration": 7776000,
-  "webAuthnPolicyPasswordlessPasskeysEnabled": true
+  "webAuthnPolicyPasswordlessPasskeysEnabled": true,
+  "loginTheme": "sal-admin",
+  "accountTheme": "sal"
 }
