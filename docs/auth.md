@@ -1,8 +1,8 @@
 # Authentication standard
 
-All software developed by the Societal Analytics Lab (AmCAT, AnnoTinder) uses the same approach to authentication. This page is the standard: what our software does, and what it requires from the OIDC provider. For deployers, see also:
+How we design authentication in all software developed by the Societal Analytics Lab (AmCAT, AnnoTinder), so that it is done consistently: what our software does, and what it requires from the OIDC provider. It is written for us as developers. Teams that host our software only need parts of it; their guides link to those:
 
-* [Installation guide](./auth-install.md): choosing and setting up an OIDC provider.
+* [Choosing a login provider](./auth-install.md): for teams that host our software.
 * [Migration guide](./auth-migration.md): moving to a different OIDC provider.
 * [Decisions](./decisions.md): why it is set up this way, and which alternatives we dropped.
 
@@ -16,7 +16,7 @@ Our software works with any OIDC provider that meets the [provider requirements]
 
 ## Choosing an OIDC provider
 
-The person hosting our software chooses the OIDC provider (see the [Installation guide](./auth-install.md)):
+The person hosting our software chooses the OIDC provider (see [Choosing a login provider](./auth-install.md)):
 
 * **Your institution's identity provider** (recommended, and the right choice for sensitive research data): managed by a security team, with a helpdesk for account recovery.
 * **Another provider that meets the requirements,** hosted (e.g. ZITADEL Cloud) or self-hosted (e.g. Keycloak). The lab runs its own Keycloak for its own servers; its documentation ([Keycloak setup](./keycloak.md)) can serve as an example.

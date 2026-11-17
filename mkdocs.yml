@@ -4,27 +4,32 @@ theme:
 
 nav:
   - Home: index.md
-  - AmCAT: amcat.md
-  - Authentication:
-      - Standard: auth.md
-      - Installation guide: auth-install.md
+  - For IT: it.md
+  - Infrastructure:
+      - Overview: infrastructure.md
+      - Servers:
+          - Lab server: lab-server.md
+          - University VMs: vm.md
+          - Docker on our servers: docker.md
+      - Login service (Keycloak):
+          - Keycloak setup: keycloak.md
+          - Keycloak deployment: keycloak-deploy.md
+          - Lab authentication: lab-auth.md
+  - Our software:
+      - Authentication standard: auth.md
+      - AmCAT: amcat.md
+      - AnnoTinder: annotinder.md
+  - Hosting our software:
+      - Choosing a login provider: auth-install.md
       - Migration guide: auth-migration.md
-  - Our Keycloak:
-      - Keycloak setup: keycloak.md
-      - Keycloak deployment: keycloak-deploy.md
-      - Lab authentication: lab-auth.md
+      - Privacy template: policies/privacy-template.md
   - Decisions: decisions.md
   - Background:
       - "2FA: where should it live?": auth-2fa.md
       - Provider comparison: auth-providers.md
-  - Servers:
-      - Lab server: lab-server.md
-      - University VMs: vm.md
-      - Docker on our servers: docker.md
   - Policies:
       - Privacy statement: policies/privacy.md
       - Acceptable use policy: policies/aup.md
-      - Privacy template for self-hosting: policies/privacy-template.md
 
 markdown_extensions:
   - admonition

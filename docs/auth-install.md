@@ -1,4 +1,4 @@
-# Installation guide: authentication
+# Choosing a login provider
 
 This guide is for teams that host AmCAT or AnnoTinder themselves. It covers choosing and setting up an OIDC provider. For what our software does with the provider, see the [Authentication standard](./auth.md).
 
