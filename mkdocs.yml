@@ -20,6 +20,7 @@ nav:
   - Servers:
       - Lab server: lab-server.md
       - University VMs: vm.md
+      - Docker on our servers: docker.md
   - Policies:
       - Privacy statement: policies/privacy.md
       - Acceptable use policy: policies/aup.md

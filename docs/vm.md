@@ -139,28 +139,7 @@ These rules apply to programs running **on the VM itself** (e.g. `apt`, `git`, `
 ## Docker and the VM firewall
 
 !!! danger "Read this before running containers"
-    The `INBOUND` and `OUTBOUND` rules above **don't protect Docker containers**. A port published by a container is open to the whole internet, whatever the firewall file says.
-
-**Why.** The firewall rules are attached to the traffic of the VM itself: incoming traffic for the VM (the `INPUT` chain) and outgoing traffic from the VM (the `OUTPUT` chain, `-A OUTPUT -j OUTBOUND` in the file). Traffic to and from containers is *forwarded* by Docker (the `FORWARD` chain), with its own rules, so it never passes the `INBOUND` and `OUTBOUND` rules. This is how Docker works on any Linux machine (see [Docker: packet filtering and firewalls](https://docs.docker.com/engine/network/packet-filtering-firewalls/)).
-
-**What this means:**
-
-* **Incoming:** a published port (`ports: - "5432:5432"` in a compose file, or `docker run -p 5432:5432`) is reachable from the internet, even if the firewall doesn't allow port 5432. Accidentally publishing a database port exposes the database.
-* **Outgoing:** containers can connect to any port on the internet, even ports that the `OUTBOUND` rules don't allow. For instance, the email relay of the Keycloak deployment can send email via SMTP on port 587 without a firewall rule. The rules only restrict programs on the VM itself.
-
-**Rules for running containers on these VMs:**
-
-1. **Only publish ports that should be public,** typically only 80 and 443 of a reverse proxy (e.g. Caddy). Let containers talk to each other over Docker networks, without publishing ports. The [Keycloak deployment](./keycloak-deploy.md) works this way: only Caddy publishes ports, and the database is on an internal network without internet access.
-2. **If a port should only be reachable from the VM itself** (e.g. for a database tool), publish it on the loopback address: `"127.0.0.1:5432:5432"` instead of `"5432:5432"`.
-3. **Check which ports are published,** after every change:
-
-    ```bash
-    sudo docker ps --format '{{.Names}}\t{{.Ports}}'
-    ```
-
-    Anything with `0.0.0.0:` or `[::]:` in front of the port is reachable from the internet.
-
-4. **Restricting published ports** (e.g. to the university network) is done in Docker's `DOCKER-USER` chain, not in `/etc/iptables-custom`. Prefer restricting access in the reverse proxy instead, as the Keycloak deployment does for its admin console.
+    The `INBOUND` and `OUTBOUND` rules above **don't protect Docker containers**: a port published by a container is open to the whole internet, and containers can connect to any port. Read [Docker on our servers](./docker.md) before running containers.
 
 **Reloading the firewall while Docker runs.** Check that `sudo iptables-custom` doesn't remove Docker's own rules. With a container running that publishes ports, the following should show rules for those ports, both before and after `sudo iptables-custom`:
 
@@ -196,7 +175,7 @@ Some updates (e.g. a new kernel) need a reboot. Ubuntu shows `*** System restart
 sudo docker compose version
 ```
 
-Run Docker with `sudo`, and don't add users to the `docker` group: membership of the `docker` group is effectively root access (anyone who can run Docker can mount the whole disk into a container), without the logging that `sudo` gives. The [Keycloak deployment](./keycloak-deploy.md#users-and-permissions) shows how to combine this with a system user that owns the files.
+Run Docker with `sudo`, and don't add users to the `docker` group: it is effectively root access (see [Docker on our servers](./docker.md#the-docker-group-is-root-access)).
 
 ## Persistence
 
