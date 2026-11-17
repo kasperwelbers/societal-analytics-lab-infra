@@ -435,9 +435,9 @@ Each AmCAT or AnnoTinder server of the lab (and anything else that logs in with 
 2. **Client authentication:** on. **Authentication flow:** only **Standard flow**. **Next.**
 3. **Valid redirect URIs:** the exact callback URL of the server (see its documentation), e.g. `https://amcat.example.org/api/auth/callback`: `https://`, no wildcards (`*`). **Valid post logout redirect URIs:** `+` (the same as the redirect URIs). Don't leave this field empty: Keycloak refuses an empty value. **Save.**
 4. **Credentials** tab: copy the **Client secret**.
-5. Configure the server: `OIDC_HOST=https://auth.example.org/realms/idp`, `OIDC_CLIENT_ID`, `OIDC_CLIENT_SECRET`, and `OIDC_MFA_CLAIM=amr:mfa` (see the [Authentication standard](./auth.md#configuration)). The server must request the scopes `openid email` only.
+5. Configure the server: `OIDC_HOST=https://auth.example.org/realms/idp`, `OIDC_CLIENT_ID`, `OIDC_CLIENT_SECRET`, and `OIDC_MFA_CLAIM=amr:mfa` (see the [Authentication standard](./auth.md#configuration)). Our software requests the scopes `openid email`.
 
-A new client gets only the scopes `email` (address and whether it is verified), `amr` (2FA), and the basics (`sub`, `auth_time`): no name, no roles, and no optional scopes. Users see that on the consent screen: "This app will be able to: see your email address; see whether you signed in with two-factor authentication".
+A new client gets the scopes `email` (address and whether it is verified), `amr` (2FA), and the basics (`sub`, `auth_time`), and `profile` (the name) only when it asks for it; no roles. Users see that on the consent screen: "This app will be able to: see your email address; see whether you signed in with two-factor authentication", and "see your name" for a service that requests `profile`. Other services (not ours) work the same way: they often request `openid profile email`.
 
 The client policy `deployment-clients` (in `realms/idp-realm.json`) applies to every confidential client that an admin creates or changes in `idp`. It prevents mistakes, not misuse (an admin can change the policy):
 
@@ -650,7 +650,7 @@ Log in to the admin console as `recovery-admin`, fix the problem (e.g. delete th
 | A login flow asks for OTP twice, or not at all | A "Condition - sub-flow executed" refers to a flow name that doesn't exist (e.g. after copying a flow). Run `python3 check-realms.py`. |
 | Users see that an email could not be sent | The relay refused or couldn't deliver it. `sudo docker compose logs mail-relay` shows why, e.g. the cap was reached (`Message delivery request rate limit exceeded`), a wrong sender address in a realm (`Sender address rejected`), or a login or TLS problem with the provider. |
 | Users see "Please try again later" | The email limit per IP address was reached (see [Email limits](#email-limits)). |
-| An app's login fails with `invalid_scope` ("Invalid scopes") | The app requests a scope that `idp` doesn't offer, typically `profile`. It must request `openid email` only (see step 8). |
+| An app's login fails with `invalid_scope` ("Invalid scopes") | The app requests a scope that `idp` doesn't offer (only `openid`, `email` and `profile` are offered), e.g. `roles` or `phone`. Remove it from the app's settings, or add the scope to that client (**Clients** → the client → **Client scopes**) if it really needs it. |
 | Creating a client fails with "Invalid Redirect Uri" | A redirect URI with `http://` or a wildcard, or an empty **Valid post logout redirect URIs** field: use `+` there (see step 8). |
 | `WARN ... configured to build using Bake, but buildx isn't installed` | Harmless: Compose falls back to the classic build. To remove the warning, install the buildx plugin (`sudo apt install docker-buildx-plugin`, with Docker from Docker's own repository). |
 

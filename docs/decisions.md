@@ -81,7 +81,7 @@ The cost: lab members have two accounts. `lab` as a login option of `idp` solves
 
 **Why:** students and collaborators sign up themselves when a project gives them access, instead of waiting for an admin. The client policy prevents mistakes, not misuse: admins are trusted.
 
-**Servers get only the email address and the 2FA signal** (and the account ID and login time), not the name or roles. That is all our software uses, and it makes the consent screen something everyone understands: "see your email address; see whether you signed in with two-factor authentication". The cost: our software must request exactly `openid email`, because Keycloak refuses a request for a scope it doesn't offer (e.g. `profile`, which many OIDC libraries request by default).
+**Servers get the email address and the 2FA signal** (and the account ID and login time), and the name only if they ask for it (the scope `profile`), not roles. Our software only uses the email address and the 2FA signal, so it requests `openid email`; other services (which often request `profile`) work too. The consent screen says it in words everyone understands: "see your email address; see whether you signed in with two-factor authentication", plus "see your name" for services that ask for it. Keycloak refuses a request for a scope it doesn't offer (e.g. `roles`), so only these are offered.
 
 **Dropped:**
 
@@ -174,7 +174,9 @@ The cost: lab members have two accounts. `lab` as a login option of `idp` solves
 
 **Why:** with a cookie for all subdomains, every app on the domain receives everyone's login, including apps with their own login that users can run code in (e.g. Jupyter). It would also need a wildcard redirect URI. A cookie per app costs one line in Keycloak per app, and users still log in once.
 
-**Dropped:** one shared cookie for all subdomains (`COOKIE_DOMAINS`). Authentik's forward auth (we moved from Authentik to Keycloak, see [Keycloak](#keycloak)).
+**oauth2-proxy in a Docker network of its own,** with its port published on `127.0.0.1` only, and only the gateway of that network trusted for `X-Forwarded-*` headers. It can't reach the apps on the server's localhost, and no other container can reach it.
+
+**Dropped:** one shared cookie for all subdomains (`COOKIE_DOMAINS`). `network_mode: host` for oauth2-proxy (simpler, but a compromised oauth2-proxy could reach every app on the server's localhost). Authentik's forward auth (we moved from Authentik to Keycloak, see [Keycloak](#keycloak)).
 
 ## Later
 

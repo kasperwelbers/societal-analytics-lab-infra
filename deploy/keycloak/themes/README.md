@@ -7,7 +7,7 @@ Keycloak themes for the login pages, the account console and emails. Only texts,
 | `sal` | login | (parent of the others) | Logo, favicon, colours, the footer link |
 | `sal-admin` | login | `master` | Subtitle "Administration" |
 | `sal-lab` | login, email | `lab` | Subtitle "Lab account", and the texts for members (first time, set your lab password) |
-| `sal-idp` | login | `idp` | Subtitle "Identity provider", and the consent screen ("Allow ... to use your account?", what the app will see, Allow / Don't allow) |
+| `sal-idp` | login | `idp` | Subtitle "Identity provider", and the consent screen ("Allow ... to use your account?", what the app will see: email address, 2FA, and the name only for apps that ask; Allow / Don't allow) |
 | `sal` | account | all realms | Logo in the account console |
 
 * **Texts** are in `messages/messages_en.properties`. The keys are Keycloak's own: see `theme/base/login/messages/messages_en.properties` in the `org.keycloak.keycloak-themes` jar of the Keycloak version in use.

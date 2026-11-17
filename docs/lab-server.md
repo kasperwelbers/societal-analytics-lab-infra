@@ -82,7 +82,7 @@ sudo mkdir /opt/oauth2-proxy
 sudo chown sal:sal /opt/oauth2-proxy && sudo chmod 750 /opt/oauth2-proxy
 ```
 
-Create `/opt/oauth2-proxy/compose.yml` with `sudoedit -u sal`. It uses the server's network, and only listens on localhost:
+Create `/opt/oauth2-proxy/compose.yml` with `sudoedit -u sal`. oauth2-proxy gets a Docker network of its own, and its port is only published on localhost, for Caddy:
 
 ```yaml
 services:
@@ -90,8 +90,10 @@ services:
     # Pin a release; check https://github.com/oauth2-proxy/oauth2-proxy/releases for a newer one
     image: quay.io/oauth2-proxy/oauth2-proxy:v7.15.6
     restart: unless-stopped
-    # Caddy (on the server itself) reaches it at 127.0.0.1:4180
-    network_mode: host
+    # Only for Caddy on this server
+    ports:
+      - "127.0.0.1:4180:4180"
+    networks: [authwall]
     env_file: .env
     environment:
       OAUTH2_PROXY_PROVIDER: keycloak-oidc
@@ -104,13 +106,27 @@ services:
       # Go straight to the lab login, without oauth2-proxy's own "Sign in" page
       OAUTH2_PROXY_SKIP_PROVIDER_BUTTON: "true"
       OAUTH2_PROXY_REVERSE_PROXY: "true"
-      # Only Caddy may set X-Forwarded-* headers
-      OAUTH2_PROXY_TRUSTED_PROXY_IP: 127.0.0.1/32
+      # Requests from the server (Caddy) arrive from the gateway of the network below:
+      # only that address may set X-Forwarded-* headers
+      OAUTH2_PROXY_TRUSTED_PROXY_IPS: 172.30.255.1/32
       OAUTH2_PROXY_SET_XAUTHREQUEST: "true"
-      OAUTH2_PROXY_HTTP_ADDRESS: 127.0.0.1:4180
+      OAUTH2_PROXY_HTTP_ADDRESS: 0.0.0.0:4180
+    # No writes, no extra privileges (the image already runs as a non-root user)
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+
+networks:
+  # oauth2-proxy alone, with a fixed range, so that the gateway address above is fixed too.
+  # Pick a range that no other Docker network on the server uses.
+  authwall:
+    ipam:
+      config:
+        - subnet: 172.30.255.0/29
+          gateway: 172.30.255.1
 ```
 
-No `COOKIE_DOMAINS`: without it, each app gets its own cookie.
+No `COOKIE_DOMAINS`: without it, each app gets its own cookie. Its own network keeps oauth2-proxy away from the apps on this server: from inside its container, the services on the server's `127.0.0.1` can't be reached, and no other container can reach oauth2-proxy. (With `network_mode: host` it could reach every app on the server's localhost, including apps that rely on the AuthWall.)
 
 Create `/opt/oauth2-proxy/.env`, also with `sudoedit -u sal`:
 
@@ -278,14 +294,17 @@ Then remove its block from the Caddyfile, reload Caddy, and remove its callback 
 | Keycloak shows "Invalid parameter: redirect_uri" | The app's `https://<app>.example.org/oauth2/callback` is not in **Valid redirect URIs** of `lab-authwall`. |
 | "Forbidden" after logging in | The app uses `authwall-group`, and the user is not in that group in the `lab` realm. |
 | A page of oauth2-proxy with a "Sign in" button | `OAUTH2_PROXY_SKIP_PROVIDER_BUTTON` is not set. |
-| oauth2-proxy doesn't start | Check `cd /opt/oauth2-proxy && sudo docker compose logs`. It needs to reach `https://auth.example.org/realms/lab` at startup. |
+| oauth2-proxy doesn't start | Check `cd /opt/oauth2-proxy && sudo docker compose logs`. It needs to reach `https://auth.example.org/realms/lab` at startup. If the network can't be created, its range is in use: choose another `subnet` (and `gateway`, and `OAUTH2_PROXY_TRUSTED_PROXY_IPS`). |
+| oauth2-proxy logs "no --trusted-proxy-ip CIDRs were configured" | The setting is missing or misspelled: it is `OAUTH2_PROXY_TRUSTED_PROXY_IPS` (plural). |
 | A change to the Caddyfile has no effect | The reload failed: `journalctl -u caddy -n 50`. |
 
 ## Tested
 
-On a test installation (November 2026), with oauth2-proxy v7.15.6 (built from source, with the settings above), Caddy 2.11 with these snippets, and the `lab` realm of our Keycloak:
+On a test installation (November 2026), with oauth2-proxy v7.15.6 (built from source, in a container with the settings and network above), Caddy 2.11 with these snippets, and the `lab` realm of our Keycloak:
 
 * a first visit to an app goes to the lab login (password, and setting up 2FA the first time), and back to the same page; the app receives the user's email address;
 * a second app logs in without a login page (single sign-on through Keycloak);
 * each app has its own cookie, and an app with its own login receives none;
-* an app restricted to a group lets members of the group in, and shows "Forbidden" to other lab members, who can still use the other apps.
+* an app restricted to a group lets members of the group in, and shows "Forbidden" to other lab members, who can still use the other apps;
+* oauth2-proxy sees Caddy's requests from the gateway `172.30.255.1`, and ignores forged `X-Forwarded-*` headers from any other address;
+* oauth2-proxy can't reach an app on the server's `127.0.0.1`, and another container can't reach oauth2-proxy.

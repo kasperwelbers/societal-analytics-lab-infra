@@ -123,7 +123,7 @@ All software developed by the Societal Analytics Lab follows these rules, to ens
 | --- | --- |
 | Same origin | The server and web client are always hosted on the same domain. |
 | Server-side OIDC flow | The server initiates and completes the OIDC flow with the trusted provider (`OIDC_HOST`), and sets a signed, http-only session cookie. |
-| Scopes | The server requests the scopes `openid email`, nothing more. It uses `sub`, `email`, `email_verified`, the 2FA signal and `auth_time`, and no name. Some providers (e.g. the lab's `idp`) refuse a login that requests a scope they don't offer, such as `profile`. |
+| Scopes | The server requests the scopes `openid email`, nothing more. It uses `sub`, `email`, `email_verified`, the 2FA signal and `auth_time`, and no name, so users aren't asked to share more than needed. |
 | One session per application | When AmCAT and AnnoTinder are hosted together, each application has its own session. They can share one OIDC client (the same client ID and client secret), so that users consent once per host (see [One client per host](./auth-providers.md#one-client-per-host)). The second login completes without user interaction, because the user is already signed in at the provider. Logging out is per application. |
 | Authorization on the server | The server decides what users may do, not the OIDC provider (see [Authorization](#authorization)). |
 | API keys for other clients | Other clients (e.g. R or Python) can only access the backend via [API keys](#api-keys). |
