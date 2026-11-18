@@ -32,7 +32,7 @@ The two hostnames: `auth.societal-analytics.nl` (public: `/realms/`, `/resources
 | `caddy/admin-access.example.caddy` | The template for the local Caddy setting `caddy/admin-access.caddy` (copied in step 2, never committed): the restrictions of the admin hostname ([step 4](#4-restrict-admin-access)). |
 | `caddy/init.sh` | Run by the caddy-init service before Caddy starts: creates `caddy/admin-access.caddy` from its template if it is missing, so that Caddy can always start |
 | `.env.example` | All settings. Copied to `.env`, which holds the secrets and is never committed. |
-| `backup.sh` | A database dump, for a daily cron job |
+| `backup.sh` | A database dump, run by the nightly backup ([step 9](#9-backups)) |
 
 ## 1. Prerequisites
 
@@ -442,24 +442,18 @@ Tested on a test installation: a client created step by step as above gets conse
 
 ## 9. Backups
 
-`backup.sh` writes a compressed database dump (`pg_dump --format=custom`) to `/var/backups/keycloak`, and removes dumps older than 14 days. Run it once by hand:
+The VM is backed up like every server: [Backups](backups.md). Its database is dumped first by `backup.sh`, which writes a compressed dump (`pg_dump --format=custom`) to `/opt/keycloak/backups/keycloak.dump`; set it up as the VM's dump script ([Database dumps](backups.md#3-database-dumps)). Run it once by hand to check it:
 
 ```bash
 sudo /opt/keycloak/societal-analytics-lab-infra/deploy/keycloak/backup.sh
 ```
 
-Schedule it daily (03:15):
-
-```bash
-echo '15 3 * * * root /opt/keycloak/societal-analytics-lab-infra/deploy/keycloak/backup.sh >> /var/log/keycloak-backup.log 2>&1' | sudo tee /etc/cron.d/keycloak-backup
-```
-
-* **The dumps are sensitive:** they contain user data, password hashes, client secrets and the realm signing keys. The backup folder is only readable by root.
-* **Keycloak has no master key:** the database dump (plus `.env` and `caddy/admin-access.caddy`) is all you need to restore. The internal certificate is not part of the backup: on a new VM, tls-init creates a new one.
+* **The dumps are sensitive:** they contain user data, password hashes, client secrets and the realm signing keys. The folder is only readable by root, and the backups are encrypted.
+* **Keycloak has no master key:** the database dump (plus `.env` and `caddy/admin-access.caddy`, which are in the backup too) is all you need to restore. The internal certificate is not needed: on a new VM, tls-init creates a new one.
 * **Keycloak's register of running instances** (the `jgroups_ping` table) is left out of the dump. Restoring old entries would make Keycloak believe another instance is running.
-* ==TODO: encryption and an off-site copy, once the lab's backup strategy is decided. Until then, the dumps are on the same VM, so they don't protect against losing the VM.==
+* **From an older installation:** remove the old cron job (`sudo rm /etc/cron.d/keycloak-backup`), and the old dumps in `/var/backups/keycloak` once the new backups run.
 
-**Restore** (tested; this replaces the current database):
+**Restore** (tested; this replaces the current database). First get the dump out of the backups ([Restoring](backups.md#restoring), `--include /opt/keycloak/backups`), then:
 
 ```bash
 cd /opt/keycloak/societal-analytics-lab-infra/deploy/keycloak
@@ -478,7 +472,7 @@ sudo docker compose exec -T postgres createdb -U keycloak keycloak
 ```
 
 ```bash
-sudo cat /var/backups/keycloak/<dump file> | sudo docker compose exec -T postgres pg_restore -U keycloak -d keycloak --no-owner
+sudo cat /tmp/restore/opt/keycloak/backups/keycloak.dump | sudo docker compose exec -T postgres pg_restore -U keycloak -d keycloak --no-owner
 ```
 
 ```bash
@@ -516,7 +510,7 @@ sudo docker compose restart keycloak caddy
 **Upgrading Keycloak.** Keycloak has quarterly feature releases and frequent patch releases; follow the [Keycloak blog](https://www.keycloak.org/blog) for releases and security announcements.
 
 1. Read the release notes and the [upgrading guide](https://www.keycloak.org/docs/latest/upgrading/) for the new version.
-2. Make a backup with `backup.sh`.
+2. Make a backup: `sudo systemctl start backup.service` (then check it with `journalctl -u backup.service -n 20`).
 3. Change the version in `docker-compose.yml` (`KEYCLOAK_IMAGE`, the only place where it is set). Preferably make the change in the repository, and get it onto the VM with `sudo -u keycloak git pull`.
 4. Rebuild and restart. Keycloak migrates the database on start.
 
@@ -657,4 +651,4 @@ The choices behind this setup, and the alternatives that were dropped: [Decision
 * "Sign in with your lab account" in `idp`: `lab` as a login option of `idp`, so lab members use one account (see [Decisions](../decisions.md#later)).
 * Clients for the lab's own servers (step 8), once they move to `idp`.
 * Institutional login for the `lab` realm (e.g. via the university).
-* Encrypted, off-site backups (part of the lab's backup strategy).
+* Backups off the VM ([Backups](backups.md#changing-the-location)).

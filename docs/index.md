@@ -23,7 +23,7 @@ flowchart LR
 
 * **The 🔑 is the lab's login service** (Keycloak). Everything that needs a login uses it: the lab login on the lab server, and the services on the service VMs.
 * **🌐 Only HTTPS is public.** Each server has one reverse proxy (Caddy) in front of its services; the services themselves listen only on the server itself or on internal networks. The database server has no public access at all.
-* **Backups** of the servers are still to be decided with VU IT (see [Open points](#open-points)).
+* **Backups:** every server backs up `/opt` every night, encrypted ([Backups](./install/backups.md)); for now on the server itself (see [Open points](#open-points)).
 
 ## Two kinds of servers
 
@@ -55,7 +55,7 @@ How the servers are set up: [Installation guides](./install/vm.md). Why they are
 
 ## Open points
 
-* **Backups:** an encrypted backup of `/opt` on every server (without the `temp` folders), and of the database server, stored off the server: where, to be agreed with VU IT. Keycloak's daily database dumps are currently kept on the VM itself ([Backups](./install/keycloak.md#9-backups)).
+* **Backups:** the nightly backups are still stored on each server itself, so they don't protect against losing a server. ==TODO: a location off the servers, to be agreed with VU IT, and the backup of the database server.== ([Backups](./install/backups.md))
 * **The lab server:** ==TODO: operating system updates, SSH access, the move of the services to their addresses under `lab.`, and of their data to `/opt/<app>/data` or `/opt/<app>/temp`.==
 * **The database server:** ==TODO: what it stores, and how the service VMs connect to it.==
 * **Keycloak's address:** Keycloak still runs at an older address; ==TODO: move it to `auth.societal-analytics.nl`.==

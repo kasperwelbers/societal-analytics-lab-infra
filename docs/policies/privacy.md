@@ -82,7 +82,7 @@ We do not sell personal data, and do not share it for advertising. ==TODO: confi
 | Security logs | ==TODO: period (e.g. 6 or 12 months)== |
 | Research data | As agreed with the research project |
 | Whisper and Ollama inputs and outputs | ==TODO: e.g. deleted after processing, or after a fixed period== |
-| Backups | ==TODO: backup retention period== |
+| Backups | Up to 6 months: data deleted from a service can remain in the encrypted backups until they expire. Data with a short retention (e.g. uploaded audio and transcripts) is never backed up. |
 
 ## Security
 

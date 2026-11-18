@@ -1,0 +1,10 @@
+[Unit]
+Description=Nightly backup of /opt with restic (docs/install/backups.md)
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/opt/backup/societal-analytics-lab-infra/deploy/backup/backup.sh
+Nice=10
+IOSchedulingClass=idle

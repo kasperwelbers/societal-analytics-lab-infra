@@ -13,9 +13,9 @@ The [Keycloak VM](keycloak.md) follows the same layout, with its own system acco
 | `/opt/<app>/temp` | Data with a short retention, e.g. uploaded audio and transcripts | No | Automatically, after a set number of days ([below](#short-retention-temp)) |
 | Docker named volumes | Caches, downloaded models: anything that can be downloaded or created again | No | When the volume is removed |
 
-So everything that must survive is under `/opt`, and a backup of the server is all of `/opt`, except the `temp` folders. ==TODO: the backup itself (see [Open points](../index.md#open-points)).==
+So everything that must survive is under `/opt`, and the nightly backup of the server is all of `/opt`, except the `temp` folders ([Backups](backups.md)). An app with a database also gets a dump script ([Database dumps](backups.md#3-database-dumps)).
 
-For every new app, decide where its data goes: does it need to be kept (`data`), deleted after a while (`temp`), or is it a cache (a named volume)? Record the answer in [Hosted services](../servers/services.md).
+For every new app, decide where its data goes: does it need to be kept (`data`), deleted after a while (`temp`), or is it a cache (a named volume)? How to find out what an app writes where: [Sorting an app's data](#sorting-an-apps-data). Record the answer in [Hosted services](../servers/services.md).
 
 ## 1. The system account
 
@@ -85,20 +85,21 @@ sudo usermod -aG sal <admin>
     sudo -u sal mkdir /opt/<app>/data
     ```
 
-    In the compose file, mount it (or subfolders of it) into the container, e.g. `/opt/<app>/data/uploads:/app/uploads`. Use the full path: a relative path counts from the folder with the compose file, which isn't always `/opt/<app>`. A container that writes as its own user (e.g. PostgreSQL) needs that user as the owner of its folder; the app's documentation says which user.
+    In the compose file, mount it (or subfolders of it) into the container, e.g. `/opt/<app>/data:/app/data`. Use the full path: a relative path counts from the folder with the compose file, which isn't always `/opt/<app>`. A container that writes as its own user (e.g. PostgreSQL) needs that user as the owner of its folder; the app's documentation says which user.
 
-5. **Data with a short retention:** set up `temp` as below ([Short retention](#short-retention-temp)), and mount it like `data`.
+5. **Data with a short retention:** set up `temp` as below ([Short retention](#short-retention-temp)), and mount it on exactly the folder for uploads and results, never on a folder that also holds settings or a database.
 6. **Caches and downloaded models:** keep the named volumes the app's compose file already has.
-7. **Listen on localhost only,** so the app can't be reached around Caddy.
+7. **A database:** add a dump script for the backup ([Database dumps](backups.md#3-database-dumps)).
+8. **Listen on localhost only,** so the app can't be reached around Caddy.
     * With Docker, publish ports on `127.0.0.1`: `"127.0.0.1:<port>:<port>"`. A plain `"<port>:<port>"` is reachable from the internet, even with a firewall (see [Docker warnings](docker.md#published-ports-bypass-the-firewall)). Check with `sudo docker ps --format '{{.Names}}\t{{.Ports}}'`: nothing should show `0.0.0.0:` or `[::]:`. See which ports are taken with `sudo ss -tlnp`.
     * Without Docker, use a systemd service with `User=sal` and `WorkingDirectory=/opt/<app>`, and bind the app to `127.0.0.1`.
-8. **Start it,** from the folder with the compose file:
+9. **Start it,** from the folder with the compose file:
 
     ```bash
     cd /opt/<app> && sudo docker compose up -d
     ```
 
-9. **Make it reachable** through Caddy: on the lab server, see [Adding a service](lab-server.md#2-adding-a-service).
+10. **Make it reachable** through Caddy: on the lab server, see [Adding a service](lab-server.md#2-adding-a-service).
 
 ## Short retention: `temp`
 
@@ -118,7 +119,38 @@ sudo systemd-tmpfiles --create /etc/tmpfiles.d/<app>.conf
 
 From then on, a daily timer of the system (`systemd-tmpfiles-clean.timer`) deletes files in it that weren't changed for 30 days. To see which files are past the period: `sudo find /opt/<app>/temp -mtime +30`.
 
-If the app keeps its own list of these files (e.g. in a database), check that it copes with files that disappear; otherwise use the app's own retention setting, if it has one.
+If the app has its own retention setting, use that instead: the app then also cleans up its own records.
+
+## Sorting an app's data
+
+Most apps don't say what they keep where. Before the first real use:
+
+1. **Find out what it writes where:** in the app's documentation, in its compose file (the `volumes:`), and by trying it: after a test run, `sudo docker diff <container>` lists every file the container changed outside its mounts, and the mounted folders show the rest.
+2. **Sort every folder:**
+    * settings, accounts, a database: `data`;
+    * users' uploads and results: `temp`, if they may only be kept for a limited time (otherwise `data`);
+    * caches and downloaded models: a named volume.
+3. **Mount each folder where it belongs.** A mount can point at a folder inside another mounted folder; the more specific one wins. So the uploads of an app can go to `temp` while the rest of its data folder goes to `data`:
+
+    ```yaml
+    volumes:
+      - /opt/<app>/data:/app/data            # settings, database: kept
+      - /opt/<app>/temp:/app/data/uploads    # only the uploads: deleted after the set time
+    ```
+
+    (Docker leaves an empty `uploads` folder in `data`, where the second mount is attached; leave it.)
+
+4. **Test the retention with a short period:** set `m:10m` in the tmpfiles line, wait ten minutes, run `sudo systemctl start systemd-tmpfiles-clean`, and check that the old files are gone and that the app still works (including its list of earlier results, if it has one). Then set the real period.
+5. **Record it** in the "Kept" column of [Hosted services](../servers/services.md).
+
+Where sorting by folder doesn't work:
+
+* **Settings and uploads in the same folder** (e.g. `settings.json` next to `job-123.wav`): no mount can separate them.
+* **Folders that vary,** e.g. `/app/data/<user>/uploads`: a mount needs a fixed path.
+* **Files moved from one mount to the other:** some apps write a file elsewhere first and then move it into the uploads folder. Depending on how the app moves it, that is a copy (fine) or fails with "cross-device link". The test in step 4 shows it.
+* **The app keeps a list of its files** (e.g. a history of transcriptions in its database): after the cleanup, the list points to files that are gone, which can confuse it.
+
+Then use the app's own retention setting, or delete through the app (its API or admin page, run on a schedule). That is work per app: record how in Hosted services.
 
 ## Updating and removing an app
 

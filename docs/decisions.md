@@ -175,6 +175,8 @@ The cost: lab members have two accounts. `lab` as a login option of `idp` solves
 
 **Where data goes depends on how long it is kept:** data that must be kept in `/opt/<app>/data`, data with a short retention in `/opt/<app>/temp` (deleted by `systemd-tmpfiles` after a set number of days), and caches in Docker named volumes. Everything that must survive is under `/opt`, so a backup is all of `/opt` except the `temp` folders. Not backing up `temp` keeps short retention real: deleted audio or transcripts don't live on in backups.
 
+**Backups with restic, the same on every server:** every night, the dump scripts of the server (`/opt/backup/hooks.d/`) dump the databases into the apps' folders, then restic backs up all of `/opt`, encrypted, without the `temp` folders, and keeps 7 daily, 4 weekly and 6 monthly backups ([Backups](./install/backups.md)). restic encrypts before anything leaves the server, stores only changes, and can store backups almost anywhere, so moving the backups off the server later is one setting. The job and its dump scripts are owned by root, because they run as root: a file that `sal` can change must never decide what root deletes or runs. Dropped: a policy file per app (`/opt/<app>/policy.yml`) read by our own tool; the standard tools (tmpfiles, dump scripts, the exclusion of `temp`) do the same without a tool to maintain.
+
 **Dropped:**
 
 * **`sal` in the `docker` group:** membership of that group is effectively root access, and apps that run as `sal` without Docker would get it too.
