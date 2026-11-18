@@ -23,7 +23,7 @@ flowchart LR
 
 * **The 🔑 is the lab's login service** (Keycloak). Everything that needs a login uses it: the lab login on the lab server, and the services on the service VMs.
 * **🌐 Only HTTPS is public.** Each server has one reverse proxy (Caddy) in front of its services; the services themselves listen only on the server itself or on internal networks. The database server has no public access at all.
-* **Backups** of the database server and of Keycloak are still to be decided with VU IT (see [Open points](#open-points)).
+* **Backups** of the servers are still to be decided with VU IT (see [Open points](#open-points)).
 
 ## Two kinds of servers
 
@@ -49,15 +49,16 @@ IP addresses and the admin hostname of Keycloak are not published here.
 * Docker containers bypass a server's firewall, so we follow strict rules for them ([Docker warnings](./install/docker.md)).
 * Software versions are pinned and upgraded deliberately; the operating system installs security updates automatically.
 * Secrets are only on the server they are used on, readable only by the account that runs the service.
+* Everything that must survive is under `/opt`; data with a short retention is deleted automatically, and isn't backed up ([Apps on our servers](./install/apps.md)).
 
 How the servers are set up: [Installation guides](./install/vm.md). Why they are set up this way: [Decisions](./decisions.md).
 
 ## Open points
 
-* **Backups:** an encrypted, off-site (or at least off-server) backup for the database server and Keycloak, to be agreed with VU IT. Keycloak's daily database dumps are currently kept on the VM itself ([Backups](./install/keycloak.md#9-backups)).
-* **The lab server:** ==TODO: operating system updates, SSH access, the move of the services to their addresses under `lab.`, and of their data to `/srv`.== Its backup is `/srv` plus the `.env` files in `/opt`.
+* **Backups:** an encrypted backup of `/opt` on every server (without the `temp` folders), and of the database server, stored off the server: where, to be agreed with VU IT. Keycloak's daily database dumps are currently kept on the VM itself ([Backups](./install/keycloak.md#9-backups)).
+* **The lab server:** ==TODO: operating system updates, SSH access, the move of the services to their addresses under `lab.`, and of their data to `/opt/<app>/data` or `/opt/<app>/temp`.==
 * **The database server:** ==TODO: what it stores, and how the service VMs connect to it.==
 * **Keycloak's address:** Keycloak still runs at an older address; ==TODO: move it to `auth.societal-analytics.nl`.==
 * **The VM firewall:** one check of the VM firewall together with Docker is still to be done ([Docker and the VM firewall](./install/vm.md#docker-and-the-vm-firewall)).
 * **Privacy statement and acceptable use policy:** drafts, to be reviewed by the VU privacy officer ([Privacy statement](./policies/privacy.md), [Acceptable use policy](./policies/aup.md)).
-* **Retention** of the inputs and outputs of the lab services (e.g. audio and transcripts): ==TODO== (see the privacy statement).
+* **Retention** of the inputs and outputs of the lab services (e.g. audio and transcripts): the periods in [Hosted services](./servers/services.md) are ==TODO==, and must match the privacy statement.

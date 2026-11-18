@@ -15,6 +15,7 @@ nav:
       - Hosted services: servers/services.md
   - Installation guides:
       - University VMs: install/vm.md
+      - Apps on our servers: install/apps.md
       - Lab server: install/lab-server.md
       - Keycloak VM: install/keycloak.md
       - "⚠️ Docker warnings": install/docker.md

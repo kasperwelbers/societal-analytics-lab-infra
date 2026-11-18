@@ -32,8 +32,8 @@ Rules for running Docker containers on any of our servers: the [lab server](lab-
 
 Run Docker with `sudo`, and don't add anyone to the `docker` group: not admins, and not the system accounts that own the files of an app (`keycloak`, `sal`). Anyone who can run Docker can mount the whole disk into a container, so membership of the `docker` group is effectively root access, without the logging that `sudo` gives. A program that runs as a system account in the `docker` group (e.g. an app without Docker, run by systemd as `sal`) would have that access too.
 
-Files are still owned by a system account; only the `docker compose` commands use `sudo`. See [Installation: lab server](lab-server.md#1-the-system-account) and the Keycloak installation ([Users and permissions](keycloak.md#users-and-permissions)).
+Files are still owned by a system account; only the `docker compose` commands use `sudo`. See [Apps on our servers](apps.md#1-the-system-account) and the Keycloak installation ([Users and permissions](keycloak.md#users-and-permissions)).
 
 ## Directories for bind mounts
 
-When a bind mount (e.g. `./data:/data` in a compose file) points to a directory that doesn't exist, Docker creates it, owned by root. Create such directories yourself before the first start, as the account that owns the app (e.g. `sudo -u sal mkdir /srv/<app>/uploads`).
+When a bind mount (e.g. `./data:/data` in a compose file) points to a directory that doesn't exist, Docker creates it, owned by root. Create such directories yourself before the first start, as the account that owns the app (e.g. `sudo -u sal mkdir /opt/<app>/data`).

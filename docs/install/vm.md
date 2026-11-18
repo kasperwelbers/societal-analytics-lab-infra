@@ -173,6 +173,10 @@ sudo docker compose version
 
 Run Docker with `sudo`, and don't add users to the `docker` group: it is effectively root access (see [Docker warnings](docker.md#the-docker-group-is-root-access)).
 
+## 6. Installing apps
+
+Install apps as described in [Apps on our servers](apps.md): the system account `sal`, every app in `/opt/<app>`, and where its data goes. Install Caddy from its official apt repository, as on the lab server ([Caddy](lab-server.md#caddy)).
+
 ## Persistence
 
 To decide whether to use **Instantiate as persistent**, it helps to know how the portal combines templates, instances and images:

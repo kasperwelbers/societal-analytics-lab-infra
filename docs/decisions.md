@@ -167,18 +167,19 @@ The cost: lab members have two accounts. `lab` as a login option of `idp` solves
 
 ## The lab server
 
-### One system account, apps in `/opt` and data in `/srv`, Caddy on the server, Docker with `sudo`
+### One system account, everything in `/opt`, Caddy on the server, Docker with `sudo`
 
-**Chosen:** every app in `/opt/<app>`, owned by the system account `sal` (no login, no home directory); admins are in the `sal` group and work as `sal` with `sudo -u sal` and `sudoedit -u sal`. Caddy runs on the server itself and is the only way in. Admins run Docker with `sudo` ([Installation: lab server](./install/lab-server.md)).
+**Chosen:** every app in `/opt/<app>`, owned by the system account `sal` (no login, no home directory); admins are in the `sal` group and work as `sal` with `sudo -u sal` and `sudoedit -u sal`. Caddy runs on the server itself and is the only way in. Admins run Docker with `sudo`. The same on the service VMs ([Apps on our servers](./install/apps.md)).
 
 **Why:** one convention for all apps on a server with many small apps, and no app files owned by root or by an admin's personal account. Caddy in front of everything gives HTTPS and one place to decide what is reachable.
 
-**App and data apart:** each app has `/opt/<app>` (code, compose file, settings and secrets) and `/srv/<app>` (everything it writes). A backup of the server is `/srv` plus the `.env` files; reinstalling or removing an app can't take its data with it; a data disk can be mounted on `/srv`; and it is clear where personal data is kept. The cost: two directories per app, and absolute paths in the compose file (through `DATA_DIR` in `.env`).
+**Where data goes depends on how long it is kept:** data that must be kept in `/opt/<app>/data`, data with a short retention in `/opt/<app>/temp` (deleted by `systemd-tmpfiles` after a set number of days), and caches in Docker named volumes. Everything that must survive is under `/opt`, so a backup is all of `/opt` except the `temp` folders. Not backing up `temp` keeps short retention real: deleted audio or transcripts don't live on in backups.
 
 **Dropped:**
 
 * **`sal` in the `docker` group:** membership of that group is effectively root access, and apps that run as `sal` without Docker would get it too.
-* **Data inside the app directory** (`/opt/<app>/data`): code and data mixed, so backups, reinstalls and a separate data disk are all harder.
+* **Data in `/srv/<app>`,** apart from the app: a backup would then be `/srv` plus the `.env` files in `/opt`, so two places instead of one, and two directories per app. Its advantage, a separate data disk mounted on `/srv`, doesn't apply yet; reconsider when a server gets one.
+* **All data in Docker named volumes** (the default of most compose files): they live in `/var/lib/docker/volumes`, out of sight, and `docker compose down -v` or `docker volume prune` deletes them.
 
 ### All lab services under `lab.`, with one login cookie for the zone
 
