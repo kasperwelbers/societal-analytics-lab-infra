@@ -16,6 +16,7 @@ nav:
   - Installation guides:
       - University VMs: install/vm.md
       - Apps on our servers: install/apps.md
+      - Docker Compose standards: install/compose.md
       - Backups: install/backups.md
       - Lab server: install/lab-server.md
       - Keycloak VM: install/keycloak.md
@@ -33,6 +34,7 @@ nav:
   - Discussion:
       - About: discussion.md
       - Decisions: decisions.md
+      - Backup strategies: backup-strategies.md
       - "2FA: where should it live?": auth-2fa.md
       - Provider comparison: auth-providers.md
 

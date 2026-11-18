@@ -2,7 +2,7 @@
 
 Our software doesn't handle passwords or second factors itself: it delegates logins to an OIDC provider (see the [Authentication standard](./auth.md)). This page is for teams that host AmCAT or AnnoTinder themselves, and need to choose that provider.
 
-**What the lab uses:** its own Keycloak, for the lab's own servers ([Keycloak VM](./servers/keycloak.md)). It is not a service for other teams' servers, but its setup and realm files (`deploy/keycloak/`) can serve as an example if you decide to run your own Keycloak.
+**What the lab uses:** its own Keycloak, for the lab's own servers ([Keycloak VM](./servers/keycloak.md)). It is not a service for other teams' servers, but its setup and realm files ([deploy-keycloak](https://github.com/vu-societal-analytics/deploy-keycloak)) can serve as an example if you decide to run your own Keycloak.
 
 **What the provider must do** ([requirements](./auth.md#oidc-provider-requirements)): verify email addresses, support 2FA and signal it to the server, and support step-up (`max_age` and `auth_time`). Which provider fits depends on your institution and on the data on your server:
 

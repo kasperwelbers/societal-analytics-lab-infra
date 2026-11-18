@@ -1,6 +1,6 @@
 # Installation: Keycloak VM
 
-This guide sets up the lab's login service: Keycloak on a single VM, with PostgreSQL and Caddy (TLS via Let's Encrypt), using the files in [`deploy/keycloak/`](https://github.com/vu-societal-analytics/societal-analytics-lab-infra/tree/main/deploy/keycloak). It takes about an hour. What the result looks like (the hostnames, the realms, how users log in, and the security measures): [Keycloak VM](../servers/keycloak.md). What was tested: the [test checklist](../auth-providers.md#keycloak-test-checklist).
+This guide sets up the lab's login service: Keycloak on a single VM, with PostgreSQL and Caddy (TLS via Let's Encrypt), using the files in the repository [deploy-keycloak](https://github.com/vu-societal-analytics/deploy-keycloak), cloned to `/opt/keycloak`. It takes about an hour. What the result looks like (the hostnames, the realms, how users log in, and the security measures): [Keycloak VM](../servers/keycloak.md). What was tested: the [test checklist](../auth-providers.md#keycloak-test-checklist).
 
 !!! info "The admin hostname"
     The admin hostname is not published: replace `<admin hostname>` with it. The IP ranges and the secrets are only on the VM (in `.env` and `caddy/admin-access.caddy`).
@@ -19,7 +19,7 @@ The two hostnames: `auth.societal-analytics.nl` (public: `/realms/`, `/resources
 
 | File | Contents |
 | --- | --- |
-| `docker-compose.yml` | The services, pinned versions, memory limits, health checks, and two networks (the database network has no internet access) |
+| `compose.yml` | The services, pinned versions, memory limits, health checks, and two networks (the database network has no internet access) |
 | `Dockerfile` | The optimized Keycloak image (`kc.sh build` with PostgreSQL and health endpoints) |
 | `Caddy.Dockerfile` | Caddy with the [rate limit module](https://github.com/mholt/caddy-ratelimit) |
 | `realms/` | The realms (`master`, `lab`, `idp`) as Keycloak realm files, imported when a realm doesn't exist yet ([step 7](#7-realms)); `realms/README.md` explains what we changed |
@@ -32,7 +32,7 @@ The two hostnames: `auth.societal-analytics.nl` (public: `/realms/`, `/resources
 | `caddy/admin-access.example.caddy` | The template for the local Caddy setting `caddy/admin-access.caddy` (copied in step 2, never committed): the restrictions of the admin hostname ([step 4](#4-restrict-admin-access)). |
 | `caddy/init.sh` | Run by the caddy-init service before Caddy starts: creates `caddy/admin-access.caddy` from its template if it is missing, so that Caddy can always start |
 | `.env.example` | All settings. Copied to `.env`, which holds the secrets and is never committed. |
-| `backup.sh` | A database dump, run by the nightly backup ([step 9](#9-backups)) |
+| `db-backup.sh` | The `db-backup` service: a daily database dump into `backups/` ([step 9](#9-backups)) |
 
 ## 1. Prerequisites
 
@@ -72,10 +72,10 @@ The deployment uses two accounts:
 How commands are run:
 
 * **File operations** (cloning, editing `.env`, `git pull`) run **as `keycloak`**, with `sudo -u keycloak ...`, so that the files stay owned by `keycloak`.
-* **Docker commands** (`docker compose ...`, `./admin-cli.sh`, `backup.sh`) run **from your own account with `sudo`**, from the deployment folder `/opt/keycloak/societal-analytics-lab-infra/deploy/keycloak`. Docker reads `.env` as root, so your account doesn't need to be able to read it.
+* **Docker commands** (`docker compose ...`, `./admin-cli.sh`) run **from your own account with `sudo`**, from `/opt/keycloak`. Docker reads `.env` as root, so your account doesn't need to be able to read it.
 
 !!! warning "Required: your admin account must be in the `keycloak` group"
-    `/opt/keycloak` is only accessible to the `keycloak` user and group (`chmod 750`). The Docker commands are run from the deployment folder inside it, so your admin account must be a member of the `keycloak` group, otherwise `cd` into the folder fails with `Permission denied`. Group membership gives access to the folder and the deployment files, but not to `.env`, which stays readable only by `keycloak` (`chmod 600`).
+    `/opt/keycloak` is only accessible to the `keycloak` user and group (`chmod 750`). The Docker commands are run from it, so your admin account must be a member of the `keycloak` group, otherwise `cd` into the folder fails with `Permission denied`. Group membership gives access to the folder and the deployment files, but not to `.env`, which stays readable only by `keycloak` (`chmod 600`).
 
 Why not simpler:
 
@@ -117,16 +117,16 @@ ls /opt/keycloak
 
 ### Files and settings
 
-Get the files onto the VM, as `keycloak`:
+Get the files onto the VM, as `keycloak`, into the (still empty) folder:
 
 ```bash
-sudo -u keycloak git clone https://github.com/vu-societal-analytics/societal-analytics-lab-infra.git /opt/keycloak/societal-analytics-lab-infra
+sudo -u keycloak git clone https://github.com/vu-societal-analytics/deploy-keycloak.git /opt/keycloak
 ```
 
-Go to the deployment folder. All further commands in this guide are run from here:
+All further commands in this guide are run from here:
 
 ```bash
-cd /opt/keycloak/societal-analytics-lab-infra/deploy/keycloak
+cd /opt/keycloak
 ```
 
 Create `.env`, readable only by `keycloak`:
@@ -193,17 +193,7 @@ The login pages of the `master` realm (used by the admin console) must be on the
 curl -s https://<admin hostname>/realms/master/.well-known/openid-configuration | grep -o '"issuer":"[^"]*"'
 ```
 
-On an installation from before the realm files, set it once with Keycloak's admin tool. `admin-cli.sh` runs it inside the container; log in as an admin of `master` (you are prompted for the password), and set the frontend URL (use your real admin hostname):
-
-```bash
-sudo ./admin-cli.sh login
-```
-
-```bash
-sudo ./admin-cli.sh update realms/master -s attributes.frontendUrl=https://<admin hostname>
-```
-
-This changes the issuer of `master`, so the admin tool's login is no longer valid afterwards: run `sudo ./admin-cli.sh login` again for further commands.
+On an installation from before the realm files, or after changing the admin hostname, set it directly in the database (see [Changing the hostnames](#changing-the-hostnames)).
 
 ## 4. Restrict admin access
 
@@ -416,8 +406,8 @@ The files are the starting point and the documentation; the realms themselves ar
     python3 check-realms.py
     ```
 
-    It catches mistakes in flows that Keycloak accepts silently, e.g. a "Condition - sub-flow executed" that refers to a flow that doesn't exist (which happens when a flow is copied in the admin console: the copy keeps the old name), and placeholders that `docker-compose.yml` doesn't pass to Keycloak.
-* **New values from `.env`:** write `${NAME}` (upper case), and add `NAME` to the environment of the `keycloak` service in `docker-compose.yml`. Lower-case placeholders, e.g. `${role_admin}`, are Keycloak's own texts.
+    It catches mistakes in flows that Keycloak accepts silently, e.g. a "Condition - sub-flow executed" that refers to a flow that doesn't exist (which happens when a flow is copied in the admin console: the copy keeps the old name), and placeholders that `compose.yml` doesn't pass to Keycloak.
+* **New values from `.env`:** write `${NAME}` (upper case), and add `NAME` to the environment of the `keycloak` service in `compose.yml`. Lower-case placeholders, e.g. `${role_admin}`, are Keycloak's own texts.
 * **Larger changes:** make them in the admin console of a test installation, and export the realm (**Realm settings → Action → Partial export**, with clients, groups and roles). Then put the placeholders back for the secrets and hostnames, and compare with the old file before replacing it.
 
 ## 8. Clients for our deployments
@@ -442,25 +432,26 @@ Tested on a test installation: a client created step by step as above gets conse
 
 ## 9. Backups
 
-The VM is backed up like every server: [Backups](backups.md). Its database is dumped first by `backup.sh`, which writes a compressed dump (`pg_dump --format=custom`) to `/opt/keycloak/backups/keycloak.dump`; set it up as the VM's dump script ([Database dumps](backups.md#3-database-dumps)). Run it once by hand to check it:
+The VM is backed up like every server ([Backups](backups.md)): every night, `/opt` (with `.env`, `caddy/admin-access.caddy` and the database dumps) is backed up, encrypted. Set that up after this guide.
+
+The database itself is dumped by the `db-backup` service in `compose.yml`: at its start, and every day at 02:00 (UTC), into `/opt/keycloak/backups/keycloak-<date>.dump`, kept for 7 days. It starts with the rest. Check it after the first start:
 
 ```bash
-sudo /opt/keycloak/societal-analytics-lab-infra/deploy/keycloak/backup.sh
+sudo docker compose logs db-backup
 ```
 
-* **The dumps are sensitive:** they contain user data, password hashes, client secrets and the realm signing keys. The folder is only readable by root, and the backups are encrypted.
-* **Keycloak has no master key:** the database dump (plus `.env` and `caddy/admin-access.caddy`, which are in the backup too) is all you need to restore. The internal certificate is not needed: on a new VM, tls-init creates a new one.
+* **The dumps are sensitive:** they contain user data, password hashes, client secrets and the realm signing keys. They are only readable by root, and the backups are encrypted.
+* **Keycloak has no master key:** a dump, plus `.env` and `caddy/admin-access.caddy`, is all you need to restore. The internal certificate is not needed: on a new VM, tls-init creates a new one.
 * **Keycloak's register of running instances** (the `jgroups_ping` table) is left out of the dump. Restoring old entries would make Keycloak believe another instance is running.
-* **From an older installation:** remove the old cron job (`sudo rm /etc/cron.d/keycloak-backup`), and the old dumps in `/var/backups/keycloak` once the new backups run.
 
-**Restore** (tested; this replaces the current database). First get the dump out of the backups ([Restoring](backups.md#restoring), `--include /opt/keycloak/backups`), then:
+**Restore** (tested; this replaces the current database). Choose a dump in `backups/`, or an older one from the nightly backup ([Restoring](backups.md#restoring), `--include /opt/keycloak/backups`). Then:
 
 ```bash
-cd /opt/keycloak/societal-analytics-lab-infra/deploy/keycloak
+cd /opt/keycloak
 ```
 
 ```bash
-sudo docker compose stop keycloak
+sudo docker compose stop keycloak db-backup
 ```
 
 ```bash
@@ -472,11 +463,11 @@ sudo docker compose exec -T postgres createdb -U keycloak keycloak
 ```
 
 ```bash
-sudo cat /tmp/restore/opt/keycloak/backups/keycloak.dump | sudo docker compose exec -T postgres pg_restore -U keycloak -d keycloak --no-owner
+sudo cat backups/<dump> | sudo docker compose exec -T postgres pg_restore -U keycloak -d keycloak --no-owner
 ```
 
 ```bash
-sudo docker compose start keycloak
+sudo docker compose up -d
 ```
 
 Do a restore test after setting up the backups, e.g. on a test machine.
@@ -511,14 +502,14 @@ sudo docker compose restart keycloak caddy
 
 1. Read the release notes and the [upgrading guide](https://www.keycloak.org/docs/latest/upgrading/) for the new version.
 2. Make a backup: `sudo systemctl start backup.service` (then check it with `journalctl -u backup.service -n 20`).
-3. Change the version in `docker-compose.yml` (`KEYCLOAK_IMAGE`, the only place where it is set). Preferably make the change in the repository, and get it onto the VM with `sudo -u keycloak git pull`.
+3. Change the version in `compose.yml` (`KEYCLOAK_IMAGE`, the only place where it is set). Preferably make the change in the repository, and get it onto the VM with `sudo -u keycloak git pull`.
 4. Rebuild and restart. Keycloak migrates the database on start.
 
 ```bash
 sudo docker compose build --pull && sudo docker compose up -d
 ```
 
-**PostgreSQL:** change the image tag in `docker-compose.yml`, and run `sudo docker compose up -d`. Minor PostgreSQL versions (e.g. 18.7 to 18.8) need nothing else. A new major version (e.g. 18 to 19) needs a dump and restore; check that Keycloak supports it first.
+**PostgreSQL:** change the image tag in `compose.yml`, and run `sudo docker compose up -d`. Minor PostgreSQL versions (e.g. 18.7 to 18.8) need nothing else. A new major version (e.g. 18 to 19) needs a dump and restore; check that Keycloak supports it first.
 
 **Caddy** is built with the rate limit module: change `CADDY_VERSION` in `Caddy.Dockerfile` (and, if needed, the pinned commit of the module), then rebuild with `sudo docker compose up -d --build caddy`.
 
@@ -615,6 +606,81 @@ sudo docker compose start keycloak
 
 Log in to the admin console as `recovery-admin`, fix the problem (e.g. delete the lost OTP credential on the admin's **Credentials** tab), and delete `recovery-admin` again.
 
+### Changing the hostnames
+
+Keycloak reads its hostnames from `.env` (`KC_HOSTNAME`, `KC_HOSTNAME_ADMIN`), and Caddy too, so changing them is: point the DNS records to the VM, change `.env`, and `sudo docker compose up -d`. Beyond the VM:
+
+* **The `master` realm stores its admin hostname** (its frontend URL) since it was set up. After changing `KC_HOSTNAME_ADMIN`, the admin console keeps sending you to the old one. Change it in the database (fill in the new admin hostname; it should print `UPDATE 1`), and restart Keycloak:
+
+    ```bash
+    sudo docker compose exec postgres psql -U keycloak -d keycloak -c "UPDATE realm_attribute SET value = 'https://<admin hostname>' WHERE name = 'frontendUrl' AND realm_id = (SELECT id FROM realm WHERE name = 'master');"
+    ```
+
+    ```bash
+    sudo docker compose restart keycloak
+    ```
+
+* **Every app that uses Keycloak** has a new issuer URL (`https://<hostname>/realms/<realm>`): update it everywhere, e.g. the lab login on the lab server. Our own software recognizes users by issuer and user ID, so a new issuer makes existing users look new: check before moving a realm that our servers use ([Migration guide](../auth-migration.md)).
+* **Google and GitHub** (`idp`): update the redirect URI in both developer consoles (`https://<hostname>/realms/idp/broker/<google or github>/endpoint`).
+* **Passkeys** only work on the domain they were created on: users sign in with their password and second factor, and register their passkey again.
+* **Everyone signs in again,** and links in emails sent before the change no longer work.
+
+### Moving from the old layout (one time)
+
+Until November 2026, the files were in a clone of the documentation repository, in `/opt/keycloak/societal-analytics-lab-infra/deploy/keycloak`, with a database backup by cron (`backup.sh`). To move to `/opt/keycloak` (the database and the realms stay as they are: the volumes belong to the compose project `keycloak`, whatever its folder):
+
+1. Make a database backup with the old script, and stop everything (without `-v`: the volumes stay):
+
+    ```bash
+    cd /opt/keycloak/societal-analytics-lab-infra/deploy/keycloak && sudo ./backup.sh
+    ```
+
+    ```bash
+    sudo docker compose down
+    ```
+
+2. Move the old folder aside, and create a new, empty one:
+
+    ```bash
+    cd / && sudo mv /opt/keycloak /opt/keycloak-old
+    ```
+
+    ```bash
+    sudo mkdir /opt/keycloak && sudo chown keycloak:keycloak /opt/keycloak && sudo chmod 750 /opt/keycloak
+    ```
+
+3. Clone the new repository, and copy the local files over:
+
+    ```bash
+    sudo -u keycloak git clone https://github.com/vu-societal-analytics/deploy-keycloak.git /opt/keycloak
+    ```
+
+    ```bash
+    sudo cp -p /opt/keycloak-old/societal-analytics-lab-infra/deploy/keycloak/.env /opt/keycloak/.env
+    ```
+
+    ```bash
+    sudo cp -p /opt/keycloak-old/societal-analytics-lab-infra/deploy/keycloak/caddy/admin-access.caddy /opt/keycloak/caddy/admin-access.caddy
+    ```
+
+4. Start it, and check that Keycloak works and that the first dump is there:
+
+    ```bash
+    cd /opt/keycloak && sudo docker compose up -d --build
+    ```
+
+    ```bash
+    sudo docker compose logs db-backup
+    ```
+
+5. Remove the old cron job, and set up the nightly backup ([Backups](backups.md)):
+
+    ```bash
+    sudo rm -f /etc/cron.d/keycloak-backup
+    ```
+
+6. After a week or two, remove `/opt/keycloak-old` and the old dumps in `/var/backups/keycloak`.
+
 ## Troubleshooting
 
 | Problem | Likely cause |
@@ -631,9 +697,9 @@ Log in to the admin console as `recovery-admin`, fix the problem (e.g. delete th
 | Requests through Caddy return 403 Forbidden | `KC_PROXY_HEADERS` is not set to `xforwarded`, so Keycloak's origin checks fail (see the reverse proxy guide). |
 | Keycloak doesn't start: `Missing in .env: ...` | A value used in the realm files is not set in `.env` (see [step 7](#7-realms)). |
 | Keycloak doesn't start on the first start: `invalidPasswordMinUpperCaseCharsMessage` (or a similar password message) | `KC_BOOTSTRAP_ADMIN_PASSWORD` doesn't meet the password policy of `master` (at least 10 characters, an uppercase letter and a digit). Generate a new one (step 2), and remove the database volume of this failed first start: `sudo docker compose down -v` (only on a new installation: this deletes all data). |
-| Locked out of the admin console after turning on **Verify email** in `master` | `master` has no email server, so the verification email never arrives. Don't turn it on (the realm configuration keeps it off). To recover, follow [Recovering admin access](#recovering-admin-access), but create a service account (`bootstrap-admin service --optimized --client-id recovery`) instead of a user, because a new user would also have to verify their email. Log in to the admin tool with `sudo ./admin-cli.sh config credentials --server https://localhost:8443 --realm master --client recovery --secret <secret>` (after `sudo ./admin-cli.sh login` has set up the truststore; its password prompt may fail), turn verification off with `sudo ./admin-cli.sh update realms/master -s verifyEmail=false`, and delete the `recovery` client. |
+| Locked out of the admin console after turning on **Verify email** in `master` | `master` has no email server, so the verification email never arrives. Don't turn it on (the realm configuration keeps it off). To recover, follow [Recovering admin access](#recovering-admin-access), but create a service account (`bootstrap-admin service --optimized --client-id recovery`) instead of a user, because a new user would also have to verify their email. Log in to the admin tool with `sudo ./admin-cli.sh login-client recovery` (it asks for the secret), turn verification off with `sudo ./admin-cli.sh update realms/master -s verifyEmail=false`, and delete the `recovery` client. |
 | After renaming a realm, the account console or admin console of that realm doesn't load | Keycloak doesn't update the URLs of the built-in clients (`account`, `account-console`, `security-admin-console`): fix their root and redirect URLs by hand, or create the realm again with the new name. |
-| `admin-cli.sh login` fails with `Account is not fully set up` | The account has no email address, while the realm uses email addresses as usernames and has the required action **Update email** turned on. The realm configuration keeps **Update email** off in `master` for this reason; check **Authentication → Required actions** in `master`. |
+| `admin-cli.sh login <username>` fails with `Account is not fully set up` | The account has no email address, while the realm uses email addresses as usernames and has the required action **Update email** turned on. The realm configuration keeps **Update email** off in `master` for this reason; check **Authentication → Required actions** in `master`. |
 | A login flow asks for OTP twice, or not at all | A "Condition - sub-flow executed" refers to a flow name that doesn't exist (e.g. after copying a flow). Run `python3 check-realms.py`. |
 | Users see that an email could not be sent | The relay refused or couldn't deliver it. `sudo docker compose logs mail-relay` shows why, e.g. the cap was reached (`Message delivery request rate limit exceeded`), a wrong sender address in a realm (`Sender address rejected`), or a login or TLS problem with the provider. |
 | Users see "Please try again later" | The email limit per IP address was reached (see [Email limits](#email-limits)). |

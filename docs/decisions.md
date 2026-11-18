@@ -167,21 +167,32 @@ The cost: lab members have two accounts. `lab` as a login option of `idp` solves
 
 ## The lab server
 
-### One system account, everything in `/opt`, Caddy on the server, Docker with `sudo`
+### One system account, every app in `/opt` with Docker Compose, Caddy on the server, Docker with `sudo`
 
 **Chosen:** every app in `/opt/<app>`, owned by the system account `sal` (no login, no home directory); admins are in the `sal` group and work as `sal` with `sudo -u sal` and `sudoedit -u sal`. Caddy runs on the server itself and is the only way in. Admins run Docker with `sudo`. The same on the service VMs ([Apps on our servers](./install/apps.md)).
 
 **Why:** one convention for all apps on a server with many small apps, and no app files owned by root or by an admin's personal account. Caddy in front of everything gives HTTPS and one place to decide what is reachable.
 
-**Everything is backed up, except what is meant to expire:** the backup covers `/opt` and all Docker volumes, so an app's data is backed up however its compose file stores it, and compose files can stay as they ship. Data with a short retention goes to `/srv/temp/<app>` (deleted by `systemd-tmpfiles` after a set number of days), which isn't backed up, so deleted audio or transcripts don't live on in backups. Large caches can be left out of the backup per volume. The point is what happens when someone forgets a step: forgetting to exclude a cache makes the backups larger; forgetting to include data would lose it.
+**Every app runs with Docker Compose,** from `/opt/<app>/compose.yml`: one way of working, so the examples on [Docker Compose standards](./install/compose.md) apply to every app, and its whole setup can be read in one file. Apps the lab maintains itself (Keycloak, the backup job) have their own repository, cloned to `/opt/<app>`; apps we only host have a `compose.yml` written from the examples.
 
-**Backups with restic, the same on every server:** every night, the dump scripts of the server (`/opt/backup/hooks.d/`) dump the databases into the apps' folders, then restic backs up `/opt` and all Docker volumes, encrypted, and keeps 7 daily, 4 weekly and 6 monthly backups ([Backups](./install/backups.md)). restic encrypts before anything leaves the server, stores only changes, and can store backups almost anywhere, so moving the backups off the server later is one setting. The job and its dump scripts are owned by root, because they run as root: a file that `sal` can change must never decide what root deletes or runs. Dropped: a policy file per app (`/opt/<app>/policy.yml`) read by our own tool; the standard tools (tmpfiles, dump scripts, an exclusion list) do the same without a tool to maintain.
+**Two layers of backups:** VU IT's server backups as the last resort, and our own backups per app ([Backup strategies](./backup-strategies.md)). Everything needed to restore an app is under `/opt/<app>`: its `compose.yml` and `.env`, its files in `data/`, and its databases as dumps in `backups/`, made every day by a backup service in its own compose file. Every night, restic backs up `/opt`, encrypted, keeps 7 daily, 4 weekly and 6 monthly backups, checks them, and reports to healthchecks.io, which emails us when a backup failed or didn't run ([Backups](./install/backups.md)).
+
+**Why:**
+
+* **Databases are dumped,** because a copy of a running database's files can be inconsistent.
+* **The apps dump their own databases,** in a container of their own compose file. A script on the server that runs per-app commands as root would let anyone who can change an app's files (`sal`) run code as root.
+* **Data with a short retention** is in named volumes, which our backups don't contain, with a cleanup service in the same compose file (or the app's own setting): the retention policy sits next to the app, and deleted data doesn't live on in our backups.
+* **Monitoring by a "dead man's switch"** (healthchecks.io) also notices a backup that didn't run at all, and needs no mail credentials on the servers.
 
 **Dropped:**
 
 * **`sal` in the `docker` group:** membership of that group is effectively root access, and apps that run as `sal` without Docker would get it too.
-* **Backing up only a data folder per app** (`/opt/<app>/data` or `/srv/<app>`, opt-in): every compose file would have to be changed, and an app whose data was left in a volume by mistake would silently not be backed up. (A separate data disk, mounted on `/srv`, would be a reason to revisit this.)
-* **Short-retention data in `/tmp` or `/var/tmp`:** Ubuntu empties `/tmp` at every restart and cleans `/var/tmp` on its own schedule, which would interfere with the retention periods.
+* **Backing up all Docker volumes as well:** they contain the raw files of running databases (unreliable, and large) and caches. With VU IT's server backups as the last resort, our backups only need what each app sets up.
+* **Dump scripts per app run by the backup job as root** (`hooks.d`, or `/opt/<app>/backup.sh`): see above.
+* **A policy file per app read by our own tool:** the compose file already declares the app's backup and retention, with standard images.
+* **Data in `/srv/<app>`:** two places per app instead of one. A separate data disk would be a reason to revisit this.
+* **Retention with `systemd-tmpfiles` on the server:** works, but the rule then lives outside the app's compose file, and needs a step on the server per app.
+* **One repository with everything** (documentation and deployments): the apps then lived deep inside a clone (`/opt/keycloak/societal-analytics-lab-infra/deploy/keycloak`), and every server cloned all of it.
 
 ### All lab services under `lab.`, with one login cookie for the zone
 

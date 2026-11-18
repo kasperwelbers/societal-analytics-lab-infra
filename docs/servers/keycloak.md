@@ -48,7 +48,7 @@ A realm in Keycloak is a separate login: its own users, apps, settings and admin
 
 All realms show the lab logo and name on their login pages, with a subtitle ("Administration", "Lab account", "Identity provider"), so users know whose login this is; in `idp`, the consent screen names the app that asks for access.
 
-The realms are set up from realm files in the repository (`deploy/keycloak/realms/`), which Keycloak imports when it starts, for realms that don't exist yet. The files document the configuration, including the login flows, and make it easy to set up the realms again ([Realms](../install/keycloak.md#7-realms)).
+The realms are set up from realm files in the repository [deploy-keycloak](https://github.com/vu-societal-analytics/deploy-keycloak) (`realms/`), which Keycloak imports when it starts, for realms that don't exist yet. The files document the configuration, including the login flows, and make it easy to set up the realms again ([Realms](../install/keycloak.md#7-realms)).
 
 ## How users log in
 
@@ -80,7 +80,7 @@ In all realms, the email address is the username. A second factor is an authenti
 * **Lost second factor:** log in with a recovery code (**Try another way → Recovery Authentication Code**; each code works once). Then, in the account console, set up a new authenticator app or passkey, and new recovery codes. Without recovery codes: in lab, a lab admin removes the lost factor after checking who the user is (not by email alone: the inbox may be the problem); in idp, one of our admins does the same; in master, another admin, or the VM ([Recovering admin access](../install/keycloak.md#recovering-admin-access)). How: [A user lost their second factor](../install/keycloak.md#a-user-lost-their-second-factor).
 * **Time:** each page of the login (e.g. setting up the authenticator app, or saving the recovery codes) may take 30 minutes. After that, Keycloak says **Your login attempt timed out** and the login starts again.
 
-The flows behind these steps: `deploy/keycloak/realms/README.md`.
+The flows behind these steps: [`realms/README.md`](https://github.com/vu-societal-analytics/deploy-keycloak/blob/main/realms/README.md) in [deploy-keycloak](https://github.com/vu-societal-analytics/deploy-keycloak).
 
 ## The idp realm: one login for the lab's servers
 

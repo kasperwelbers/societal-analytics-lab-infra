@@ -81,8 +81,8 @@ We do not sell personal data, and do not share it for advertising. ==TODO: confi
 | Account data | As long as the account is active, and ==TODO: period== after the last login |
 | Security logs | ==TODO: period (e.g. 6 or 12 months)== |
 | Research data | As agreed with the research project |
-| Whisper and Ollama inputs and outputs | ==TODO: e.g. deleted after processing, or after a fixed period== |
-| Backups | Up to 6 months: data deleted from a service can remain in the encrypted backups until they expire. Data with a short retention (e.g. uploaded audio and transcripts) is never backed up. |
+| Whisper and Ollama inputs and outputs | Deleted automatically after the period in [Hosted services](../servers/services.md) (==TODO: the periods==), and not in the lab's own backups |
+| Backups | The lab's own encrypted backups: up to 6 months, so data deleted from a service can remain there until they expire; data with a short retention (e.g. uploaded audio and transcripts) is not in them. The server backups of VU IT: ==TODO: their retention period==. |
 
 ## Security
 

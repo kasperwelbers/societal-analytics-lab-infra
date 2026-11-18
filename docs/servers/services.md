@@ -4,7 +4,7 @@ The services the lab runs, where they run, and how users log in. The [privacy st
 
 | Service | What it does | For | Runs on | Login | Data it handles | Kept |
 | --- | --- | --- | --- | --- | --- | --- |
-| **Whisper** | Transcription of audio | Lab members | [Lab server](./lab.md), `whisper.lab.societal-analytics.nl` | The lab login | Audio files and transcripts | Temporary: deleted after ==TODO== days, not backed up |
+| **Whisper** | Transcription of audio | Lab members | [Lab server](./lab.md), `whisper.lab.societal-analytics.nl` | The lab login | Audio files and transcripts | Deleted after ==TODO== days (cleanup service or Whisper's own setting: ==TODO==) |
 | **Ollama** | Language models (LLMs) | Lab members | [Lab server](./lab.md), ==TODO: address== | ==TODO: the lab login, or its own== | Prompts and outputs | ==TODO== |
 | **Scriptorium** | ==TODO== | ==TODO== | ==TODO== | ==TODO== | ==TODO== | ==TODO== |
 | **AmCAT** | Storing, managing and sharing research data ([AmCAT](../amcat.md)) | Researchers, also outside the lab | A [service VM](./service-vms.md), with its data on the [database server](./database.md) | Its own login, through Keycloak | Research data uploaded to projects (may contain personal data) | Until the project deletes it |

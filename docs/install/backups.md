@@ -1,15 +1,20 @@
 # Installation: backups
 
-Every server is backed up the same way, every night:
+The lab's servers are backed up in two layers (why: [Backup strategies](../backup-strategies.md)):
 
-1. **Database dumps:** the dump scripts of the server (`/opt/backup/hooks.d/`) write a dump of each database into the app's folder, e.g. `/opt/<app>/backups/`.
-2. **The backup:** [restic](https://restic.net) backs up all of `/opt` and all Docker volumes (`/var/lib/docker/volumes`), encrypted, except what is listed in `/etc/restic/excludes` ([Leaving out large caches](#leaving-out-large-caches)).
-3. **Old backups** are removed: restic keeps the last 7 daily, 4 weekly and 6 monthly backups. So data deleted on the server can remain in the backups for up to 6 months.
+1. **Server backups, by VU IT:** a copy of each whole server, the last resort after losing a server. ==TODO: confirm with VU IT which servers they back up, how often, and how long they keep the backups.==
+2. **Our own backups, per app:** every night, each server backs up `/opt`, encrypted. Everything needed to restore an app is there: its `compose.yml` and `.env`, its files (`data/`) and its databases as dumps (`backups/`), made every day by the app itself ([Apps on our servers](apps.md#where-things-live)). This page is about this layer.
 
-So the apps, their settings and secrets, and their data are backed up by default, however an app's compose file stores its data ([Apps on our servers](apps.md#where-things-live)). Only data with a short retention is kept out of the backups: it is in `/srv/temp`, which isn't backed up ([Short retention](apps.md#short-retention-srvtemp)). The files are in [`deploy/backup/`](https://github.com/vu-societal-analytics/societal-analytics-lab-infra/tree/main/deploy/backup).
+The nightly job is in its own repository, [deploy-backup](https://github.com/vu-societal-analytics/deploy-backup), cloned to `/opt/backup` on every server. Every night it:
+
+1. **checks the database dumps:** every `/opt/<app>/backups` folder must have a dump from the last 26 hours, otherwise the app's backup service has stopped;
+2. **backs up `/opt`** with [restic](https://restic.net): encrypted on the server, before anything leaves it, and only the changes since the last backup;
+3. **removes old backups:** it keeps the last 7 daily, 4 weekly and 6 monthly backups, so data deleted on the server can remain in these backups for up to 6 months;
+4. **checks the backups:** the structure every night, and on Sundays also a sample of 5% of the data itself;
+5. **reports the result** to the monitoring, which emails us when a backup failed or didn't run ([Monitoring](#monitoring)).
 
 !!! warning "For now, the backups stay on the server itself"
-    Until the lab has a place for backups elsewhere, the backups are stored on the same server (`/var/backups/restic`). They protect against mistakes (a deleted file, a failed upgrade), but **not against losing the server**. ==TODO: a location off the server, to be agreed with VU IT ([Changing the location](#changing-the-location)).==
+    Until the lab has a place for backups elsewhere, they are stored on the same server (`/var/backups/restic`). They protect against mistakes (a deleted file, a failed upgrade), but **not against losing the server**: for that, there are only the server backups of VU IT. ==TODO: a location off the server, to be agreed with VU IT ([Changing the location](#changing-the-location)).==
 
     The database server is not covered by this page yet. ==TODO==
 
@@ -21,14 +26,10 @@ restic, from Ubuntu's packages:
 sudo apt install restic
 ```
 
-The backup job, owned by root, which runs it (it must be able to read every app's files and secrets):
+The job, owned by root, which runs it (it must be able to read every app's files and secrets):
 
 ```bash
-sudo mkdir -m 700 /opt/backup /opt/backup/hooks.d
-```
-
-```bash
-sudo git clone https://github.com/vu-societal-analytics/societal-analytics-lab-infra.git /opt/backup/societal-analytics-lab-infra
+sudo git clone https://github.com/vu-societal-analytics/deploy-backup.git /opt/backup && sudo chmod 700 /opt/backup
 ```
 
 ## 2. The password and the repository
@@ -49,66 +50,43 @@ openssl rand -base64 32 | sudo tee /etc/restic/password > /dev/null && sudo chmo
 Create the repository, where restic keeps the backups:
 
 ```bash
-cd /opt/backup/societal-analytics-lab-infra/deploy/backup
+cd /opt/backup && sudo ./restic.sh init
 ```
 
-```bash
-sudo ./restic.sh init
-```
+`restic.sh` runs restic with this server's settings: the defaults (`/var/backups/restic` and `/etc/restic/password`), or what is set in `/etc/restic/env`. Use it for every restic command below, from `/opt/backup`.
 
-`restic.sh` runs restic with this server's settings: the defaults (`/var/backups/restic` and `/etc/restic/password`), or what is set in `/etc/restic/env`. Use it for every restic command below.
+## 3. Monitoring
 
-## 3. Database dumps
+A backup that silently stopped is the most common way to lose data. So every run reports to [healthchecks.io](https://healthchecks.io): a ping at the start, and one with the result at the end. Healthchecks.io emails us when a run failed, and also when no run arrived for a day (e.g. the server was off, or the timer broke). It only receives these pings, no data. The free plan covers 20 checks.
 
-The database's own files are in the backup too (in its volume), but a copy of a running database's files can be inconsistent. So every app with a database gets a dump script in `/opt/backup/hooks.d/`, which runs before the backup. Only root can change these scripts (they run as root).
+1. In the lab's healthchecks.io project (==TODO: create the account and project; who has access==), add a check for this server: name it after the server, **Period** 1 day, **Grace** 2 hours, and the email addresses to notify.
+2. Copy its ping URL into `/etc/restic/env`:
 
-**An app with PostgreSQL:** copy the template, and fill in the app, the database service of its compose file, the user and the database:
+    ```bash
+    sudoedit /etc/restic/env
+    ```
 
-```bash
-sudo cp /opt/backup/societal-analytics-lab-infra/deploy/backup/postgres-hook.example.sh /opt/backup/hooks.d/<app>.sh
-```
+    ```
+    PING_URL=https://hc-ping.com/<uuid>
+    ```
 
-```bash
-sudoedit /opt/backup/hooks.d/<app>.sh
-```
-
-The dump goes to `/opt/<app>/backups/`, readable only by root, and replaces the previous one: the history is in the backups.
-
-**The Keycloak VM:** its dump script already exists:
-
-```bash
-printf '#!/usr/bin/env bash\nexec /opt/keycloak/societal-analytics-lab-infra/deploy/keycloak/backup.sh\n' | sudo tee /opt/backup/hooks.d/keycloak.sh > /dev/null
-```
-
-Test the scripts by hand: `sudo bash /opt/backup/hooks.d/<app>.sh`, then check the dump in `/opt/<app>/backups/`.
-
-## Leaving out large caches
-
-Caches and downloaded models (e.g. the language models of Ollama, which can be tens of GB) can be downloaded again, and only make the backups large. Leave their volumes out in `/etc/restic/excludes`, one line per volume:
-
-```bash
-sudoedit /etc/restic/excludes
-```
-
-```
-/var/lib/docker/volumes/<project>_<volume>
-```
-
-The volume names are in `sudo docker volume ls` (a compose project's volumes start with its folder name). Forgetting one is harmless: the backups are just larger.
+    ```bash
+    sudo chmod 600 /etc/restic/env
+    ```
 
 ## 4. Every night
 
 Connect the service and the timer from the repository, and turn on the timer:
 
 ```bash
-sudo systemctl link /opt/backup/societal-analytics-lab-infra/deploy/backup/backup.service /opt/backup/societal-analytics-lab-infra/deploy/backup/backup.timer
+sudo systemctl link /opt/backup/backup.service /opt/backup/backup.timer
 ```
 
 ```bash
 sudo systemctl enable --now backup.timer
 ```
 
-Make the first backup now, and see how it went:
+Make the first backup now, and see how it went (healthchecks.io should show it too):
 
 ```bash
 sudo systemctl start backup.service
@@ -118,37 +96,42 @@ sudo systemctl start backup.service
 journalctl -u backup.service -n 50
 ```
 
-It runs every night between 03:30 and 04:00, and catches up after a night the server was off.
+It runs every night between 03:30 and 04:00, and catches up after a night the server was off. Updating the job: `sudo git -C /opt/backup pull`.
 
 ## Checking
 
 * **When it last ran, and when it runs next:** `systemctl list-timers backup.timer`.
-* **Whether it worked:** `systemctl status backup.service` (`status=0/SUCCESS`), and the details with `journalctl -u backup.service -n 50`. A failed dump script or unreadable files make the run fail, even though the rest is backed up.
+* **Whether it worked:** `systemctl status backup.service` (`status=0/SUCCESS`), and the details with `journalctl -u backup.service -n 50`. A missing dump or unreadable files make the run fail, even though the rest is backed up.
 * **The backups:** `sudo ./restic.sh snapshots`, and what is in the latest: `sudo ./restic.sh ls latest`.
 
 While there are fewer than 7 days of backups, restic keeps a few extra; that sorts itself out.
 
-## Restoring
+## Leaving something out
 
-From `/opt/backup/societal-analytics-lab-infra/deploy/backup`. Restore into a separate folder first, and copy back what you need:
+`/etc/restic/excludes` (optional, readable only by root) lists what to leave out, one pattern per line, e.g. large files in an app's folder that can be downloaded again:
 
-```bash
-sudo ./restic.sh restore latest --target /tmp/restore --include <path>
+```
+/opt/<app>/models
 ```
 
-The files are then in `/tmp/restore/<path>`. The path of a file in an app's folder is `/opt/<app>/...`; of a file in a volume `/var/lib/docker/volumes/<volume>/_data/...` (`sudo ./restic.sh ls latest` shows them). Stop the app (`sudo docker compose down`, without `-v`), copy the files back with `sudo cp -a`, and start it again. An older backup: use its ID from `snapshots` instead of `latest`.
+## Restoring
 
-**A database:** restore its dump the same way, then load it into the database with `pg_restore` (Keycloak: [Backups](keycloak.md#9-backups)).
+From `/opt/backup`. Restore into a separate folder first, and copy back what you need:
+
+```bash
+sudo ./restic.sh restore latest --target /tmp/restore --include /opt/<app>/<file or folder>
+```
+
+The files are then in `/tmp/restore/opt/<app>/...`. Stop the app (`sudo docker compose down`, without `-v`), copy the files back with `sudo cp -a`, and start it again. An older backup: use its ID from `snapshots` instead of `latest`.
+
+* **A database:** restore its dump the same way (`--include /opt/<app>/backups`), and load it ([Restoring a dump](compose.md#restoring-a-dump); Keycloak: [Backups](keycloak.md#9-backups)).
+* **A whole app on a new server:** restore `/opt/<app>`, and start it with `sudo docker compose up -d`; then load its database dump.
 
 **Test a restore** after setting up the backups, and then twice a year: a backup that can't be restored is no backup.
 
 ## Changing the location
 
-Once there is a place for backups elsewhere (e.g. an SFTP server or S3 storage), put it in `/etc/restic/env` (readable only by root), with what that location needs (e.g. its access keys), and create the repository there:
-
-```bash
-sudoedit /etc/restic/env
-```
+Once there is a place for backups elsewhere (e.g. an SFTP server or S3 storage), add it to `/etc/restic/env`, with what that location needs (e.g. its access keys), and create the repository there:
 
 ```
 RESTIC_REPOSITORY=s3:https://<host>/<bucket>/<server>
