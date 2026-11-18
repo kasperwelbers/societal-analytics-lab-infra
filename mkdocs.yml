@@ -35,6 +35,7 @@ nav:
       - About: discussion.md
       - Decisions: decisions.md
       - Backup strategies: backup-strategies.md
+      - Hardening plan: hardening.md
       - "2FA: where should it live?": auth-2fa.md
       - Provider comparison: auth-providers.md
 

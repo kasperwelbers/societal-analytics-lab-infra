@@ -60,6 +60,7 @@ How the servers are set up: [Installation guides](./install/vm.md). Why they are
 * **The lab server:** ==TODO: operating system updates, SSH access, the move of the services to their addresses under `lab.`, and to the [Docker Compose standards](./install/compose.md).==
 * **The database server:** ==TODO: what it stores, and how the service VMs connect to it.==
 * **Keycloak's address:** Keycloak still runs at an older address; ==TODO: move it to `auth.societal-analytics.nl`.==
+* **Hardening:** proposals, not yet in place: [Hardening plan](./hardening.md) (security keys for administrators, the admin consoles through SSH, closing off access to the VMs through the SciCloud portal).
 * **The VM firewall:** one check of the VM firewall together with Docker is still to be done ([Docker and the VM firewall](./install/vm.md#docker-and-the-vm-firewall)).
 * **Privacy statement and acceptable use policy:** drafts, to be reviewed by the VU privacy officer ([Privacy statement](./policies/privacy.md), [Acceptable use policy](./policies/aup.md)).
 * **Retention** of the inputs and outputs of the lab services (e.g. audio and transcripts): the periods in [Hosted services](./servers/services.md) are ==TODO==, and must match the privacy statement.
