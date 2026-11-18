@@ -104,10 +104,10 @@ sudo usermod -aG sal <admin>
 
 Data that may only be kept for a limited time (e.g. uploaded audio and its transcripts) goes in `/opt/<app>/temp`. Linux deletes files there once they are older than the retention period, with its own `systemd-tmpfiles`. It isn't backed up, so deleted data doesn't live on in backups.
 
-Create `/etc/tmpfiles.d/<app>.conf` (e.g. with `sudoedit`), with the retention period at the end (here 30 days):
+Create `/etc/tmpfiles.d/<app>.conf` (e.g. with `sudoedit`), with the retention period at the end (here 30 days). The `m:` counts the days from when a file was last changed; without it, a file that is still opened now and then would never be deleted:
 
 ```
-d /opt/<app>/temp 0750 sal sal 30d
+d /opt/<app>/temp 0750 sal sal m:30d
 ```
 
 Apply it once; this also creates the folder, with the right owner:
@@ -116,7 +116,7 @@ Apply it once; this also creates the folder, with the right owner:
 sudo systemd-tmpfiles --create /etc/tmpfiles.d/<app>.conf
 ```
 
-From then on, a daily timer of the system (`systemd-tmpfiles-clean.timer`) deletes files in it older than 30 days. To see which files are past the period: `sudo find /opt/<app>/temp -mtime +30`.
+From then on, a daily timer of the system (`systemd-tmpfiles-clean.timer`) deletes files in it that weren't changed for 30 days. To see which files are past the period: `sudo find /opt/<app>/temp -mtime +30`.
 
 If the app keeps its own list of these files (e.g. in a database), check that it copes with files that disappear; otherwise use the app's own retention setting, if it has one.
 
