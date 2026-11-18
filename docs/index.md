@@ -55,7 +55,7 @@ How the servers are set up: [Installation guides](./install/vm.md). Why they are
 ## Open points
 
 * **Backups:** an encrypted, off-site (or at least off-server) backup for the database server and Keycloak, to be agreed with VU IT. Keycloak's daily database dumps are currently kept on the VM itself ([Backups](./install/keycloak.md#9-backups)).
-* **The lab server:** ==TODO: operating system updates, SSH access, and the move of the services to their addresses under `lab.`.==
+* **The lab server:** ==TODO: operating system updates, SSH access, the move of the services to their addresses under `lab.`, and of their data to `/srv`.== Its backup is `/srv` plus the `.env` files in `/opt`.
 * **The database server:** ==TODO: what it stores, and how the service VMs connect to it.==
 * **Keycloak's address:** Keycloak still runs at an older address; ==TODO: move it to `auth.societal-analytics.nl`.==
 * **The VM firewall:** one check of the VM firewall together with Docker is still to be done ([Docker and the VM firewall](./install/vm.md#docker-and-the-vm-firewall)).

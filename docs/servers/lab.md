@@ -32,7 +32,7 @@ flowchart LR
 * **The lab login** (the AuthWall) protects services without a login of their own, and the overview page. Visitors without its login cookie (🍪) are sent to the lab's login service (the `lab` realm of [Keycloak](./keycloak.md)), so only lab members get in: an account with a password and a mandatory second factor. After that login, the lab login sets the cookie for all of `*.lab`. A service can be restricted further, to one group of members.
 * **Services with their own login** (e.g. a chat interface for the language models) are reached directly through Caddy, and log users in through Keycloak's `lab` realm themselves.
 * **The rule:** every service under `lab.` either sits behind the lab login, or has its own login through Keycloak. Never a separate password or token, so lab members have one account, with a second factor, for everything.
-* **The services** listen only on the server itself (`127.0.0.1`), so they can't be reached around Caddy. Each one lives in its own directory, owned by a system account without a login.
+* **The services** listen only on the server itself (`127.0.0.1`), so they can't be reached around Caddy. Each one lives in its own directory in `/opt`, owned by a system account without a login, and keeps everything it writes in `/srv`, so all data on the server is in one place.
 
 ## The lab zone: everything under `lab.`
 

@@ -36,4 +36,4 @@ Files are still owned by a system account; only the `docker compose` commands us
 
 ## Directories for bind mounts
 
-When a bind mount (e.g. `./data:/data` in a compose file) points to a directory that doesn't exist, Docker creates it, owned by root. Create such directories yourself before the first start, as the account that owns the app (e.g. `sudo -u sal mkdir /opt/<app>/data`).
+When a bind mount (e.g. `./data:/data` in a compose file) points to a directory that doesn't exist, Docker creates it, owned by root. Create such directories yourself before the first start, as the account that owns the app (e.g. `sudo -u sal mkdir /srv/<app>/uploads`).

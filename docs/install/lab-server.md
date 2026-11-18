@@ -2,7 +2,7 @@
 
 How the [lab server](../servers/lab.md) is set up: the system account for the apps, Caddy, the lab login (oauth2-proxy), and how a new service is added. Why it is set up this way: [Decisions](../decisions.md#the-lab-server).
 
-All applications live in their own directory `/opt/<app>`, owned by the system account `sal`. `/opt` itself stays owned by root. Caddy (in `/etc/caddy`) is the only thing reachable from outside: it handles HTTPS, and puts the lab login in front of apps that have no login of their own.
+Every application has two directories, both owned by the system account `sal`: `/opt/<app>` for the app itself (code, compose file, settings and secrets), and `/srv/<app>` for everything it writes (uploads, results, databases, downloaded models). `/opt` and `/srv` themselves stay owned by root. Caddy (in `/etc/caddy`) is the only thing reachable from outside: it handles HTTPS, and puts the lab login in front of apps that have no login of their own.
 
 ## 1. The system account
 
@@ -12,28 +12,28 @@ Once per server:
 sudo useradd --system --home-dir /nonexistent --no-create-home --shell /usr/sbin/nologin sal
 ```
 
-For each admin, so that they can enter the app directories:
+For each admin, so that they can enter the app and data directories:
 
 ```bash
 sudo usermod -aG sal <admin>
 ```
 
-`/opt` stays as it is: owned by `root:root`, mode `755`. `sal` is **not** in the `docker` group: membership of that group is effectively root access, and apps that run as `sal` without Docker would get it too (see [Docker warnings](docker.md#the-docker-group-is-root-access)). Admins run Docker with `sudo`.
+`/opt` and `/srv` stay as they are: owned by `root:root`, mode `755`. If the server has a separate data disk, mount it on `/srv`. `sal` is **not** in the `docker` group: membership of that group is effectively root access, and apps that run as `sal` without Docker would get it too (see [Docker warnings](docker.md#the-docker-group-is-root-access)). Admins run Docker with `sudo`.
 
 **How access works**
 
-* Each app directory is owned by `sal:sal`, with mode `750`. `sal` can change everything, admins (the `sal` group) can enter and read, and other users can't enter at all. That last part is what protects the files inside, whatever their own modes are.
+* Each app directory and each data directory is owned by `sal:sal`, with mode `750`. `sal` can change everything, admins (the `sal` group) can enter and read, and other users can't enter at all. That last part is what protects the files inside, whatever their own modes are.
 * Secrets in `.env` get mode `600`, so only `sal` can read them. Admins use `sudo` when they need to.
 
 **Rules for admins**
 
-* Everything inside `/opt/<app>` is done as `sal`: `sudo -u sal <command>`, or `sudo -u sal bash` for longer work. The exception is Docker: `sudo docker compose ...`, from the app's directory.
+* Everything inside `/opt/<app>` and `/srv/<app>` is done as `sal`: `sudo -u sal <command>`, or `sudo -u sal bash` for longer work. The exception is Docker: `sudo docker compose ...`, from the app's directory.
 * Edit files with `sudoedit -u sal <file>`. It opens your own editor with your own settings, and saves the file as `sal`.
     * Choose the editor in your `~/.bashrc`: `export SUDO_EDITOR=nvim` (or `nano`).
     * Don't run the editor as `sal` (`sudo -u sal nvim`): `sal` has no home directory for the editor's own files.
 * Pasting into a file on the server: go into insert mode and use your terminal's paste shortcut: `Cmd+V` on a Mac, `Ctrl+Shift+V` on Linux, `Ctrl+V` or right-click in Windows Terminal or PuTTY. (`"+p` doesn't work: a server has no clipboard.)
-* Never use plain `sudo` for other commands inside an app directory, or files end up owned by root. Docker creates a missing directory for a bind mount as root, so create data directories as `sal` before the first start ([Docker warnings](docker.md#directories-for-bind-mounts)).
-* After copying files in from elsewhere, fix the owner: `sudo chown -R sal:sal /opt/<app>`.
+* Never use plain `sudo` for other commands inside an app or data directory, or files end up owned by root. Docker creates a missing directory for a bind mount as root, so create data directories as `sal` before the first start ([Docker warnings](docker.md#directories-for-bind-mounts)).
+* After copying files in from elsewhere, fix the owner: `sudo chown -R sal:sal /opt/<app>` (or `/srv/<app>`).
 
 ## 2. Caddy and the lab login
 
@@ -251,14 +251,14 @@ What members experience: [Signing out, and inactivity](../servers/lab.md#signing
 ## 3. Adding an application
 
 1. **Choose a free port** and a name. See which ports are taken with `sudo ss -tlnp` (and in the Caddyfile). The address will be `<app>.lab.societal-analytics.nl`; DNS needs no change.
-2. **Create the directory,** as an admin:
+2. **Create its directories,** as an admin: `/opt/<app>` for the app, `/srv/<app>` for its data.
 
     ```bash
-    sudo mkdir /opt/<app>
+    sudo mkdir /opt/<app> /srv/<app>
     ```
 
     ```bash
-    sudo chown sal:sal /opt/<app> && sudo chmod 750 /opt/<app>
+    sudo chown sal:sal /opt/<app> /srv/<app> && sudo chmod 750 /opt/<app> /srv/<app>
     ```
 
 3. **Put the app in it,** as `sal`. The directory must be empty for `git clone`. A private repository needs a deploy key (a read-only SSH key for that repository) for `sal`.
@@ -267,11 +267,13 @@ What members experience: [Signing out, and inactivity](../servers/lab.md#signing
     sudo -u sal git clone <repo> /opt/<app>
     ```
 
-4. **Secrets** go in `/opt/<app>/.env`, readable only by `sal`:
+4. **Settings and secrets** go in `/opt/<app>/.env`, readable only by `sal`. Put the data directory there too, as `DATA_DIR=/srv/<app>`:
 
     ```bash
     sudo -u sal chmod 600 /opt/<app>/.env
     ```
+
+    In the compose file, every directory the app writes to is a bind mount under it, e.g. `${DATA_DIR}/uploads:/app/uploads`. Create those subdirectories as `sal` before the first start (`sudo -u sal mkdir /srv/<app>/uploads`). A container that writes as its own user (e.g. PostgreSQL) needs that user as the owner of its subdirectory; the app's documentation says which user.
 
 5. **Listen on localhost only,** so the app can't be reached around Caddy.
     * With Docker, publish ports on `127.0.0.1`: `"127.0.0.1:<port>:<port>"`. A plain `"<port>:<port>"` is reachable from the internet, even with a firewall (see [Docker warnings](docker.md#published-ports-bypass-the-firewall)). Check with `sudo docker ps --format '{{.Names}}\t{{.Ports}}'`: nothing should show `0.0.0.0:` or `[::]:`.
@@ -332,7 +334,9 @@ cd /opt/<app> && sudo docker compose down
 sudo rm -r /opt/<app>
 ```
 
-Then remove its block from the Caddyfile and its line from the overview page, and reload Caddy.
+Its data stays in `/srv/<app>`: remove it as well (`sudo rm -r /srv/<app>`) once it is no longer needed, following the retention rules of the [privacy statement](../policies/privacy.md). Then remove its block from the Caddyfile and its line from the overview page, and reload Caddy.
+
+**Moving an existing app's data to `/srv`:** stop the app (`sudo docker compose down`), create `/srv/<app>` as above, move the data directories with `sudo mv`, fix the owner with `sudo chown -R sal:sal /srv/<app>` (except for subdirectories owned by a container's user), set `DATA_DIR` and the bind mounts, and start it again.
 
 ## Troubleshooting
 

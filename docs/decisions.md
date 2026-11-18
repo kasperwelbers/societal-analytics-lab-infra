@@ -167,13 +167,18 @@ The cost: lab members have two accounts. `lab` as a login option of `idp` solves
 
 ## The lab server
 
-### One system account, Caddy on the server, Docker with `sudo`
+### One system account, apps in `/opt` and data in `/srv`, Caddy on the server, Docker with `sudo`
 
 **Chosen:** every app in `/opt/<app>`, owned by the system account `sal` (no login, no home directory); admins are in the `sal` group and work as `sal` with `sudo -u sal` and `sudoedit -u sal`. Caddy runs on the server itself and is the only way in. Admins run Docker with `sudo` ([Installation: lab server](./install/lab-server.md)).
 
 **Why:** one convention for all apps on a server with many small apps, and no app files owned by root or by an admin's personal account. Caddy in front of everything gives HTTPS and one place to decide what is reachable.
 
-**Dropped:** `sal` in the `docker` group. Membership of that group is effectively root access, and apps that run as `sal` without Docker would get it too.
+**App and data apart:** each app has `/opt/<app>` (code, compose file, settings and secrets) and `/srv/<app>` (everything it writes). A backup of the server is `/srv` plus the `.env` files; reinstalling or removing an app can't take its data with it; a data disk can be mounted on `/srv`; and it is clear where personal data is kept. The cost: two directories per app, and absolute paths in the compose file (through `DATA_DIR` in `.env`).
+
+**Dropped:**
+
+* **`sal` in the `docker` group:** membership of that group is effectively root access, and apps that run as `sal` without Docker would get it too.
+* **Data inside the app directory** (`/opt/<app>/data`): code and data mixed, so backups, reinstalls and a separate data disk are all harder.
 
 ### All lab services under `lab.`, with one login cookie for the zone
 
