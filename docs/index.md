@@ -5,37 +5,17 @@ The Societal Analytics Lab (VU Amsterdam) runs a small infrastructure for its re
 ## Map
 
 ```mermaid
-flowchart TB
-    subgraph Cloud ["VU SciCloud: virtual machines"]
-        direction LR
-        KC["Keycloak VM<br/>🔑 auth.societal-analytics.nl<br/>🌐 public (HTTPS)"]
-        SVM["Service VMs<br/>🌐 public (HTTPS)"]
-    end
+flowchart LR
+    KC["Keycloak VM<br/>🔑 login service<br/>🌐 public (HTTPS)<br/>auth.societal-analytics.nl"]
+    Lab["Lab server<br/>🌐 public (HTTPS)<br/>lab.societal-analytics.nl"]
+    SVM["Service VMs<br/>🌐 public (HTTPS)"]
+    DB[("Database server<br/>🔒 no public access")]
 
-    subgraph VU ["VU premises: physical servers"]
-        direction LR
-        subgraph Lab ["Lab server · 🌐 public (HTTPS)"]
-            direction TB
-            Proxy["lab.societal-analytics.nl<br/>Caddy + lab login"]
-            Services["*.lab.societal-analytics.nl<br/>lab services"]
-            Proxy --> Services
-        end
-        DB[("Database server<br/>🔒 no public access")]
-    end
-
-    Backups[["Backups (encrypted)<br/>to be decided"]]
-
-    KC -.->|🔑 lab login| Proxy
-    KC -.->|🔑 login| SVM
+    KC -.->|🔑| Lab
+    KC -.->|🔑| SVM
     SVM -->|internal, encrypted| DB
-    DB -.-> Backups
-    KC -.-> Backups
 
-    classDef tbd fill:#fff4e5,stroke:#e8a33d,stroke-dasharray:5 5,color:#7a4b00
-    class Backups tbd
-
-    click Proxy "servers/lab/" "Lab server"
-    click Services "servers/lab/" "Lab server"
+    click Lab "servers/lab/" "Lab server"
     click DB "servers/database/" "Database server"
     click KC "servers/keycloak/" "Keycloak VM"
     click SVM "servers/service-vms/" "Service VMs"
@@ -43,7 +23,7 @@ flowchart TB
 
 * **The 🔑 is the lab's login service** (Keycloak). Everything that needs a login uses it: the lab login on the lab server, and the services on the service VMs.
 * **🌐 Only HTTPS is public.** Each server has one reverse proxy (Caddy) in front of its services; the services themselves listen only on the server itself or on internal networks. The database server has no public access at all.
-* **Backups** of the database server and of Keycloak are still to be decided with VU IT: where they are kept (e.g. on VU premises), and how they are encrypted.
+* **Backups** of the database server and of Keycloak are still to be decided with VU IT (see [Open points](#open-points)).
 
 ## Two kinds of servers
 
@@ -66,7 +46,7 @@ IP addresses and the admin hostname of Keycloak are not published here.
 **On every server:**
 
 * One reverse proxy (Caddy) with certificates from Let's Encrypt is the only way in. Services listen on `127.0.0.1` or on internal networks.
-* Docker containers bypass a server's firewall, so we follow strict rules for them ([Docker on our servers](./install/docker.md)).
+* Docker containers bypass a server's firewall, so we follow strict rules for them ([Docker warnings](./install/docker.md)).
 * Software versions are pinned and upgraded deliberately; the operating system installs security updates automatically.
 * Secrets are only on the server they are used on, readable only by the account that runs the service.
 

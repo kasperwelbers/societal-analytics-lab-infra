@@ -2,9 +2,6 @@
 
 How to set up a virtual machine (VM) on VU SciCloud, the VU's research cloud, and secure it before hosting anything on it. This applies to the [Keycloak VM](../servers/keycloak.md) and the [service VMs](../servers/service-vms.md). SciCloud is documented by VU Research Data Management ([SciCloud](https://rdm.vu.nl/tools/scicloud/), [logging in](https://rdm.vu.nl/tools/ada/login.html)).
 
-!!! danger "Docker bypasses the VM firewall"
-    Ports published by Docker containers (`ports:` in a compose file, or `docker run -p`) are **reachable from the internet, even if the VM firewall doesn't allow them**. Docker routes this traffic around the firewall rules described on this page, and containers can also connect to any port on the internet. Only publish ports that should be public, and read [Docker and the VM firewall](#docker-and-the-vm-firewall) before running containers.
-
 ## 1. Create the VM
 
 Log in to the VM portal at [one.labs.vu.nl](https://one.labs.vu.nl), from the VU network or the VU VPN.
@@ -138,8 +135,7 @@ These rules apply to programs running **on the VM itself** (e.g. `apt`, `git`, `
 
 ## Docker and the VM firewall
 
-!!! danger "Read this before running containers"
-    The `INBOUND` and `OUTBOUND` rules above **don't protect Docker containers**: a port published by a container is open to the whole internet, and containers can connect to any port. Read [Docker on our servers](docker.md) before running containers.
+The `INBOUND` and `OUTBOUND` rules above don't apply to Docker containers: see [Docker warnings](docker.md).
 
 **Reloading the firewall while Docker runs.** Check that `sudo iptables-custom` doesn't remove Docker's own rules. With a container running that publishes ports, the following should show rules for those ports, both before and after `sudo iptables-custom`:
 
@@ -175,7 +171,7 @@ Some updates (e.g. a new kernel) need a reboot. Ubuntu shows `*** System restart
 sudo docker compose version
 ```
 
-Run Docker with `sudo`, and don't add users to the `docker` group: it is effectively root access (see [Docker on our servers](docker.md#the-docker-group-is-root-access)).
+Run Docker with `sudo`, and don't add users to the `docker` group: it is effectively root access (see [Docker warnings](docker.md#the-docker-group-is-root-access)).
 
 ## Persistence
 

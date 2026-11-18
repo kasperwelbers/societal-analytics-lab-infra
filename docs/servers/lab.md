@@ -10,14 +10,14 @@ flowchart LR
 
     subgraph Server ["Lab server"]
         direction LR
-        Caddy["Caddy<br/>lab. and *.lab."]
-        Login["Lab login<br/>(oauth2-proxy)"]
+        Caddy["Caddy"]
+        Login["Lab login (oauth2-proxy)<br/>sets 🍪 for *.lab"]
         Overview["lab.societal-analytics.nl<br/>overview page"]
-        Walled["Services without<br/>their own login"]
-        Own["Services with<br/>their own login"]
-        Caddy -->|"logged in?"| Login
-        Caddy --> Overview
-        Caddy --> Walled
+        Walled["*.lab.societal-analytics.nl<br/>no own login"]
+        Own["*.lab.societal-analytics.nl<br/>own login"]
+        Caddy -->|no 🍪| Login
+        Caddy -->|🍪| Overview
+        Caddy -->|🍪| Walled
         Caddy --> Own
     end
 
@@ -25,11 +25,13 @@ flowchart LR
 
     Member -->|HTTPS| Caddy
     Login -.->|🔑| KC
+    Own -.->|🔑| KC
 ```
 
 * **Caddy** is the only thing reachable from outside. It handles HTTPS (certificates from Let's Encrypt), and sends every request to the right service.
-* **The lab login** (the AuthWall) protects services without a login of their own, and the overview page. It sends visitors to the lab's login service (the `lab` realm of [Keycloak](./keycloak.md)), so only lab members get in: an account with a password and a mandatory second factor. A service can be restricted further, to one group of members.
-* **Services with their own login** (e.g. a chat interface for the language models) are reached directly through Caddy.
+* **The lab login** (the AuthWall) protects services without a login of their own, and the overview page. Visitors without its login cookie (🍪) are sent to the lab's login service (the `lab` realm of [Keycloak](./keycloak.md)), so only lab members get in: an account with a password and a mandatory second factor. After that login, the lab login sets the cookie for all of `*.lab`. A service can be restricted further, to one group of members.
+* **Services with their own login** (e.g. a chat interface for the language models) are reached directly through Caddy, and log users in through Keycloak's `lab` realm themselves.
+* **The rule:** every service under `lab.` either sits behind the lab login, or has its own login through Keycloak. Never a separate password or token, so lab members have one account, with a second factor, for everything.
 * **The services** listen only on the server itself (`127.0.0.1`), so they can't be reached around Caddy. Each one lives in its own directory, owned by a system account without a login.
 
 ## The lab zone: everything under `lab.`

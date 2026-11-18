@@ -17,7 +17,7 @@ nav:
       - University VMs: install/vm.md
       - Lab server: install/lab-server.md
       - Keycloak VM: install/keycloak.md
-      - Docker on our servers: install/docker.md
+      - "⚠️ Docker warnings": install/docker.md
   - Software development:
       - Our software: software.md
       - Authentication standard: auth.md

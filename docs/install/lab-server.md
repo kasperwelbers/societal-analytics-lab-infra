@@ -2,9 +2,6 @@
 
 How the [lab server](../servers/lab.md) is set up: the system account for the apps, Caddy, the lab login (oauth2-proxy), and how a new service is added. Why it is set up this way: [Decisions](../decisions.md#the-lab-server).
 
-!!! danger "Docker and the firewall"
-    Ports published by Docker containers bypass the server's firewall: a plain `"<port>:<port>"` is open to the whole internet. Publish app ports on `127.0.0.1` only, and read [Docker on our servers](docker.md).
-
 All applications live in their own directory `/opt/<app>`, owned by the system account `sal`. `/opt` itself stays owned by root. Caddy (in `/etc/caddy`) is the only thing reachable from outside: it handles HTTPS, and puts the lab login in front of apps that have no login of their own.
 
 ## 1. The system account
@@ -21,7 +18,7 @@ For each admin, so that they can enter the app directories:
 sudo usermod -aG sal <admin>
 ```
 
-`/opt` stays as it is: owned by `root:root`, mode `755`. `sal` is **not** in the `docker` group: membership of that group is effectively root access, and apps that run as `sal` without Docker would get it too (see [Docker on our servers](docker.md#the-docker-group-is-root-access)). Admins run Docker with `sudo`.
+`/opt` stays as it is: owned by `root:root`, mode `755`. `sal` is **not** in the `docker` group: membership of that group is effectively root access, and apps that run as `sal` without Docker would get it too (see [Docker warnings](docker.md#the-docker-group-is-root-access)). Admins run Docker with `sudo`.
 
 **How access works**
 
@@ -35,7 +32,7 @@ sudo usermod -aG sal <admin>
     * Choose the editor in your `~/.bashrc`: `export SUDO_EDITOR=nvim` (or `nano`).
     * Don't run the editor as `sal` (`sudo -u sal nvim`): `sal` has no home directory for the editor's own files.
 * Pasting into a file on the server: go into insert mode and use your terminal's paste shortcut: `Cmd+V` on a Mac, `Ctrl+Shift+V` on Linux, `Ctrl+V` or right-click in Windows Terminal or PuTTY. (`"+p` doesn't work: a server has no clipboard.)
-* Never use plain `sudo` for other commands inside an app directory, or files end up owned by root. Docker creates a missing directory for a bind mount as root, so create data directories as `sal` before the first start ([Docker on our servers](docker.md#directories-for-bind-mounts)).
+* Never use plain `sudo` for other commands inside an app directory, or files end up owned by root. Docker creates a missing directory for a bind mount as root, so create data directories as `sal` before the first start ([Docker warnings](docker.md#directories-for-bind-mounts)).
 * After copying files in from elsewhere, fix the owner: `sudo chown -R sal:sal /opt/<app>`.
 
 ## 2. Caddy and the lab login
@@ -277,7 +274,7 @@ What members experience: [Signing out, and inactivity](../servers/lab.md#signing
     ```
 
 5. **Listen on localhost only,** so the app can't be reached around Caddy.
-    * With Docker, publish ports on `127.0.0.1`: `"127.0.0.1:<port>:<port>"`. A plain `"<port>:<port>"` is reachable from the internet, even with a firewall (see [Docker on our servers](docker.md#published-ports-bypass-the-firewall)). Check with `sudo docker ps --format '{{.Names}}\t{{.Ports}}'`: nothing should show `0.0.0.0:` or `[::]:`.
+    * With Docker, publish ports on `127.0.0.1`: `"127.0.0.1:<port>:<port>"`. A plain `"<port>:<port>"` is reachable from the internet, even with a firewall (see [Docker warnings](docker.md#published-ports-bypass-the-firewall)). Check with `sudo docker ps --format '{{.Names}}\t{{.Ports}}'`: nothing should show `0.0.0.0:` or `[::]:`.
     * Without Docker, use a systemd service with `User=sal` and `WorkingDirectory=/opt/<app>`, and bind the app to `127.0.0.1`.
 6. **Start it:**
 
@@ -306,7 +303,7 @@ What members experience: [Signing out, and inactivity](../servers/lab.md#signing
         }
         ```
 
-    * Its own login (e.g. Open WebUI, Jupyter with its token):
+    * Its own login, through Keycloak: create a client for it in the `lab` realm (**Clients → Create client**, client authentication on, the app's callback URL as **Valid redirect URI**), and configure the app's OIDC settings with issuer `https://auth.societal-analytics.nl/realms/lab` (e.g. Open WebUI):
 
         ```
         <app>.lab.societal-analytics.nl {
