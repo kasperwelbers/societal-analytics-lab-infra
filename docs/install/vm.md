@@ -2,6 +2,29 @@
 
 How to set up a virtual machine (VM) on VU SciCloud, the VU's research cloud, and secure it before hosting anything on it. This applies to the [Keycloak VM](../servers/keycloak.md) and the [service VMs](../servers/service-vms.md). SciCloud is documented by VU Research Data Management ([SciCloud](https://rdm.vu.nl/tools/scicloud/), [logging in](https://rdm.vu.nl/tools/ada/login.html)).
 
+!!! tip "Steps 3 to 5 in one script"
+    After creating the VM and logging in as `root` (steps 1 and 2), [`setup-vm.sh`](setup-vm.sh) does steps 3 to 5: your admin user with your SSH keys, the firewall rules, automatic security updates and Docker, and the system account `sal` for the apps. It can safely run again. Download it, read it, and run it:
+
+    ```bash
+    cd /tmp && curl -fsSLO https://vu-societal-analytics.github.io/societal-analytics-lab-infra/install/setup-vm.sh
+    ```
+
+    ```bash
+    less setup-vm.sh
+    ```
+
+    ```bash
+    bash setup-vm.sh <username> --web
+    ```
+
+    `--web` opens ports 80 and 443 (for a VM that hosts a website or service); `--caddy` also installs Caddy on the VM itself (for service VMs, not for the Keycloak VM). At the end, it asks you to check in a second terminal that you can log in as your new user and use `sudo`. Only then, turn off root and password logins:
+
+    ```bash
+    sudo bash /tmp/setup-vm.sh --harden-ssh
+    ```
+
+    The steps below describe what it does, and are the way to do it by hand.
+
 ## 1. Create the VM
 
 Log in to the VM portal at [one.labs.vu.nl](https://one.labs.vu.nl), from the VU network or the VU VPN.

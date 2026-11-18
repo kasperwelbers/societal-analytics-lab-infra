@@ -18,75 +18,30 @@ The nightly job is in its own repository, [deploy-backup](https://github.com/vu-
 
     The database server is not covered by this page yet. ==TODO==
 
-## 1. Install
+## Setting up a server
 
-restic, from Ubuntu's packages:
-
-```bash
-sudo apt install restic
-```
-
-The job, owned by root, which runs it (it must be able to read every app's files and secrets):
+First create a check for the server in the lab's healthchecks.io project ([Monitoring](#monitoring)), and copy its ping URL. Then clone the job, and run its setup script with that URL:
 
 ```bash
-sudo git clone https://github.com/vu-societal-analytics/deploy-backup.git /opt/backup && sudo chmod 700 /opt/backup
-```
-
-## 2. The password and the repository
-
-The backups are encrypted with a password. Create it, readable only by root:
-
-```bash
-sudo mkdir -m 700 /etc/restic
+sudo git clone https://github.com/vu-societal-analytics/deploy-backup.git /opt/backup
 ```
 
 ```bash
-openssl rand -base64 32 | sudo tee /etc/restic/password > /dev/null && sudo chmod 600 /etc/restic/password
+sudo /opt/backup/setup.sh https://hc-ping.com/<uuid>
 ```
+
+The script ([`setup.sh`](https://github.com/vu-societal-analytics/deploy-backup/blob/main/setup.sh)) can safely run again: it never replaces a password or a repository that exists. It:
+
+1. makes `/opt/backup` readable only by root (the job must read every app's files and secrets, so it runs as root);
+2. creates the encryption password in `/etc/restic/password`, readable only by root;
+3. puts the ping URL in `/etc/restic/env`;
+4. creates the repository, where restic keeps the backups (for now `/var/backups/restic`);
+5. turns on the timer: every night between 03:30 and 04:00, and catching up after a night the server was off.
 
 !!! danger "Store the password in the password manager"
     Without the password, the backups can't be read: not by us, and not by anyone else. Store it in the lab's password manager, accessible to at least two people: `sudo cat /etc/restic/password`.
 
-Create the repository, where restic keeps the backups:
-
-```bash
-cd /opt/backup && sudo ./restic.sh init
-```
-
-`restic.sh` runs restic with this server's settings: the defaults (`/var/backups/restic` and `/etc/restic/password`), or what is set in `/etc/restic/env`. Use it for every restic command below, from `/opt/backup`.
-
-## 3. Monitoring
-
-A backup that silently stopped is the most common way to lose data. So every run reports to [healthchecks.io](https://healthchecks.io): a ping at the start, and one with the result at the end. Healthchecks.io emails us when a run failed, and also when no run arrived for a day (e.g. the server was off, or the timer broke). It only receives these pings, no data. The free plan covers 20 checks.
-
-1. In the lab's healthchecks.io project (==TODO: create the account and project; who has access==), add a check for this server: name it after the server, **Period** 1 day, **Grace** 2 hours, and the email addresses to notify.
-2. Copy its ping URL into `/etc/restic/env`:
-
-    ```bash
-    sudoedit /etc/restic/env
-    ```
-
-    ```
-    PING_URL=https://hc-ping.com/<uuid>
-    ```
-
-    ```bash
-    sudo chmod 600 /etc/restic/env
-    ```
-
-## 4. Every night
-
-Connect the service and the timer from the repository, and turn on the timer:
-
-```bash
-sudo systemctl link /opt/backup/backup.service /opt/backup/backup.timer
-```
-
-```bash
-sudo systemctl enable --now backup.timer
-```
-
-Make the first backup now, and see how it went (healthchecks.io should show it too):
+Then make the first backup, and check it (healthchecks.io should show it too):
 
 ```bash
 sudo systemctl start backup.service
@@ -96,7 +51,13 @@ sudo systemctl start backup.service
 journalctl -u backup.service -n 50
 ```
 
-It runs every night between 03:30 and 04:00, and catches up after a night the server was off. Updating the job: `sudo git -C /opt/backup pull`.
+Updating the job later: `sudo git -C /opt/backup pull`. For every other restic command, use `restic.sh` from `/opt/backup`: it runs restic with this server's settings (`/etc/restic/env`).
+
+## Monitoring
+
+A backup that silently stopped is the most common way to lose data. So every run reports to [healthchecks.io](https://healthchecks.io): a ping at the start, and one with the result at the end. Healthchecks.io emails us when a run failed, and also when no run arrived for a day (e.g. the server was off, or the timer broke). It only receives these pings, no data. The free plan covers 20 checks.
+
+For each server, in the lab's healthchecks.io project (==TODO: create the account and project; who has access==): add a check named after the server, with **Period** 1 day, **Grace** 2 hours, and the email addresses to notify. Its ping URL goes to `setup.sh`, or later in `/etc/restic/env` as `PING_URL=<url>`.
 
 ## Checking
 

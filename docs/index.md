@@ -56,7 +56,7 @@ How the servers are set up: [Installation guides](./install/vm.md). Why they are
 ## Open points
 
 * **Backups:** our nightly backups are still stored on each server itself, so they don't protect against losing a server. ==TODO: ask VU IT (1) which of our servers they back up, how often, and for how long, and (2) where our own encrypted backups may be stored; and the backup of the database server.== ([Backups](./install/backups.md))
-* **Monitoring:** ==TODO: the lab's healthchecks.io account ([Monitoring](./install/backups.md#3-monitoring)); and ask VU IT about a mail relay for servers, for other notifications.==
+* **Monitoring:** ==TODO: the lab's healthchecks.io account ([Monitoring](./install/backups.md#monitoring)); and ask VU IT about a mail relay for servers, for other notifications.==
 * **The lab server:** ==TODO: operating system updates, SSH access, the move of the services to their addresses under `lab.`, and to the [Docker Compose standards](./install/compose.md).==
 * **The database server:** ==TODO: what it stores, and how the service VMs connect to it.==
 * **Keycloak's address:** Keycloak still runs at an older address; ==TODO: move it to `auth.societal-analytics.nl`.==
