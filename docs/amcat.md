@@ -34,7 +34,7 @@ Browser session authentication is managed by an OIDC provider capable of handlin
 The OIDC provider only does authentication: letting users securely prove to AmCAT that they own an email address.
 
 For University hosted AmCAT servers we recommend the institution's own identity provider.
-See the [Authentication standard](./auth.md) for the requirements, and [Choosing a login provider](./auth-install.md) for teams that host AmCAT themselves.
+See the [Authentication standard](./auth.md) for the requirements, and [Authentication provider](./auth-install.md) for teams that host AmCAT themselves.
 
 ```mermaid
 graph TD

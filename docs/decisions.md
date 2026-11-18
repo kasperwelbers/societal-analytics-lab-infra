@@ -1,6 +1,6 @@
 # Decisions
 
-This page records the choices behind our authentication setup: what we chose, why, and which alternatives we dropped. The other pages describe how it is; this page explains why. The evaluations behind these decisions are under **Background** ([2FA: where should it live?](./auth-2fa.md), [Provider comparison](./auth-providers.md)).
+The choices behind the lab's setup: what was chosen, why, and which alternatives were dropped. The other pages describe how things are; this page explains why. The evaluations behind these decisions: [2FA: where should it live?](./auth-2fa.md) and [Provider comparison](./auth-providers.md).
 
 Last reviewed: November 2026.
 
@@ -46,9 +46,16 @@ Last reviewed: November 2026.
 
 ### Keycloak
 
-**Chosen:** one Keycloak installation for the lab ([Keycloak setup](./keycloak.md)).
+**Chosen:** one Keycloak installation for the lab ([Keycloak VM](./servers/keycloak.md)).
 
-**Why:**
+**What the lab needs:**
+
+* **Our [Authentication standard](./auth.md):** verified email (`email_verified`), a 2FA signal (`amr`), and step-up (`max_age`, `auth_time`).
+* **A login for services without their own** (the lab login on the lab server), through forward auth.
+* **External collaborators:** researchers from other institutions, including abroad, and guests without an institutional account.
+* **Little maintenance,** and a clear route for account recovery: lab admins can reset a member's second factor.
+
+**Why Keycloak:**
 
 * **Realms:** separate logins (users, sessions, keys, admins) in one installation: `lab`, `idp`, and later realms for other teams.
 * **Everything our standard needs:** `email_verified`, `amr` (with our configuration), step-up with `max_age`, and it can also be asked for 2FA (`acr_values`). Consent per client, enforced by client policies.
@@ -77,7 +84,7 @@ The cost: lab members have two accounts. `lab` as a login option of `idp` solves
 
 ### The `idp` realm: the lab's own login, not a public service
 
-**Chosen:** `idp` is the one login for the lab's own servers. Anyone can create an account (with email, Google or GitHub), but an account gives no access by itself: each server gives roles. Our admins create the clients of our servers in the admin console; a client policy turns on consent and PKCE and refuses unsafe redirect URIs ([step 8 of the runbook](./keycloak-deploy.md#8-clients-for-our-deployments)).
+**Chosen:** `idp` is the one login for the lab's own servers. Anyone can create an account (with email, Google or GitHub), but an account gives no access by itself: each server gives roles. Our admins create the clients of our servers in the admin console; a client policy turns on consent and PKCE and refuses unsafe redirect URIs ([step 8 of the installation guide](./install/keycloak.md#8-clients-for-our-deployments)).
 
 **Why:** students and collaborators sign up themselves when a project gives them access, instead of waiting for an admin. The client policy prevents mistakes, not misuse: admins are trusted.
 
@@ -93,7 +100,7 @@ The cost: lab members have two accounts. `lab` as a login option of `idp` solves
 
 **Chosen:**
 
-* **Members are added by us,** without a password and without an email from us. They set their password themselves with **First time, or forgot your password?** on the login page. After the email link, in one go: a password, their name, an authenticator app, recovery codes, and they're in ([Adding lab members](./keycloak-deploy.md#adding-lab-members)).
+* **Members are added by us,** without a password and without an email from us. They set their password themselves with **First time, or forgot your password?** on the login page. After the email link, in one go: a password, their name, an authenticator app, recovery codes, and they're in ([Adding lab members](./install/keycloak.md#adding-lab-members)).
 * **2FA is mandatory:** these accounts give access to our infrastructure, and a mandatory second factor is needed for `lab` to become a trusted login option of `idp` later.
 * **"Remember me"** keeps members logged in for up to 30 days on their own device.
 
@@ -106,7 +113,7 @@ The cost: lab members have two accounts. `lab` as a login option of `idp` solves
 
 ### A password reset never replaces the second factor
 
-**Chosen:** after the email link, users with a second factor enter it before they can choose a new password ([How users log in](./keycloak.md#how-users-log-in)).
+**Chosen:** after the email link, users with a second factor enter it before they can choose a new password ([How users log in](./servers/keycloak.md#how-users-log-in)).
 
 **Dropped:** Keycloak's default reset, which logs the user in after the new password without the second factor, and lets them set up a new authenticator app, so an inbox was enough to take over an account. Also dropped: a first fix that made users log in again after the reset (secure, but clumsy for new members).
 
@@ -118,7 +125,7 @@ The cost: lab members have two accounts. `lab` as a login option of `idp` solves
 
 ### Our look: texts and CSS only
 
-**Chosen:** Keycloak themes with the lab logo, colours and our texts, but no changed page templates ([Themes](./keycloak-deploy.md#themes)).
+**Chosen:** Keycloak themes with the lab logo, colours and our texts, but no changed page templates ([Themes](./install/keycloak.md#themes)).
 
 **Why:** page templates change between Keycloak versions and can break after an upgrade; texts, CSS and images rarely do. Users see whose login this is.
 
@@ -138,7 +145,7 @@ The cost: lab members have two accounts. `lab` as a login option of `idp` solves
 
 ### Realm files, imported by Keycloak itself
 
-**Chosen:** complete realm files, imported by Keycloak's own `--import-realm` when a realm doesn't exist yet ([Realms](./keycloak-deploy.md#7-realms)). Later changes are made in the admin console.
+**Chosen:** complete realm files, imported by Keycloak's own `--import-realm` when a realm doesn't exist yet ([Realms](./install/keycloak.md#7-realms)). Later changes are made in the admin console.
 
 **Dropped:** keycloak-config-cli, a third-party tool that applies the files again and again. It needs an admin client with a secret on the server, for a workflow we don't use.
 
@@ -152,7 +159,7 @@ The cost: lab members have two accounts. `lab` as a login option of `idp` solves
 
 ### Email limits
 
-**Chosen:** a limit per IP address in Caddy, on the requests that make Keycloak send an email, and a cap on all email in the relay ([Email limits](./keycloak-deploy.md#email-limits)).
+**Chosen:** a limit per IP address in Caddy, on the requests that make Keycloak send an email, and a cap on all email in the relay ([Email limits](./install/keycloak.md#email-limits)).
 
 **Why:** Keycloak has no limit on the emails it sends, and its brute force detection only covers logins. Blocking only the requests that send an email never breaks logins or the sessions of a server. The cap on all email is in the relay, because only the relay counts emails that were actually sent; a limit on all requests in Caddy could be used up by one person.
 
@@ -162,7 +169,7 @@ The cost: lab members have two accounts. `lab` as a login option of `idp` solves
 
 ### One system account, Caddy on the server, Docker with `sudo`
 
-**Chosen:** every app in `/opt/<app>`, owned by the system account `sal` (no login, no home directory); admins are in the `sal` group and work as `sal` with `sudo -u sal` and `sudoedit -u sal`. Caddy runs on the server itself and is the only way in. Admins run Docker with `sudo` ([Lab server](./lab-server.md)).
+**Chosen:** every app in `/opt/<app>`, owned by the system account `sal` (no login, no home directory); admins are in the `sal` group and work as `sal` with `sudo -u sal` and `sudoedit -u sal`. Caddy runs on the server itself and is the only way in. Admins run Docker with `sudo` ([Installation: lab server](./install/lab-server.md)).
 
 **Why:** one convention for all apps on a server with many small apps, and no app files owned by root or by an admin's personal account. Caddy in front of everything gives HTTPS and one place to decide what is reachable.
 
@@ -170,7 +177,7 @@ The cost: lab members have two accounts. `lab` as a login option of `idp` solves
 
 ### All lab services under `lab.`, with one login cookie for the zone
 
-**Chosen:** every service the lab runs for its members gets an address under `lab.example.org` (e.g. `whisper.lab.example.org`), with or without its own login, and `lab.example.org` is the overview page. Services without their own login sit behind oauth2-proxy with Caddy's `forward_auth`, against the `lab` realm. oauth2-proxy sets **one login cookie for the zone** (`.lab.example.org`), and every login comes back to one fixed address (`lab.example.org/oauth2/callback`). Signing out ends the login for all services and the Keycloak session (oauth2-proxy's backend logout). oauth2-proxy checks the session with Keycloak every 10 minutes, so inactive users (2 hours, Keycloak's idle time) and removed members are signed out ([Lab server](./lab-server.md#2-caddy-and-the-lab-login)).
+**Chosen:** every service the lab runs for its members gets an address under `lab.societal-analytics.nl` (e.g. `whisper.lab.societal-analytics.nl`), with or without its own login, and `lab.societal-analytics.nl` is the overview page. Services without their own login sit behind oauth2-proxy with Caddy's `forward_auth`, against the `lab` realm. oauth2-proxy sets **one login cookie for the zone** (`.lab.societal-analytics.nl`), and every login comes back to one fixed address (`lab.societal-analytics.nl/oauth2/callback`). Signing out ends the login for all services and the Keycloak session (oauth2-proxy's backend logout). oauth2-proxy checks the session with Keycloak every 10 minutes, so inactive users (2 hours, Keycloak's idle time) and removed members are signed out ([Lab server](./servers/lab.md)).
 
 **Why:** users need one login, and one sign-out that ends everything. oauth2-proxy can't do that with a cookie per service: a browser only lets a site clear its own cookies, and oauth2-proxy doesn't support Keycloak's back-channel logout. A shared cookie is the common way to use oauth2-proxy, but a cookie for the whole domain would also go to the lab's website, which is hosted by GitHub Pages. A zone of its own keeps the cookie within the lab's own services on this server, which could reach each other anyway. The zone also makes the rule visible: everything under `lab.` is a lab service.
 
@@ -182,15 +189,27 @@ The cost: lab members have two accounts. `lab` as a login option of `idp` solves
 
 * **A cookie per service:** signing out of one service would leave the others logged in until their next check with Keycloak. (oauth2-proxy also doesn't bind a cookie to a service, so it protected less than it seemed.)
 * **One cookie for the whole domain:** it would be sent to the website on GitHub Pages.
-* **Services under one address, by path** (`lab.example.org/whisper`): all services would share one origin, so their cookies could clash, and a bug in one could read the others' pages; many apps also can't run under a sub-path.
-* **A wildcard redirect URI** (`https://*.lab.example.org/...`): Keycloak doesn't allow a wildcard in the host name (tested). One fixed callback replaces it.
+* **Services under one address, by path** (`lab.societal-analytics.nl/whisper`): all services would share one origin, so their cookies could clash, and a bug in one could read the others' pages; many apps also can't run under a sub-path.
+* **A wildcard redirect URI** (`https://*.lab.societal-analytics.nl/...`): Keycloak doesn't allow a wildcard in the host name (tested). One fixed callback replaces it.
 * **`network_mode: host` for oauth2-proxy** (simpler, but a compromised oauth2-proxy could reach every app on the server's localhost).
 * **A CMS for the website on the lab server:** the public website stays on GitHub Pages (quick updates, nothing to maintain); the overview page of lab services is a static page behind the lab login.
 
 ## Later
 
 * **"Sign in with your lab account" in `idp`:** `lab` as a login option of `idp`, so lab members use one account. A login through `lab` (which always requires 2FA) could count as 2FA in `idp`, if step-up works: `idp` must pass a request for a fresh login (`max_age`) on to `lab`. To be tested.
-* **Institutional login for `lab`,** via SURF SRAM ([Lab authentication](./lab-auth.md#later-institutional-login-via-sram)). A known list of lab services fits SURF's review better than `idp` would.
+* **Institutional login for `lab`,** via SURF SRAM ([below](#institutional-login-via-sram)).
 * **A local broker (option B)** as a deployment option, if the field moves towards passkeys that sync across devices, or a lightweight broker with upstream login and enforced 2FA matures (see [2FA: where should it live?](./auth-2fa.md#why-b-can-be-added-later)).
 * **Recommending 2FA in `idp`** on a landing page of the lab's services: an app can send users to the 2FA setup with a **Cancel** button (`kc_action`), and learns whether they set it up.
 * **Verifying email addresses in our software,** for servers with their own email server, so that `email_verified` can become `true` without the provider.
+
+### Institutional login via SRAM
+
+SURF Research Access Management (SRAM) is SURF's service for research collaborations: members log in with their own institution (VU, or other institutions worldwide via eduGAIN), or with eduID if they have no institutional account. The VU already uses SRAM, for instance for Yoda.
+
+Keycloak can offer SRAM as a login option of the `lab` realm (as an external OIDC provider), so lab members and collaborators could log in with their institution, while the lab's services keep talking to Keycloak, with the same claims. Open questions:
+
+* Does SRAM's ID token include `email_verified`, a 2FA signal (`amr`/`acr`), and `auth_time`, and does it honour `max_age`? If SRAM enforces 2FA but doesn't signal it, the `lab` realm would still ask for its own second factor.
+* SRAM depends on the VU: the lab may need to request a collaboration, and service registrations are reviewed. Each service needs a privacy policy and an acceptable use policy ([privacy statement](./policies/privacy.md), [AUP](./policies/aup.md)).
+* `lab` fits such a review well: a known list of lab services, for lab members and invited collaborators. `idp`, open to anyone, would be much harder to justify as a login service that passes identities on.
+
+The next step is a test on SRAM's acceptance environment (`acc.sram.surf.nl`). Sources: [SURF Research Access Management (SURF wiki)](https://wiki.surfnet.nl/x/UsLaAQ), [VU Research Support Handbook: SRAM invitations and eduID](https://rdm.vu.nl/tools/yoda/sram_invitations_eduid_activation.html), [SRAM setup guide](https://sorenwacker.github.io/sram-fastapi/sram-setup/).

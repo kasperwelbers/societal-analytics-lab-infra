@@ -1,6 +1,6 @@
 # Docker on our servers
 
-Rules for running Docker containers on any of our servers: the [lab server](./lab-server.md), [university VMs](./vm.md), and the [Keycloak VM](./keycloak-deploy.md). Two things about Docker are easy to get wrong, and both affect the security of the whole server.
+Rules for running Docker containers on any of our servers: the [lab server](lab-server.md), [university VMs](vm.md), and the [Keycloak VM](keycloak.md). Two things about Docker are easy to get wrong, and both affect the security of the whole server.
 
 ## Published ports bypass the firewall
 
@@ -16,8 +16,8 @@ Rules for running Docker containers on any of our servers: the [lab server](./la
 
 **Rules:**
 
-1. **Only publish ports that should be public,** typically only 80 and 443 of a reverse proxy (Caddy). Let containers talk to each other over Docker networks, without publishing ports. The [Keycloak deployment](./keycloak-deploy.md) works this way: only Caddy publishes ports, and the database is on an internal network without internet access.
-2. **If a port should only be reachable from the server itself** (e.g. an app behind a Caddy that runs on the server, as on the [lab server](./lab-server.md), or a database tool), publish it on the loopback address: `"127.0.0.1:5432:5432"` instead of `"5432:5432"`.
+1. **Only publish ports that should be public,** typically only 80 and 443 of a reverse proxy (Caddy). Let containers talk to each other over Docker networks, without publishing ports. The [Keycloak installation](keycloak.md) works this way: only Caddy publishes ports, and the database is on an internal network without internet access.
+2. **If a port should only be reachable from the server itself** (e.g. an app behind a Caddy that runs on the server, as on the [lab server](lab-server.md), or a database tool), publish it on the loopback address: `"127.0.0.1:5432:5432"` instead of `"5432:5432"`.
 3. **Check which ports are published,** after every change:
 
     ```bash
@@ -32,7 +32,7 @@ Rules for running Docker containers on any of our servers: the [lab server](./la
 
 Run Docker with `sudo`, and don't add anyone to the `docker` group: not admins, and not the system accounts that own the files of an app (`keycloak`, `sal`). Anyone who can run Docker can mount the whole disk into a container, so membership of the `docker` group is effectively root access, without the logging that `sudo` gives. A program that runs as a system account in the `docker` group (e.g. an app without Docker, run by systemd as `sal`) would have that access too.
 
-Files are still owned by a system account; only the `docker compose` commands use `sudo`. See [Lab server](./lab-server.md#1-the-system-account) and the Keycloak runbook ([Users and permissions](./keycloak-deploy.md#users-and-permissions)).
+Files are still owned by a system account; only the `docker compose` commands use `sudo`. See [Installation: lab server](lab-server.md#1-the-system-account) and the Keycloak installation ([Users and permissions](keycloak.md#users-and-permissions)).
 
 ## Directories for bind mounts
 

@@ -1,8 +1,8 @@
 # Authentication standard
 
-How we design authentication in all software developed by the Societal Analytics Lab (AmCAT, AnnoTinder), so that it is done consistently: what our software does, and what it requires from the OIDC provider. It is written for us as developers. Teams that host our software only need parts of it; their guides link to those:
+How authentication works in all software developed by the Societal Analytics Lab (AmCAT, AnnoTinder): what the software does, and what it requires from the OIDC provider. It is written for developers of our software. Teams that host the software only need parts of it; these pages link to those:
 
-* [Choosing a login provider](./auth-install.md): for teams that host our software.
+* [Authentication provider](./auth-install.md): for teams that host our software.
 * [Migration guide](./auth-migration.md): moving to a different OIDC provider.
 * [Decisions](./decisions.md): why it is set up this way, and which alternatives we dropped.
 
@@ -16,10 +16,10 @@ Our software works with any OIDC provider that meets the [provider requirements]
 
 ## Choosing an OIDC provider
 
-The person hosting our software chooses the OIDC provider (see [Choosing a login provider](./auth-install.md)):
+The person hosting our software chooses the OIDC provider (see [Authentication provider](./auth-install.md)):
 
 * **Your institution's identity provider** (recommended, and the right choice for sensitive research data): managed by a security team, with a helpdesk for account recovery.
-* **Another provider that meets the requirements,** hosted (e.g. ZITADEL Cloud) or self-hosted (e.g. Keycloak). The lab runs its own Keycloak for its own servers; its documentation ([Keycloak setup](./keycloak.md)) can serve as an example.
+* **Another provider that meets the requirements,** hosted (e.g. ZITADEL Cloud) or self-hosted (e.g. Keycloak). The lab runs its own Keycloak for its own servers; its documentation ([Keycloak VM](./servers/keycloak.md)) can serve as an example.
 * **For teaching and other servers without sensitive data:** a provider that doesn't meet all requirements, with the [weaker security settings](#weaker-security-teaching-and-low-sensitivity-servers) turned on.
 
 Names and email addresses of users (e.g. students) are personal data, so any server must be used according to your institution's rules. Moving to another provider is a [migration](./auth-migration.md). For development on a local machine there is a separate [development mode](#development-mode).

@@ -1,11 +1,11 @@
 # Two-factor authentication: where should it live?
 
-!!! info "Background"
+!!! info "Evaluation"
     This page is the evaluation behind our choice to keep 2FA at the OIDC provider (November 2026). The decision and its reasons are on the [Decisions](./decisions.md#2fa-lives-at-the-oidc-provider) page. Where this page mentions our shared provider for other teams: that was dropped later. Teams without a provider with 2FA can now use [weaker security settings](./auth.md#weaker-security-teaching-and-low-sensitivity-servers) for teaching servers.
 
 All our software requires a second factor (2FA, MFA) for sensitive actions (see the [Authentication standard](./auth.md)). This page discusses **which component provides that second factor**: the OIDC provider (option A), or a component of our own (option B). It explains the relevant concepts, lists the pros and cons of both options, and ends with a recommendation.
 
-This page is about AmCAT and AnnoTinder, including when other teams host them. The lab's own infrastructure is discussed in [Lab authentication](./lab-auth.md).
+This page is about AmCAT and AnnoTinder, including when other teams host them. The lab's own login service is described on the [Keycloak VM](./servers/keycloak.md) page.
 
 ## Concepts
 

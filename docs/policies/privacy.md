@@ -7,7 +7,7 @@
 
 This privacy statement explains how the Societal Analytics Lab handles personal data in the services that the lab operates. It supplements the general privacy statement of Vrije Universiteit Amsterdam ==TODO: link to the VU privacy statement==.
 
-This statement does **not** apply to AmCAT or AnnoTinder servers that are hosted by other teams. The team hosting such a server is responsible for it, and should provide its own privacy statement (see the [template](./privacy-template.md)).
+This statement does **not** apply to AmCAT or AnnoTinder servers that are hosted by other teams. The team hosting such a server is responsible for it, and should provide its own privacy statement; this one can serve as an example.
 
 ## Who is responsible
 
@@ -21,8 +21,8 @@ This statement does **not** apply to AmCAT or AnnoTinder servers that are hosted
 
 | Service | What it does | Service-specific data |
 | --- | --- | --- |
-| **AmCAT** (lab server) | Storing, managing and sharing research data | Data that users upload to projects (see [Research data](#research-data)) |
-| **AnnoTinder** (lab server) | Annotating research data | Data that users upload, and their annotations |
+| **AmCAT** | Storing, managing and sharing research data | Data that users upload to projects (see [Research data](#research-data)) |
+| **AnnoTinder** | Annotating research data | Data that users upload, and their annotations |
 | **Whisper** | Transcription of audio | Audio files and transcripts, processed on lab hardware |
 | **Ollama** | AI inference with language models | Prompts and outputs, processed on lab hardware |
 | **Login service** (the lab's Keycloak: the `lab` and `idp` realms) | Logging in to the lab's services | Accounts of users (see [Login service](#login-service)) |
@@ -57,7 +57,7 @@ AmCAT and AnnoTinder store data that users upload to research projects. That dat
 
 ## Login service
 
-The lab runs its own login service ([Keycloak](../keycloak.md)) for the services above: one realm for the lab's infrastructure (lab members and collaborators), and one for the lab's AmCAT and AnnoTinder servers (anyone can create an account there; each server decides who gets access). For accounts at this service:
+The lab runs its own login service ([Keycloak](../servers/keycloak.md)) for the services above: one realm for the lab's infrastructure (lab members and collaborators), and one for the lab's AmCAT and AnnoTinder servers (anyone can create an account there; each server decides who gets access). For accounts at this service:
 
 * The lab processes account data (name, email address, login and 2FA settings, security logs) to provide the login service.
 * Before one of our servers receives your name and email address, you are asked to consent. You can see and withdraw these consents in your account settings.

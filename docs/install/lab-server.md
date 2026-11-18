@@ -1,12 +1,9 @@
-# Lab server
+# Installation: lab server
 
-How applications are installed on the lab server (LabServices: Whisper, Ollama and other tools), how they are named (everything under `lab.`), and how apps without a login of their own get the lab login (the AuthWall). Why it is set up this way: [Decisions](./decisions.md#the-lab-server).
-
-!!! info "Placeholders"
-    This page uses `example.org` for the lab's domain: `lab.example.org` for the overview of the lab's services, `<app>.lab.example.org` for the services, `auth.example.org` for the lab's Keycloak, and `admin@example.org`. The real names are only on the server.
+How the [lab server](../servers/lab.md) is set up: the system account for the apps, Caddy, the lab login (oauth2-proxy), and how a new service is added. Why it is set up this way: [Decisions](../decisions.md#the-lab-server).
 
 !!! danger "Docker and the firewall"
-    Ports published by Docker containers bypass the server's firewall: a plain `"<port>:<port>"` is open to the whole internet. Publish app ports on `127.0.0.1` only, and read [Docker on our servers](./docker.md).
+    Ports published by Docker containers bypass the server's firewall: a plain `"<port>:<port>"` is open to the whole internet. Publish app ports on `127.0.0.1` only, and read [Docker on our servers](docker.md).
 
 All applications live in their own directory `/opt/<app>`, owned by the system account `sal`. `/opt` itself stays owned by root. Caddy (in `/etc/caddy`) is the only thing reachable from outside: it handles HTTPS, and puts the lab login in front of apps that have no login of their own.
 
@@ -24,7 +21,7 @@ For each admin, so that they can enter the app directories:
 sudo usermod -aG sal <admin>
 ```
 
-`/opt` stays as it is: owned by `root:root`, mode `755`. `sal` is **not** in the `docker` group: membership of that group is effectively root access, and apps that run as `sal` without Docker would get it too (see [Docker on our servers](./docker.md#the-docker-group-is-root-access)). Admins run Docker with `sudo`.
+`/opt` stays as it is: owned by `root:root`, mode `755`. `sal` is **not** in the `docker` group: membership of that group is effectively root access, and apps that run as `sal` without Docker would get it too (see [Docker on our servers](docker.md#the-docker-group-is-root-access)). Admins run Docker with `sudo`.
 
 **How access works**
 
@@ -38,23 +35,14 @@ sudo usermod -aG sal <admin>
     * Choose the editor in your `~/.bashrc`: `export SUDO_EDITOR=nvim` (or `nano`).
     * Don't run the editor as `sal` (`sudo -u sal nvim`): `sal` has no home directory for the editor's own files.
 * Pasting into a file on the server: go into insert mode and use your terminal's paste shortcut: `Cmd+V` on a Mac, `Ctrl+Shift+V` on Linux, `Ctrl+V` or right-click in Windows Terminal or PuTTY. (`"+p` doesn't work: a server has no clipboard.)
-* Never use plain `sudo` for other commands inside an app directory, or files end up owned by root. Docker creates a missing directory for a bind mount as root, so create data directories as `sal` before the first start ([Docker on our servers](./docker.md#directories-for-bind-mounts)).
+* Never use plain `sudo` for other commands inside an app directory, or files end up owned by root. Docker creates a missing directory for a bind mount as root, so create data directories as `sal` before the first start ([Docker on our servers](docker.md#directories-for-bind-mounts)).
 * After copying files in from elsewhere, fix the owner: `sudo chown -R sal:sal /opt/<app>`.
 
 ## 2. Caddy and the lab login
 
-### The lab zone: everything under `lab.`
+### DNS
 
-Every service the lab runs for its members gets an address under `lab.example.org`: `whisper.lab.example.org`, `llm.lab.example.org`, and so on, with or without its own login. `lab.example.org` itself is the overview page: the services, who is signed in, and a sign-out button.
-
-**DNS:** two records, both pointing to this server: `lab.example.org` and `*.lab.example.org`. New services then need no DNS change.
-
-!!! warning "Only the lab's own services under `lab.`"
-    The lab login is one cookie for the whole zone: the browser sends it to **every** address under `lab.example.org`. Whoever receives it can use it to get into the services behind the lab login, as that user. So only put services under `lab.` that the lab runs on its own servers. Never a site hosted by someone else (an external website host, a SaaS product, a student's own server).
-
-    Why one cookie for the zone: browsers only let a site clear its own cookies, and oauth2-proxy can't be told by Keycloak that a user signed out. With a cookie per service, signing out would leave the other services logged in. One cookie for the zone gives one login and one sign-out for all of them, while the lab's website and other sites outside `lab.` never receive it.
-
-Services with their own login under `lab.` (e.g. `llm`) also receive the cookie, which they don't use. That's acceptable: they are the lab's own, on this server, from where they could reach the other services directly anyway.
+Two records, both pointing to this server: `lab.societal-analytics.nl` and `*.lab.societal-analytics.nl`. New services then need no DNS change. Only the lab's own services may get an address under `lab.`: see [the lab zone](../servers/lab.md#the-lab-zone-everything-under-lab).
 
 ### Caddy
 
@@ -82,7 +70,7 @@ Services without their own login sit behind [oauth2-proxy](https://oauth2-proxy.
 
 1. **Clients → Create client.** **Client ID:** `lab-authwall`. **Next.**
 2. **Client authentication:** on. **Authentication flow:** only **Standard flow**. **Next.**
-3. **Valid redirect URIs:** `https://lab.example.org/oauth2/callback` (the one place every login comes back to; Keycloak doesn't allow a wildcard in the host name). **Valid post logout redirect URIs:** `+`. **Save.**
+3. **Valid redirect URIs:** `https://lab.societal-analytics.nl/oauth2/callback` (the one place every login comes back to; Keycloak doesn't allow a wildcard in the host name). **Valid post logout redirect URIs:** `+`. **Save.**
 4. **Advanced** tab: **Proof Key for Code Exchange Code Challenge Method:** `S256`. **Save.**
 5. **Client scopes** tab → `lab-authwall-dedicated` → **Configure a new mapper** (or **Add mapper → By configuration**):
     * **Audience:** name `audience`, **Included Client Audience** `lab-authwall`, **Add to ID token** and **Add to access token** on. oauth2-proxy needs this.
@@ -114,18 +102,18 @@ services:
     env_file: .env
     environment:
       OAUTH2_PROXY_PROVIDER: keycloak-oidc
-      OAUTH2_PROXY_OIDC_ISSUER_URL: https://auth.example.org/realms/lab
+      OAUTH2_PROXY_OIDC_ISSUER_URL: https://auth.societal-analytics.nl/realms/lab
       OAUTH2_PROXY_CODE_CHALLENGE_METHOD: S256
       # All members of the lab realm; restrict a service to a group in the Caddyfile (step 3)
       OAUTH2_PROXY_EMAIL_DOMAINS: "*"
-      # One login cookie for the lab zone (see the warning above)
-      OAUTH2_PROXY_COOKIE_DOMAINS: .lab.example.org
+      # One login cookie for the lab zone (see [the lab zone](../servers/lab.md#the-lab-zone-everything-under-lab))
+      OAUTH2_PROXY_COOKIE_DOMAINS: .lab.societal-analytics.nl
       # Every login comes back here (the redirect URI in Keycloak)
-      OAUTH2_PROXY_REDIRECT_URL: https://lab.example.org/oauth2/callback
+      OAUTH2_PROXY_REDIRECT_URL: https://lab.societal-analytics.nl/oauth2/callback
       # Where users may be sent after logging in or out: the lab's sites (including the website)
-      OAUTH2_PROXY_WHITELIST_DOMAINS: .example.org
+      OAUTH2_PROXY_WHITELIST_DOMAINS: .societal-analytics.nl
       # Signing out also ends the Keycloak session (otherwise the next visit logs straight back in)
-      OAUTH2_PROXY_BACKEND_LOGOUT_URL: https://auth.example.org/realms/lab/protocol/openid-connect/logout?id_token_hint={id_token}
+      OAUTH2_PROXY_BACKEND_LOGOUT_URL: https://auth.societal-analytics.nl/realms/lab/protocol/openid-connect/logout?id_token_hint={id_token}
       # Check the login with Keycloak every 10 minutes: users who signed out, or were inactive
       # longer than Keycloak's idle time (2 hours), have to log in again
       OAUTH2_PROXY_COOKIE_REFRESH: 10m
@@ -152,6 +140,8 @@ networks:
           gateway: 172.30.255.1
 ```
 
+==TODO: until Keycloak has moved to `auth.societal-analytics.nl`, use its current address in `OAUTH2_PROXY_OIDC_ISSUER_URL` and `OAUTH2_PROXY_BACKEND_LOGOUT_URL`.==
+
 Its own network keeps oauth2-proxy away from the apps on this server: from inside its container, the services on the server's `127.0.0.1` can't be reached, and no other container can reach oauth2-proxy. (With `network_mode: host` it could reach every app on the server's localhost, including apps that rely on the lab login.)
 
 Create `/opt/oauth2-proxy/.env`, also with `sudoedit -u sal`:
@@ -176,7 +166,7 @@ At the top of `/etc/caddy/Caddyfile`:
 
 ```
 {
-	email admin@example.org
+	email <admin email address>
 }
 
 # The lab login, for services without their own: import authwall { reverse_proxy ... }
@@ -225,7 +215,7 @@ At the top of `/etc/caddy/Caddyfile`:
 }
 
 # The overview of the lab's services, behind the lab login
-lab.example.org {
+lab.societal-analytics.nl {
 	import authwall {
 		root * /var/www/lab
 		templates
@@ -246,24 +236,24 @@ The service receives the user's email address in the header `X-Auth-Request-Emai
 <body>
 <h1>Lab services</h1>
 <p>Signed in as {{.Req.Header.Get "X-Auth-Request-Email"}} ·
-<a href="/oauth2/sign_out?rd=https%3A%2F%2Fexample.org%2F">Sign out</a></p>
+<a href="/oauth2/sign_out?rd=https%3A%2F%2Fsocietal-analytics.nl%2F">Sign out</a></p>
 <ul>
-  <li><a href="https://whisper.lab.example.org/">Whisper</a>: transcription</li>
-  <li><a href="https://llm.lab.example.org/">LLM chat</a> (its own login)</li>
+  <li><a href="https://whisper.lab.societal-analytics.nl/">Whisper</a>: transcription</li>
+  <li><a href="https://llm.lab.societal-analytics.nl/">LLM chat</a> (its own login)</li>
 </ul>
 </body></html>
 ```
 
 ### Signing out, and inactivity
 
-* **Sign out:** the **Sign out** button on the overview page, or `/oauth2/sign_out` on any service behind the lab login. It ends the login for all of them and the Keycloak session, and goes to the address in `rd` (here the lab's website).
-* **Inactivity:** users who don't use any service behind the lab login for 2 hours (the idle time of the `lab` realm in Keycloak, **Realm settings → Sessions → SSO Session Idle**) have to log in again. Active users stay signed in: oauth2-proxy checks in with Keycloak every 10 minutes while they work. A long request (e.g. a large upload) is never cut off.
-* **Remember me:** members who tick it at login stay signed in on that device for up to 7 days without activity.
-* **A removed member** (or one removed from a group) loses access within 10 minutes. To sign out everyone at once (e.g. after a stolen laptop), set a new `OAUTH2_PROXY_COOKIE_SECRET` and restart oauth2-proxy.
+What members experience: [Signing out, and inactivity](../servers/lab.md#signing-out-and-inactivity). The settings behind it:
+
+* The 2 hours are the idle time of the `lab` realm in Keycloak (**Realm settings → Sessions → SSO Session Idle**); `OAUTH2_PROXY_COOKIE_REFRESH` makes oauth2-proxy check the session every 10 minutes.
+* To sign out everyone at once (e.g. after a stolen laptop), set a new `OAUTH2_PROXY_COOKIE_SECRET` and restart oauth2-proxy.
 
 ## 3. Adding an application
 
-1. **Choose a free port** and a name. See which ports are taken with `sudo ss -tlnp` (and in the Caddyfile). The address will be `<app>.lab.example.org`; DNS needs no change.
+1. **Choose a free port** and a name. See which ports are taken with `sudo ss -tlnp` (and in the Caddyfile). The address will be `<app>.lab.societal-analytics.nl`; DNS needs no change.
 2. **Create the directory,** as an admin:
 
     ```bash
@@ -287,7 +277,7 @@ The service receives the user's email address in the header `X-Auth-Request-Emai
     ```
 
 5. **Listen on localhost only,** so the app can't be reached around Caddy.
-    * With Docker, publish ports on `127.0.0.1`: `"127.0.0.1:<port>:<port>"`. A plain `"<port>:<port>"` is reachable from the internet, even with a firewall (see [Docker on our servers](./docker.md#published-ports-bypass-the-firewall)). Check with `sudo docker ps --format '{{.Names}}\t{{.Ports}}'`: nothing should show `0.0.0.0:` or `[::]:`.
+    * With Docker, publish ports on `127.0.0.1`: `"127.0.0.1:<port>:<port>"`. A plain `"<port>:<port>"` is reachable from the internet, even with a firewall (see [Docker on our servers](docker.md#published-ports-bypass-the-firewall)). Check with `sudo docker ps --format '{{.Names}}\t{{.Ports}}'`: nothing should show `0.0.0.0:` or `[::]:`.
     * Without Docker, use a systemd service with `User=sal` and `WorkingDirectory=/opt/<app>`, and bind the app to `127.0.0.1`.
 6. **Start it:**
 
@@ -299,7 +289,7 @@ The service receives the user's email address in the header `X-Auth-Request-Emai
     * No login of its own: behind the lab login.
 
         ```
-        <app>.lab.example.org {
+        <app>.lab.societal-analytics.nl {
         	import authwall {
         		reverse_proxy 127.0.0.1:<port>
         	}
@@ -309,7 +299,7 @@ The service receives the user's email address in the header `X-Auth-Request-Emai
     * Only for members of one group: create the group in the `lab` realm (**Groups**), add the members, and use `authwall-group`:
 
         ```
-        <app>.lab.example.org {
+        <app>.lab.societal-analytics.nl {
         	import authwall-group <group> {
         		reverse_proxy 127.0.0.1:<port>
         	}
@@ -319,7 +309,7 @@ The service receives the user's email address in the header `X-Auth-Request-Emai
     * Its own login (e.g. Open WebUI, Jupyter with its token):
 
         ```
-        <app>.lab.example.org {
+        <app>.lab.societal-analytics.nl {
         	reverse_proxy 127.0.0.1:<port>
         }
         ```
@@ -327,7 +317,7 @@ The service receives the user's email address in the header `X-Auth-Request-Emai
     * For long requests or large uploads, add a `transport http { read_timeout 3000s write_timeout 3000s }` block inside `reverse_proxy`, and `request_body { max_size 2.5GB }` to the site.
 8. **Add it to the overview page** (`/var/www/lab/index.html`), and reload Caddy.
 
-**Moving a service to its address under `lab.`:** keep the old address working for a while with a redirect, e.g. `whisper.example.org { redir https://whisper.lab.example.org{uri} }`.
+**Moving a service to its address under `lab.`:** keep the old address working for a while with a redirect, e.g. `whisper.societal-analytics.nl { redir https://whisper.lab.societal-analytics.nl{uri} }`.
 
 **Updating an app:**
 
@@ -352,12 +342,12 @@ Then remove its block from the Caddyfile and its line from the overview page, an
 | Problem | Likely cause |
 | --- | --- |
 | `caddy validate` says `unrecognized directive: {block}` | Caddy is older than 2.9 (Ubuntu's own package): install it from Caddy's apt repository (section 2). |
-| Keycloak shows "Invalid parameter: redirect_uri" | `https://lab.example.org/oauth2/callback` is not in **Valid redirect URIs** of `lab-authwall`, or `OAUTH2_PROXY_REDIRECT_URL` differs from it. |
+| Keycloak shows "Invalid parameter: redirect_uri" | `https://lab.societal-analytics.nl/oauth2/callback` is not in **Valid redirect URIs** of `lab-authwall`, or `OAUTH2_PROXY_REDIRECT_URL` differs from it. |
 | A service behind the lab login returns 502 | Caddy can't reach oauth2-proxy (`curl -s localhost:4180/ping` should print `OK`), or the service itself. `journalctl -u caddy -n 20` says which. |
 | "Forbidden" after logging in | The service uses `authwall-group`, and the user is not in that group in the `lab` realm. |
 | A page of oauth2-proxy with a "Sign in" button | `OAUTH2_PROXY_SKIP_PROVIDER_BUTTON` is not set. |
 | After signing out, the next visit logs straight back in | `OAUTH2_PROXY_BACKEND_LOGOUT_URL` is missing or wrong, so the Keycloak session wasn't ended. |
-| oauth2-proxy doesn't start | Check `cd /opt/oauth2-proxy && sudo docker compose logs`. It needs to reach `https://auth.example.org/realms/lab` at startup. If the network can't be created, its range is in use: choose another `subnet` (and `gateway`, and `OAUTH2_PROXY_TRUSTED_PROXY_IPS`). |
+| oauth2-proxy doesn't start | Check `cd /opt/oauth2-proxy && sudo docker compose logs`. It needs to reach `https://auth.societal-analytics.nl/realms/lab` at startup. If the network can't be created, its range is in use: choose another `subnet` (and `gateway`, and `OAUTH2_PROXY_TRUSTED_PROXY_IPS`). |
 | oauth2-proxy logs "no --trusted-proxy-ip CIDRs were configured" | The setting is missing or misspelled: it is `OAUTH2_PROXY_TRUSTED_PROXY_IPS` (plural). |
 | A change to the Caddyfile has no effect | The reload failed: `sudo caddy validate --config /etc/caddy/Caddyfile`, or `journalctl -u caddy -n 50`. |
 

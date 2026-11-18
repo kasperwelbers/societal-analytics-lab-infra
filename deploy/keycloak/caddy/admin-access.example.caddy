@@ -1,5 +1,5 @@
 # Restrictions of the admin hostname: the university's IP ranges, for all realms (set up during
-# installation; see step 4 of docs/keycloak-deploy.md).
+# installation; see step 4 of docs/install/keycloak.md).
 #
 # Copy this file to admin-access.caddy in this folder (not in the repository), and edit that copy:
 #   sudo -u keycloak cp caddy/admin-access.example.caddy caddy/admin-access.caddy
@@ -7,7 +7,7 @@
 # (If the copy is missing when the stack starts, it is created from this file, unchanged.)
 # Apply changes with:
 #   sudo docker compose exec caddy caddy reload --config /etc/caddy/Caddyfile
-# See "Restrict admin access" in docs/keycloak-deploy.md.
+# See "Restrict admin access" in docs/install/keycloak.md.
 #
 # As long as all rules below are commented out, the admin consoles of all realms are
 # reachable from anywhere, behind Keycloak's login (and 2FA).

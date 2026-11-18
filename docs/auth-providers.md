@@ -1,6 +1,6 @@
 # OIDC provider comparison
 
-!!! info "Background"
+!!! info "Evaluation"
     This page is the evaluation behind our choice of Keycloak (November 2026): the comparison, the hands-on test checklist, and what we found. The decision and its reasons are on the [Decisions](./decisions.md#keycloak) page. Some use cases below were dropped later: a shared provider for other teams' servers (use case 3, now the lab's own `idp`), and client registration by others (use cases 2 and 6).
 
 It is only about the provider that the lab runs itself: our software works with any provider that meets the [provider requirements](./auth.md#oidc-provider-requirements).
@@ -56,7 +56,7 @@ These follow from the use cases and the [Authentication standard](./auth.md).
 
 ### Keycloak
 
-The most complete fit for our use cases, and the most battle-tested. Its main cost is complexity: Keycloak has many settings, and a misconfiguration is a bigger risk than the code itself. We manage that by keeping the realm configuration in files in this repository, which Keycloak imports itself (see [step 7 of the runbook](./keycloak-deploy.md#7-realms)), so that it is reviewable and reproducible.
+The most complete fit for our use cases, and the most battle-tested. Its main cost is complexity: Keycloak has many settings, and a misconfiguration is a bigger risk than the code itself. We manage that by keeping the realm configuration in files in this repository, which Keycloak imports itself (see [step 7 of the installation guide](./install/keycloak.md#7-realms)), so that it is reviewable and reproducible.
 
 * **Realms** give us strong isolation on one server: a realm for the shared pool, a realm for the lab, and a realm per power user.
 * **Consent** is stored per client. The consent screen is skipped only when the user already approved everything the client asks for.
@@ -117,7 +117,7 @@ To be done on a test machine, before migrating anything. Mark items as done, and
 - [ ] Trusted hosts or redirect URI restrictions work as expected.
 - [ ] ==To verify:== whether a policy exists that keeps new clients disabled until an admin enables them.
 
-Instead of DCR, apps were first registered through our own app registration site, which used the admin API with narrow rights. Since `idp` is only for the lab's own servers, our admins create the clients, and a client policy turns on consent and PKCE and refuses unsafe redirect URIs (tested, see [step 8 of the runbook](./keycloak-deploy.md#8-clients-for-our-deployments)). The DCR items above are therefore no longer needed.
+Instead of DCR, apps were first registered through our own app registration site, which used the admin API with narrow rights. Since `idp` is only for the lab's own servers, our admins create the clients, and a client policy turns on consent and PKCE and refuses unsafe redirect URIs (tested, see [step 8 of the installation guide](./install/keycloak.md#8-clients-for-our-deployments)). The DCR items above are therefore no longer needed.
 
 **Users and 2FA**
 
@@ -134,7 +134,7 @@ Instead of DCR, apps were first registered through our own app registration site
 
 **Isolation (use cases 1 and 4)**
 
-- [x] A second realm with a delegated realm admin. That admin can't see or change anything in other realms (tested, see [step 4 of the runbook](./keycloak-deploy.md#exceptions-for-specific-realms)).
+- [x] A second realm with a delegated realm admin. That admin can't see or change anything in other realms (tested, see [step 4 of the installation guide](./install/keycloak.md#exceptions-for-specific-realms)).
 - [ ] A user signed in to one realm is not signed in to another realm.
 
 **Migration (use case 5)**
@@ -143,15 +143,15 @@ Instead of DCR, apps were first registered through our own app registration site
 
 **Operations**
 
-- [x] Production setup with `start`, PostgreSQL and our reverse proxy (hostname and proxy headers): see the [Keycloak deployment](./keycloak-deploy.md) runbook.
-- [x] Realms set up from files with Keycloak's own import (see [step 7 of the runbook](./keycloak-deploy.md#7-realms)).
+- [x] Production setup with `start`, PostgreSQL and our reverse proxy (hostname and proxy headers): see the [Keycloak installation guide](./install/keycloak.md).
+- [x] Realms set up from files with Keycloak's own import (see [step 7 of the installation guide](./install/keycloak.md#7-realms)).
 - [ ] Upgrade from one 26.x release to the next.
 - [x] Backups of the database, and a restore test.
 - [ ] oauth2-proxy in front of a service without its own login (the AuthWall).
 
 **Findings**
 
-Tested with Keycloak 26.8 (locally, with the realm configuration of the runbook):
+Tested with Keycloak 26.8 (locally, with the realm configuration of the installation guide):
 
 * **2FA flows:** mandatory 2FA (with OTP setup for users without a second factor) and optional 2FA both work with Keycloak's built-in conditions, also after Google or GitHub (post login flows). A post login flow in which nothing runs counts as failed: the optional flow needs an "Allow access" step.
 * **Copying a flow** in the admin console keeps the old flow name in "Condition - sub-flow executed". The copy then silently skips (or repeats) the 2FA step. Hence `check-realms.py`.

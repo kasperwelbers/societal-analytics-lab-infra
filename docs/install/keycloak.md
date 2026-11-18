@@ -1,29 +1,21 @@
-# Keycloak deployment
+# Installation: Keycloak VM
 
-This runbook sets up Keycloak on a single VM, with PostgreSQL and Caddy (TLS via Let's Encrypt), using the files in [`deploy/keycloak/`](https://github.com/vu-societal-analytics/societal-analytics-lab-infra/tree/main/deploy/keycloak). It takes about an hour. For an overview of the setup (the realms, how users log in, and the security measures), see [Keycloak setup](./keycloak.md). Why it is set up this way: [Decisions](./decisions.md). What we tested: the [test checklist](./auth-providers.md#keycloak-test-checklist).
+This guide sets up the lab's login service: Keycloak on a single VM, with PostgreSQL and Caddy (TLS via Let's Encrypt), using the files in [`deploy/keycloak/`](https://github.com/vu-societal-analytics/societal-analytics-lab-infra/tree/main/deploy/keycloak). It takes about an hour. What the result looks like (the hostnames, the realms, how users log in, and the security measures): [Keycloak VM](../servers/keycloak.md). What was tested: the [test checklist](../auth-providers.md#keycloak-test-checklist).
 
-!!! info "Placeholders"
-    This page uses `auth.example.org` (public hostname) and `auth-admin.example.org` (admin hostname). The real hostnames, IP ranges and secrets are only stored on the VM (`.env` and `caddy/admin-access.caddy`).
+!!! info "The admin hostname"
+    The admin hostname is not published: replace `<admin hostname>` with it. The IP ranges and the secrets are only on the VM (in `.env` and `caddy/admin-access.caddy`).
 
 ## Overview
 
 | Component | Role |
 | --- | --- |
 | **Caddy** | Public TLS certificates via Let's Encrypt. Forwards only the paths that need to be public to Keycloak, over a second TLS connection (re-encrypt). Built with a rate limit module, to limit requests that make Keycloak send emails. |
-| **Keycloak** | An optimized image (built from the official image), started with `start --optimized`. Creates the realms from `realms/` when it starts, if they don't exist yet. Only accepts HTTPS, with an internal certificate that only Caddy trusts. |
+| **Keycloak** | An optimized image (built from the official image), started with `start --optimized`. Creates the realms from `realms/` when it starts, if they don't exist yet. Only accepts HTTPS, with an internal certificate (valid for 10 years) that only Caddy trusts. |
 | **tls-init** | A one-off service that creates the internal certificate on the first start (and does nothing on later starts). |
 | **PostgreSQL** | The database, only reachable by Keycloak. |
 | **mail-relay** | Sends all email of the realms to the email provider; the only place with the provider's password ([step 7](#email-the-relay)). |
 
-Two TLS connections:
-
-* **Browser to Caddy:** the public certificates from Let's Encrypt, which Caddy renews automatically.
-* **Caddy to Keycloak:** an internal certificate, valid for 10 years, which is never shown to browsers. Caddy trusts exactly this certificate. This is the *re-encrypt* setup preferred in the [reverse proxy guide](https://www.keycloak.org/server/reverseproxy), so that traffic between Caddy and Keycloak is encrypted too.
-
-Two hostnames:
-
-* **`auth.example.org`** (public): logins, OIDC endpoints and static resources (`/realms/`, `/resources/`, `/.well-known/`). Everything else returns 404, including the admin console and the admin realm (`master`).
-* **`auth-admin.example.org`** (admin): the admin consoles of all realms, the admin API, and the logins of the administrative `master` realm. Restricted to the university's IP ranges, for all realms ([step 4](#4-restrict-admin-access)).
+The two hostnames: `auth.societal-analytics.nl` (public: `/realms/`, `/resources/` and `/.well-known/`; everything else returns 404) and the admin hostname (the admin consoles, the admin API and the `master` realm; restricted to the VPN in [step 4](#4-restrict-admin-access)).
 
 | File | Contents |
 | --- | --- |
@@ -44,12 +36,12 @@ Two hostnames:
 
 ## 1. Prerequisites
 
-**The VM.** On a university VM, first follow [University VMs](./vm.md): secure SSH logins, open ports 80 and 443 in the VM firewall, and install Docker. Read the warning there about Docker bypassing the VM firewall.
+**The VM.** On a university VM, first follow [Installation: university VMs](vm.md): secure SSH logins, open ports 80 and 443 in the VM firewall, and install Docker. Read the warning there about Docker bypassing the VM firewall.
 
-**DNS.** Create three **A records** pointing to the VM's IPv4 address, e.g. `auth`, `auth-admin` and `apps` in the zone of your domain. Don't create AAAA (IPv6) records: with IPv4 only, the IP restriction of the admin hostname only needs IPv4 ranges, and Let's Encrypt can't fail on a stale IPv6 address. If your DNS provider can proxy traffic (e.g. Cloudflare), use "DNS only", otherwise Caddy can't see visitors' IP addresses. Check from your own machine:
+**DNS.** Create two **A records** pointing to the VM's IPv4 address, `auth` and the admin hostname. Don't create AAAA (IPv6) records: with IPv4 only, the IP restriction of the admin hostname only needs IPv4 ranges, and Let's Encrypt can't fail on a stale IPv6 address. If your DNS provider can proxy traffic (e.g. Cloudflare), use "DNS only", otherwise Caddy can't see visitors' IP addresses. Check from your own machine:
 
 ```bash
-dig +short auth.example.org
+dig +short auth.societal-analytics.nl
 ```
 
 **Ports.** Ports 80 and 443 must be reachable from the internet (Let's Encrypt needs port 80), and nothing else on the VM may use them. Check on the VM:
@@ -60,7 +52,7 @@ sudo ss -tlnp '( sport = :80 or sport = :443 )'
 
 Only a header line, without any rows below it, means the ports are free. This doesn't show whether they are reachable from outside: that shows in step 2, when Caddy obtains its certificates.
 
-**Docker.** Docker Engine with the compose plugin ([installation](https://docs.docker.com/engine/install/)). This runbook runs Docker with `sudo` (see [Users and permissions](#users-and-permissions)).
+**Docker.** Docker Engine with the compose plugin ([installation](https://docs.docker.com/engine/install/)). This guide runs Docker with `sudo` (see [Users and permissions](#users-and-permissions)).
 
 ```bash
 sudo docker compose version
@@ -75,7 +67,7 @@ The deployment uses two accounts:
 | Account | Role | Rights |
 | --- | --- | --- |
 | **`keycloak`** (system user) | Owns the files in `/opt/keycloak`, including `.env` with the secrets | No login shell, no `sudo`, not in the `docker` group |
-| **Your own admin account** (your personal account on the VM) | Runs the commands in this runbook | `sudo`, and **member of the `keycloak` group** |
+| **Your own admin account** (your personal account on the VM) | Runs the commands in this guide | `sudo`, and **member of the `keycloak` group** |
 
 How commands are run:
 
@@ -131,7 +123,7 @@ Get the files onto the VM, as `keycloak`:
 sudo -u keycloak git clone https://github.com/vu-societal-analytics/societal-analytics-lab-infra.git /opt/keycloak/societal-analytics-lab-infra
 ```
 
-Go to the deployment folder. All further commands in this runbook are run from here:
+Go to the deployment folder. All further commands in this guide are run from here:
 
 ```bash
 cd /opt/keycloak/societal-analytics-lab-infra/deploy/keycloak
@@ -198,7 +190,7 @@ sudo docker compose logs caddy | grep -i certificate
 The login pages of the `master` realm (used by the admin console) must be on the admin hostname: the public hostname blocks them. On a new installation this is already done: `master-realm.json` sets the frontend URL of `master` to `KC_HOSTNAME_ADMIN`. Check it (it should show the admin hostname):
 
 ```bash
-curl -s https://auth-admin.example.org/realms/master/.well-known/openid-configuration | grep -o '"issuer":"[^"]*"'
+curl -s https://<admin hostname>/realms/master/.well-known/openid-configuration | grep -o '"issuer":"[^"]*"'
 ```
 
 On an installation from before the realm files, set it once with Keycloak's admin tool. `admin-cli.sh` runs it inside the container; log in as an admin of `master` (you are prompted for the password), and set the frontend URL (use your real admin hostname):
@@ -208,7 +200,7 @@ sudo ./admin-cli.sh login
 ```
 
 ```bash
-sudo ./admin-cli.sh update realms/master -s attributes.frontendUrl=https://auth-admin.example.org
+sudo ./admin-cli.sh update realms/master -s attributes.frontendUrl=https://<admin hostname>
 ```
 
 This changes the issuer of `master`, so the admin tool's login is no longer valid afterwards: run `sudo ./admin-cli.sh login` again for further commands.
@@ -267,14 +259,14 @@ handle @not_allowed {
 If Caddy is already running, apply it with the reload above. Check, from your own device (once the stack runs). On the VPN this shows the `master` realm's issuer; **without the VPN** (e.g. on a phone hotspot) it should return `403`:
 
 ```bash
-curl -s -o /dev/null -w '%{http_code}\n' https://auth-admin.example.org/realms/master/.well-known/openid-configuration
+curl -s -o /dev/null -w '%{http_code}\n' https://<admin hostname>/realms/master/.well-known/openid-configuration
 ```
 
 ### Exceptions for specific realms
 
 The `idp` realm gets no exception: its users never need the admin console, and its clients are managed by our own admins.
 
-A realm can have admins who are not on your network, e.g. a research group outside the university that manages its own realm (see [Isolated OIDC providers](./auth-providers.md#use-cases)). For such a realm, add an exception **above** the restriction, in the same file. It makes the admin console of that realm, and only that realm, reachable from another range (or from anywhere, without the `remote_ip` line):
+A realm can have admins who are not on your network, e.g. a research group outside the university that manages its own realm (see [Isolated OIDC providers](../auth-providers.md#use-cases)). For such a realm, add an exception **above** the restriction, in the same file. It makes the admin console of that realm, and only that realm, reachable from another range (or from anywhere, without the `remote_ip` line):
 
 ```
 @realm_research_group {
@@ -289,7 +281,7 @@ handle @realm_research_group {
 * Replace `research-group` with the name of the realm (four times), and use a unique name after `@` for each exception (letters, digits and underscores).
 * The paths are what a realm's admin console needs: its console, the admin API for that realm, general server information (`/admin/serverinfo`, behind login), and scripts and styles (`/resources/`).
 * The `master` realm and the other realms stay restricted: their paths are not part of the exception. Admins of the realm can only manage their own realm.
-* Admins of such a realm have an account **in that realm** with the role `realm-admin` of the client `realm-management` (in that realm: **Users → the user → Role mapping → Assign role → filter by clients**). They use the console at `https://auth-admin.example.org/admin/<realm>/console/`. Make 2FA required for them in that realm.
+* Admins of such a realm have an account **in that realm** with the role `realm-admin` of the client `realm-management` (in that realm: **Users → the user → Role mapping → Assign role → filter by clients**). They use the console at `https://<admin hostname>/admin/<realm>/console/`. Make 2FA required for them in that realm.
 * Apply it with `sudo docker compose exec caddy caddy reload --config /etc/caddy/Caddyfile`.
 
 Tested: with the restriction and an exception, the realm's admin console works from the exception range, while the `master` realm, the console of another realm, and the admin API of other realms are refused (by Caddy, and by Keycloak for the realm admin's own token).
@@ -299,24 +291,24 @@ Tested: with the restriction and an exception, the realm's admin console works f
 From your own device (on an allowed network, if you restricted admin access in step 4):
 
 ```bash
-curl -s https://auth-admin.example.org/realms/master/.well-known/openid-configuration | grep -o '"issuer":"[^"]*"'
+curl -s https://<admin hostname>/realms/master/.well-known/openid-configuration | grep -o '"issuer":"[^"]*"'
 ```
 
-This should show `https://auth-admin.example.org/realms/master`. Then check that the public hostname doesn't expose the admin console or the admin realm (both should return `404`):
+This should show `https://<admin hostname>/realms/master`. Then check that the public hostname doesn't expose the admin console or the admin realm (both should return `404`):
 
 ```bash
-curl -s -o /dev/null -w '%{http_code}\n' https://auth.example.org/admin/
+curl -s -o /dev/null -w '%{http_code}\n' https://auth.societal-analytics.nl/admin/
 ```
 
 ```bash
-curl -s -o /dev/null -w '%{http_code}\n' https://auth.example.org/realms/master/.well-known/openid-configuration
+curl -s -o /dev/null -w '%{http_code}\n' https://auth.societal-analytics.nl/realms/master/.well-known/openid-configuration
 ```
 
 ## 6. Permanent admin account
 
 Following [Bootstrapping and recovering an admin account](https://www.keycloak.org/server/bootstrap-admin-recovery): the bootstrap account is temporary, and must be replaced by a permanent admin with 2FA. The `master` realm is for administrators only; users never go in `master`.
 
-1. Open `https://auth-admin.example.org/admin/` (from an allowed network, if you restricted admin access) and log in as `temp-admin`. Because 2FA is mandatory in `master`, Keycloak first asks you to set up an authenticator app and recovery codes for `temp-admin` too (it is deleted in step 6). A yellow banner then says you are using a temporary admin account.
+1. Open `https://<admin hostname>/admin/` (from an allowed network, if you restricted admin access) and log in as `temp-admin`. Because 2FA is mandatory in `master`, Keycloak first asks you to set up an authenticator app and recovery codes for `temp-admin` too (it is deleted in step 6). A yellow banner then says you are using a temporary admin account.
 2. In the `master` realm, go to **Users → Add user**. Fill in your email address (it is the username), turn on **Email verified**, and under **Required user actions** choose **Configure OTP**. Click **Create**.
 3. On the **Credentials** tab, click **Set password**, and turn off **Temporary**.
 4. On the **Role mapping** tab, click **Assign role**, filter by realm roles, and assign **admin**.
@@ -338,12 +330,12 @@ The realms are in `realms/` as complete Keycloak realm files (`master-realm.json
 
 In all realms:
 
-* **2FA:** OTP (authenticator app), passkeys or security keys, and recovery codes count as a second factor. Users can also sign in with only a passkey ("Sign in with Passkey" on the login page), which counts as 2FA, also where 2FA is mandatory. With mandatory 2FA, users without a second factor are asked to set up OTP when they log in. After setting up OTP, users set up recovery codes. In `idp`, Google and GitHub replace only the password: the second factor is asked after them, in the same way. All login paths, and why: [How users log in](./keycloak.md#how-users-log-in).
+* **2FA:** OTP (authenticator app), passkeys or security keys, and recovery codes count as a second factor. Users can also sign in with only a passkey ("Sign in with Passkey" on the login page), which counts as 2FA, also where 2FA is mandatory. With mandatory 2FA, users without a second factor are asked to set up OTP when they log in. After setting up OTP, users set up recovery codes. In `idp`, Google and GitHub replace only the password: the second factor is asked after them, in the same way. All login paths, and why: [How users log in](../servers/keycloak.md#how-users-log-in).
 * **Forgot password, or first time** (`lab`, `idp`): after the email link (valid 30 minutes), users with a second factor enter it, then choose a new password, and are logged in. The email link never replaces the second factor. In `lab`, users without a second factor set one up in the same go.
-* **The `amr` claim** in tokens contains `mfa` when a second factor was used, and `pwd` for a password (for our software: `OIDC_MFA_CLAIM=amr:mfa`, see the [Authentication standard](./auth.md)).
+* **The `amr` claim** in tokens contains `mfa` when a second factor was used, and `pwd` for a password (for our software: `OIDC_MFA_CLAIM=amr:mfa`, see the [Authentication standard](../auth.md)).
 * **Passwords:** at least 10 characters, with an uppercase letter and a digit, not equal to the username or email.
 * **Login action timeout** 30 minutes for each page of the login (e.g. setting up 2FA, saving the recovery codes), brute force detection, and login and admin events kept for 90 days.
-* **Sessions** at Keycloak last 30 minutes in `idp` (applications keep their own sessions), and up to 8 hours in `master`. In `lab`, a session ends after 2 hours without activity, and lasts at most 10 hours: the lab login on the lab server checks it regularly, so this is how long members stay signed in to the lab's services ([Lab server](./lab-server.md#signing-out-and-inactivity)). In `lab`, **Remember me** on the login page keeps users logged in on that device for up to 30 days (7 days idle).
+* **Sessions** at Keycloak last 30 minutes in `idp` (applications keep their own sessions), and up to 8 hours in `master`. In `lab`, a session ends after 2 hours without activity, and lasts at most 10 hours: the lab login on the lab server checks it regularly, so this is how long members stay signed in to the lab's services ([Lab server](../servers/lab.md#signing-out-and-inactivity)). In `lab`, **Remember me** on the login page keeps users logged in on that device for up to 30 days (7 days idle).
 * **The email address is the username**, and users log in with it. In `lab` and `idp`, users change their address in the account console (**Personal info → Update email**): the address, and with it the username, only changes after they confirm the new address with a link sent to it. The user stays the same (same `sub`), also for users who log in with Google or GitHub. In `master`, which has no email server, admins change an address in the admin console. Existing usernames without an email address (`temp-admin`, a recovery admin) keep working.
 * **Registration** (in `idp`) asks only for email and name: users choose their password after verifying their email address. This is Keycloak's default when email verification is on, so that nobody can set a password for an address they don't own.
 
@@ -354,7 +346,7 @@ The files contain no users, signing keys or IDs: Keycloak creates those. Values 
 The `idp` realm offers login with Google and GitHub. The `lab` realm doesn't: its accounts are tied to institutional email addresses (institutional login may be added later). Register an OAuth app at both, with this redirect URI (callback URL):
 
 ```
-https://auth.example.org/realms/idp/broker/<google or github>/endpoint
+https://auth.societal-analytics.nl/realms/idp/broker/<google or github>/endpoint
 ```
 
 * **Google:** in the [Google Cloud console](https://console.cloud.google.com/apis/credentials), **Create credentials → OAuth client ID → Web application**, with the redirect URI above. The OAuth consent screen needs the scopes `openid`, `email` and `profile`, and must be published (**In production**), otherwise only test users can log in.
@@ -389,7 +381,7 @@ sudo docker compose logs keycloak | grep -i import
 
 Then check, in a private browser window:
 
-* the `idp` login page (`https://auth.example.org/realms/idp/account`) shows Google and GitHub, and the `lab` login page doesn't;
+* the `idp` login page (`https://auth.societal-analytics.nl/realms/idp/account`) shows Google and GitHub, and the `lab` login page doesn't;
 * a user without a second factor is asked to set up OTP in `lab`, and not in `idp`;
 * **Realm settings → Email → Test connection** works in both realms, and the email shows up in `sudo docker compose logs mail-relay`.
 
@@ -409,9 +401,10 @@ After setting up `idp` again, create the clients of our deployments again (step 
 * **Login action timeout:** **Realm settings → Sessions → Login action timeout**: 30 minutes.
 * **Passkey login** (optional; it takes more steps, see `realms/README.md`): admins can do without it, and `master` gets it on a new installation.
 
-**Updating from the version with the app registration site:** after `git pull`, remove its container with `sudo docker compose up -d --remove-orphans`, delete `caddy/email-tiers.caddy`, and remove `APPS_HOSTNAME`, `APP_REGISTRATION_CLIENT_SECRET`, `APP_REGISTRATION_SESSION_SECRET`, `MAX_APPS_PER_USER` and `CONTACT_EMAIL` from `.env`, and the DNS record of the apps hostname. Set up `idp` again (above): this removes the site's client and service account, and adds the client policy of step 8.
+??? note "Upgrading an installation from before November 2026"
+    **Updating from the version with the app registration site:** after `git pull`, remove its container with `sudo docker compose up -d --remove-orphans`, delete `caddy/email-tiers.caddy`, and remove `APPS_HOSTNAME`, `APP_REGISTRATION_CLIENT_SECRET`, `APP_REGISTRATION_SESSION_SECRET`, `MAX_APPS_PER_USER` and `CONTACT_EMAIL` from `.env`, and the DNS record of the apps hostname. Set up `idp` again (above): this removes the site's client and service account, and adds the client policy of step 8.
 
-**Updating from the version with keycloak-config-cli:** the `keycloak-config` client in `master` is no longer used, and it has admin rights: delete it (**Clients** → `keycloak-config` → **Action → Delete**), and remove `KEYCLOAK_CONFIG_SECRET` from `.env`. If `lab` and `idp` have no users yet, delete them and restart Keycloak to set them up from the files, as above. (From the version with a vault, also: put the SMTP password in `.env` as `SMTP_PASSWORD`, the idp client secrets as `IDP_GOOGLE_CLIENT_SECRET` and `IDP_GITHUB_CLIENT_SECRET`, set `SMTP_PORT=587`, and delete the `vault/` folder.)
+    **Updating from the version with keycloak-config-cli:** the `keycloak-config` client in `master` is no longer used, and it has admin rights: delete it (**Clients** → `keycloak-config` → **Action → Delete**), and remove `KEYCLOAK_CONFIG_SECRET` from `.env`. If `lab` and `idp` have no users yet, delete them and restart Keycloak to set them up from the files, as above. (From the version with a vault, also: put the SMTP password in `.env` as `SMTP_PASSWORD`, the idp client secrets as `IDP_GOOGLE_CLIENT_SECRET` and `IDP_GITHUB_CLIENT_SECRET`, set `SMTP_PORT=587`, and delete the `vault/` folder.)
 
 ### Changing the realm files
 
@@ -435,7 +428,7 @@ Each AmCAT or AnnoTinder server of the lab (and anything else that logs in with 
 2. **Client authentication:** on. **Authentication flow:** only **Standard flow**. **Next.**
 3. **Valid redirect URIs:** the exact callback URL of the server (see its documentation), e.g. `https://amcat.example.org/api/auth/callback`: `https://`, no wildcards (`*`). **Valid post logout redirect URIs:** `+` (the same as the redirect URIs). Don't leave this field empty: Keycloak refuses an empty value. **Save.**
 4. **Credentials** tab: copy the **Client secret**.
-5. Configure the server: `OIDC_HOST=https://auth.example.org/realms/idp`, `OIDC_CLIENT_ID`, `OIDC_CLIENT_SECRET`, and `OIDC_MFA_CLAIM=amr:mfa` (see the [Authentication standard](./auth.md#configuration)). Our software requests the scopes `openid email`.
+5. Configure the server: `OIDC_HOST=https://auth.societal-analytics.nl/realms/idp`, `OIDC_CLIENT_ID`, `OIDC_CLIENT_SECRET`, and `OIDC_MFA_CLAIM=amr:mfa` (see the [Authentication standard](../auth.md#configuration)). Our software requests the scopes `openid email`.
 
 A new client gets the scopes `email` (address and whether it is verified), `amr` (2FA), and the basics (`sub`, `auth_time`), and `profile` (the name) only when it asks for it; no roles. Users see that on the consent screen: "This app will be able to: see your email address; see whether you signed in with two-factor authentication", and "see your name" for a service that requests `profile`. Other services (not ours) work the same way: they often request `openid profile email`.
 
@@ -443,7 +436,7 @@ The client policy `deployment-clients` (in `realms/idp-realm.json`) applies to e
 
 * **Consent** is turned on automatically: users see the client's name before it gets their name and email address.
 * **PKCE** (S256) is turned on automatically, and required at every login: a login request without PKCE is refused (our software always uses it).
-* **Redirect URIs** with `http://`, wildcards or other unsafe forms are refused, with "Invalid Redirect Uri". Local development doesn't need a client: our software has a [development mode](./auth.md#development-mode).
+* **Redirect URIs** with `http://`, wildcards or other unsafe forms are refused, with "Invalid Redirect Uri". Local development doesn't need a client: our software has a [development mode](../auth.md#development-mode).
 
 Tested on a test installation: a client created step by step as above gets consent and PKCE; a wildcard redirect URI is refused; a login without PKCE is refused, with PKCE it shows the consent screen and gives tokens. Keycloak's own clients (e.g. the account console, which is public) are not affected.
 
@@ -588,7 +581,7 @@ The counts are kept in memory: a restart of Caddy or the relay resets them (a Ca
     ```
 
 2. In the admin console of `lab`: **Realm settings → Action** (top right) **→ Partial import**, choose the file, tick **Users**, choose **Skip** for existing users, and click **Import**. If it fails, the reason is in the log: `sudo docker compose logs --since 10m keycloak | grep -E "WARN|ERROR"`.
-3. Tell the members, e.g.: *"Go to <a lab service, or https://auth.example.org/realms/lab/account>, click 'First time, or forgot your password?', and enter your VU email address. You'll get an email with a link to set your lab password (not your VU password). You'll also need an authenticator app on your phone, e.g. Microsoft Authenticator."*
+3. Tell the members, e.g.: *"Go to <a lab service, or https://auth.societal-analytics.nl/realms/lab/account>, click 'First time, or forgot your password?', and enter your VU email address. You'll get an email with a link to set your lab password (not your VU password). You'll also need an authenticator app on your phone, e.g. Microsoft Authenticator."*
 
 One member at a time: **Users → Add user**, with the email address (and **Email verified** on); users added this way get the default roles automatically.
 
@@ -608,7 +601,7 @@ The login pages, the account console and the emails of all realms use our themes
 
 First check who the user is, not by email alone (the inbox may be the problem): e.g. in person, or by a video call. Then, in the admin console of the realm: **Users** → the user → **Credentials**, and delete the lost credential (e.g. **otp**). In `lab`, the user sets up a new authenticator app (and new recovery codes) at the next login; in `idp`, they can set up a new one in the account console. For an admin in `master`, another admin does the same, or see below.
 
-Users who still have a recovery code don't need us: they log in with it, and set up a new second factor themselves (see [How users log in](./keycloak.md#how-users-log-in)).
+Users who still have a recovery code don't need an admin: they log in with it, and set up a new second factor themselves (see [How users log in](../servers/keycloak.md#how-users-log-in)).
 
 ### Recovering admin access
 
@@ -656,12 +649,12 @@ Log in to the admin console as `recovery-admin`, fix the problem (e.g. delete th
 
 ## Why it is set up this way
 
-The choices behind this setup, and the alternatives we dropped, are on the [Decisions](./decisions.md) page.
+The choices behind this setup, and the alternatives that were dropped: [Decisions](../decisions.md).
 
 ## Next steps
 
-* Work through the [test checklist](./auth-providers.md#keycloak-test-checklist), including real logins with Google and GitHub.
-* "Sign in with your lab account" in `idp`: `lab` as a login option of `idp`, so lab members use one account (see [Decisions](./decisions.md#later)).
+* Work through the [test checklist](../auth-providers.md#keycloak-test-checklist), including real logins with Google and GitHub.
+* "Sign in with your lab account" in `idp`: `lab` as a login option of `idp`, so lab members use one account (see [Decisions](../decisions.md#later)).
 * Clients for the lab's own servers (step 8), once they move to `idp`.
 * Institutional login for the `lab` realm (e.g. via the university).
 * Encrypted, off-site backups (part of the lab's backup strategy).

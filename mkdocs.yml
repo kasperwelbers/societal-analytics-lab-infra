@@ -1,39 +1,42 @@
 site_name: Lab Infrastructure Registry
 theme:
   name: material
-  features:
-    - navigation.sections
-    - navigation.expand
+
+validation:
+  anchors: warn
 
 nav:
-  - Home: index.md
-  - For IT: it.md
-  - Infrastructure:
-      - Overview: infrastructure.md
-      - Lab server: lab-server.md
-      - University VMs: vm.md
-      - Docker on our servers: docker.md
-      - Keycloak setup: keycloak.md
-      - Keycloak deployment: keycloak-deploy.md
-      - Lab authentication: lab-auth.md
-  - Our software:
+  - Overview: index.md
+  - Servers:
+      - Lab server: servers/lab.md
+      - Database server: servers/database.md
+      - Keycloak VM: servers/keycloak.md
+      - Service VMs: servers/service-vms.md
+      - Hosted services: servers/services.md
+  - Installation guides:
+      - University VMs: install/vm.md
+      - Lab server: install/lab-server.md
+      - Keycloak VM: install/keycloak.md
+      - Docker on our servers: install/docker.md
+  - Software development:
+      - Our software: software.md
       - Authentication standard: auth.md
+      - Authentication provider: auth-install.md
+      - Migration guide: auth-migration.md
       - AmCAT: amcat.md
       - AnnoTinder: annotinder.md
-  - Hosting our software:
-      - Choosing a login provider: auth-install.md
-      - Migration guide: auth-migration.md
-      - Privacy template: policies/privacy-template.md
-  - Decisions: decisions.md
-  - Background:
-      - "2FA: where should it live?": auth-2fa.md
-      - Provider comparison: auth-providers.md
   - Policies:
       - Privacy statement: policies/privacy.md
       - Acceptable use policy: policies/aup.md
+  - Discussion:
+      - About: discussion.md
+      - Decisions: decisions.md
+      - "2FA: where should it live?": auth-2fa.md
+      - Provider comparison: auth-providers.md
 
 markdown_extensions:
   - admonition
+  - pymdownx.details
   - pymdownx.mark
   - pymdownx.tasklist:
       custom_checkbox: true

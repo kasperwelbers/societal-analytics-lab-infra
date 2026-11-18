@@ -1,5 +1,5 @@
 # Keycloak with PostgreSQL, behind Caddy (TLS via Let's Encrypt).
-# Setup and maintenance: docs/keycloak-deploy.md
+# Setup and maintenance: docs/install/keycloak.md
 #
 # All settings and secrets come from .env (copy .env.example).
 
@@ -10,7 +10,7 @@ services:
     build:
       context: .
       args:
-        # Keycloak version: change it here to upgrade (see docs/keycloak-deploy.md)
+        # Keycloak version: change it here to upgrade (see docs/install/keycloak.md)
         KEYCLOAK_IMAGE: ${KEYCLOAK_IMAGE:-quay.io/keycloak/keycloak:26.8.2}
     image: lab-keycloak
     # Built locally from the Dockerfile: never try to download it from a registry
@@ -99,7 +99,7 @@ services:
     network_mode: none
 
   # Email relay: Keycloak sends all email here, without a password. Only the relay has the
-  # credentials of the email provider, so realm admins can't redirect them (see the runbook).
+  # credentials of the email provider, so realm admins can't redirect them (see docs/install/keycloak.md).
   # It only accepts the sender address SMTP_FROM, caps the number of emails for the whole
   # Keycloak instance, and queues emails while the provider is unreachable.
   mail-relay:
