@@ -49,14 +49,14 @@ IP addresses and the admin hostname of Keycloak are not published here.
 * Docker containers bypass a server's firewall, so we follow strict rules for them ([Docker warnings](./install/docker.md)).
 * Software versions are pinned and upgraded deliberately; the operating system installs security updates automatically.
 * Secrets are only on the server they are used on, readable only by the account that runs the service.
-* Everything that must survive is under `/opt`; data with a short retention is deleted automatically, and isn't backed up ([Apps on our servers](./install/apps.md)).
+* `/opt` and all Docker volumes are backed up every night; data with a short retention is in `/srv/temp`, deleted automatically, and isn't backed up ([Apps on our servers](./install/apps.md), [Backups](./install/backups.md)).
 
 How the servers are set up: [Installation guides](./install/vm.md). Why they are set up this way: [Decisions](./decisions.md).
 
 ## Open points
 
 * **Backups:** the nightly backups are still stored on each server itself, so they don't protect against losing a server. ==TODO: a location off the servers, to be agreed with VU IT, and the backup of the database server.== ([Backups](./install/backups.md))
-* **The lab server:** ==TODO: operating system updates, SSH access, the move of the services to their addresses under `lab.`, and of their data to `/opt/<app>/data` or `/opt/<app>/temp`.==
+* **The lab server:** ==TODO: operating system updates, SSH access, the move of the services to their addresses under `lab.`, and of their short-retention data to `/srv/temp`.==
 * **The database server:** ==TODO: what it stores, and how the service VMs connect to it.==
 * **Keycloak's address:** Keycloak still runs at an older address; ==TODO: move it to `auth.societal-analytics.nl`.==
 * **The VM firewall:** one check of the VM firewall together with Docker is still to be done ([Docker and the VM firewall](./install/vm.md#docker-and-the-vm-firewall)).

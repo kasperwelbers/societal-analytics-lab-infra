@@ -1,6 +1,6 @@
 # Installation: apps on our servers
 
-How apps are installed on the [lab server](../servers/lab.md) and the [service VMs](../servers/service-vms.md): one system account, every app in `/opt/<app>`, and a fixed place for its data, depending on how long it must be kept. Read [Docker warnings](docker.md) first.
+How apps are installed on the [lab server](../servers/lab.md) and the [service VMs](../servers/service-vms.md): one system account, every app in `/opt/<app>`, its data where its compose file puts it, and only data with a short retention in a place of its own. Read [Docker warnings](docker.md) first.
 
 The [Keycloak VM](keycloak.md) follows the same layout, with its own system account `keycloak` instead of `sal`.
 
@@ -9,13 +9,15 @@ The [Keycloak VM](keycloak.md) follows the same layout, with its own system acco
 | Where | What | Backed up | Deleted |
 | --- | --- | --- | --- |
 | `/opt/<app>` | The app: code, compose file, settings, and secrets in `.env` | Yes | When the app is removed |
-| `/opt/<app>/data` | Data that must be kept: projects, accounts, a database | Yes | When the app is removed, or by the app itself |
-| `/opt/<app>/temp` | Data with a short retention, e.g. uploaded audio and transcripts | No | Automatically, after a set number of days ([below](#short-retention-temp)) |
-| Docker named volumes | Caches, downloaded models: anything that can be downloaded or created again | No | When the volume is removed |
+| Docker volumes | The app's data, as its compose file sets it up (named volumes, or folders in `/opt/<app>`) | Yes | When the app's volumes are removed |
+| `/srv/temp/<app>` | Data with a short retention, e.g. uploaded audio and transcripts | No | Automatically, after a set number of days ([below](#short-retention-srvtemp)) |
 
-So everything that must survive is under `/opt`, and the nightly backup of the server is all of `/opt`, except the `temp` folders ([Backups](backups.md)). An app with a database also gets a dump script ([Database dumps](backups.md#3-database-dumps)).
+The nightly backup covers `/opt` and all Docker volumes ([Backups](backups.md)), so an app's data is backed up without doing anything. Two things need a decision per app:
 
-For every new app, decide where its data goes: does it need to be kept (`data`), deleted after a while (`temp`), or is it a cache (a named volume)? How to find out what an app writes where: [Sorting an app's data](#sorting-an-apps-data). Record the answer in [Hosted services](../servers/services.md).
+* **Data with a short retention** must go to `/srv/temp/<app>`, and never stay in a volume: otherwise it lives on in the backups. How to find out what an app writes where: [Sorting an app's data](#sorting-an-apps-data).
+* **A database** gets a dump script, because a copy of a running database's files can be inconsistent ([Database dumps](backups.md#3-database-dumps)). **Large caches** (e.g. downloaded models) can be left out of the backup ([Leaving out large caches](backups.md#leaving-out-large-caches)).
+
+Record the answers in [Hosted services](../servers/services.md).
 
 ## 1. The system account
 
@@ -47,7 +49,7 @@ sudo usermod -aG sal <admin>
 * Pasting into a file on the server: go into insert mode and use your terminal's paste shortcut: `Cmd+V` on a Mac, `Ctrl+Shift+V` on Linux, `Ctrl+V` or right-click in Windows Terminal or PuTTY. (`"+p` doesn't work: a server has no clipboard.)
 * Never use plain `sudo` for other commands inside an app directory, or files end up owned by root.
 * After copying files in from elsewhere, fix the owner: `sudo chown -R sal:sal /opt/<app>`.
-* Never run `git clean` in an app directory (it deletes `data` and `temp`), and never `docker compose down -v` or `docker volume prune` unless you mean to delete the volumes.
+* Never run `docker compose down -v` or `docker volume prune` unless you mean to delete the app's data: the volumes are where it lives.
 
 ## 2. Adding an app
 
@@ -67,78 +69,63 @@ sudo usermod -aG sal <admin>
     sudo -u sal git clone <repo> /opt/<app>
     ```
 
-    Check that the repository has no `data` or `temp` folder at the top. (If it has, choose other names, and use them in the steps below.) Keep our folders out of `git status`:
-
-    ```bash
-    printf 'data/\ntemp/\n' | sudo -u sal tee -a /opt/<app>/.git/info/exclude
-    ```
-
 3. **Settings and secrets** go in `/opt/<app>/.env`, readable only by `sal`:
 
     ```bash
     sudo -u sal chmod 600 /opt/<app>/.env
     ```
 
-4. **Data that must be kept:** create `data`, as `sal`, before the first start. Docker would otherwise create it owned by root ([Docker warnings](docker.md#directories-for-bind-mounts)).
-
-    ```bash
-    sudo -u sal mkdir /opt/<app>/data
-    ```
-
-    In the compose file, mount it (or subfolders of it) into the container, e.g. `/opt/<app>/data:/app/data`. Use the full path: a relative path counts from the folder with the compose file, which isn't always `/opt/<app>`. A container that writes as its own user (e.g. PostgreSQL) needs that user as the owner of its folder; the app's documentation says which user.
-
-5. **Data with a short retention:** set up `temp` as below ([Short retention](#short-retention-temp)), and mount it on exactly the folder for uploads and results, never on a folder that also holds settings or a database.
-6. **Caches and downloaded models:** keep the named volumes the app's compose file already has.
-7. **A database:** add a dump script for the backup ([Database dumps](backups.md#3-database-dumps)).
-8. **Listen on localhost only,** so the app can't be reached around Caddy.
+4. **Its data:** keep the volumes of the app's compose file as they are; they are backed up. (A folder in `/opt/<app>` instead of a named volume is fine too: create it as `sal` before the first start, or Docker creates it owned by root, see [Docker warnings](docker.md#directories-for-bind-mounts).)
+5. **Data with a short retention:** set up `/srv/temp/<app>` ([Short retention](#short-retention-srvtemp)), and mount it on exactly the folder for uploads and results, never on a folder that also holds settings or a database.
+6. **A database:** add a dump script for the backup ([Database dumps](backups.md#3-database-dumps)). **Large caches:** leave them out of the backup ([Leaving out large caches](backups.md#leaving-out-large-caches)).
+7. **Listen on localhost only,** so the app can't be reached around Caddy.
     * With Docker, publish ports on `127.0.0.1`: `"127.0.0.1:<port>:<port>"`. A plain `"<port>:<port>"` is reachable from the internet, even with a firewall (see [Docker warnings](docker.md#published-ports-bypass-the-firewall)). Check with `sudo docker ps --format '{{.Names}}\t{{.Ports}}'`: nothing should show `0.0.0.0:` or `[::]:`. See which ports are taken with `sudo ss -tlnp`.
     * Without Docker, use a systemd service with `User=sal` and `WorkingDirectory=/opt/<app>`, and bind the app to `127.0.0.1`.
-9. **Start it,** from the folder with the compose file:
+8. **Start it,** from the folder with the compose file:
 
     ```bash
     cd /opt/<app> && sudo docker compose up -d
     ```
 
-10. **Make it reachable** through Caddy: on the lab server, see [Adding a service](lab-server.md#2-adding-a-service).
+9. **Make it reachable** through Caddy: on the lab server, see [Adding a service](lab-server.md#2-adding-a-service).
 
-## Short retention: `temp`
+## Short retention: `/srv/temp`
 
-Data that may only be kept for a limited time (e.g. uploaded audio and its transcripts) goes in `/opt/<app>/temp`. Linux deletes files there once they are older than the retention period, with its own `systemd-tmpfiles`. It isn't backed up, so deleted data doesn't live on in backups.
+Data that may only be kept for a limited time (e.g. uploaded audio and its transcripts) goes in `/srv/temp/<app>`. It is outside the backup, so deleted data doesn't live on in backups, and Linux deletes files there once they are older than the retention period, with its own `systemd-tmpfiles`.
 
 Create `/etc/tmpfiles.d/<app>.conf` (e.g. with `sudoedit`), with the retention period at the end (here 30 days). The `m:` counts the days from when a file was last changed; without it, a file that is still opened now and then would never be deleted:
 
 ```
-d /opt/<app>/temp 0750 sal sal m:30d
+d /srv/temp/<app> 0750 sal sal m:30d
 ```
 
-Apply it once; this also creates the folder, with the right owner:
+Apply it once; this also creates the folder (and `/srv/temp`), with the right owner:
 
 ```bash
 sudo systemd-tmpfiles --create /etc/tmpfiles.d/<app>.conf
 ```
 
-From then on, a daily timer of the system (`systemd-tmpfiles-clean.timer`) deletes files in it that weren't changed for 30 days. To see which files are past the period: `sudo find /opt/<app>/temp -mtime +30`.
+From then on, a daily timer of the system (`systemd-tmpfiles-clean.timer`) deletes files in it that weren't changed for 30 days. To see which files are past the period: `sudo find /srv/temp/<app> -mtime +30`.
 
-If the app has its own retention setting, use that instead: the app then also cleans up its own records.
+If the app has its own retention setting, use that instead: the app then also cleans up its own records. (Its data then stays in the backups until they expire: up to 6 months.)
+
+Not `/tmp` or `/var/tmp`: Ubuntu empties `/tmp` at every restart, and cleans `/var/tmp` on its own schedule.
 
 ## Sorting an app's data
 
-Most apps don't say what they keep where. Before the first real use:
+Only needed for an app with data that may be kept for a limited time. Before the first real use:
 
-1. **Find out what it writes where:** in the app's documentation, in its compose file (the `volumes:`), and by trying it: after a test run, `sudo docker diff <container>` lists every file the container changed outside its mounts, and the mounted folders show the rest.
-2. **Sort every folder:**
-    * settings, accounts, a database: `data`;
-    * users' uploads and results: `temp`, if they may only be kept for a limited time (otherwise `data`);
-    * caches and downloaded models: a named volume.
-3. **Mount each folder where it belongs.** A mount can point at a folder inside another mounted folder; the more specific one wins. So the uploads of an app can go to `temp` while the rest of its data folder goes to `data`:
+1. **Find out what it writes where:** in the app's documentation, in its compose file (the `volumes:`), and by trying it: after a test run, `sudo docker diff <container>` lists every file the container changed outside its volumes, and the volumes show the rest (`sudo ls /var/lib/docker/volumes/<volume>/_data`).
+2. **Find the folder with users' uploads and results.** Everything else (settings, accounts, a database, caches) stays where the compose file puts it.
+3. **Mount `/srv/temp/<app>` on exactly that folder.** A mount can point at a folder inside another mount; the more specific one wins. So the uploads can go to `/srv/temp` while the rest of the app's data stays in its volume:
 
     ```yaml
     volumes:
-      - /opt/<app>/data:/app/data            # settings, database: kept
-      - /opt/<app>/temp:/app/data/uploads    # only the uploads: deleted after the set time
+      - app-data:/app/data                       # settings, database: kept, backed up
+      - /srv/temp/<app>:/app/data/uploads        # only the uploads: deleted after the set time
     ```
 
-    (Docker leaves an empty `uploads` folder in `data`, where the second mount is attached; leave it.)
+    (Docker leaves an empty `uploads` folder in the volume, where the second mount is attached; leave it.)
 
 4. **Test the retention with a short period:** set `m:10m` in the tmpfiles line, wait ten minutes, run `sudo systemctl start systemd-tmpfiles-clean`, and check that the old files are gone and that the app still works (including its list of earlier results, if it has one). Then set the real period.
 5. **Record it** in the "Kept" column of [Hosted services](../servers/services.md).
@@ -160,16 +147,16 @@ Then use the app's own retention setting, or delete through the app (its API or 
 cd /opt/<app> && sudo -u sal git pull && sudo docker compose up -d --build
 ```
 
-**Removing** (this deletes its data, including `data`, so check first that it is no longer needed, following the retention rules of the [privacy statement](../policies/privacy.md)):
+**Removing** (this deletes its data, so check first that it is no longer needed, following the retention rules of the [privacy statement](../policies/privacy.md)):
 
 ```bash
 cd /opt/<app> && sudo docker compose down
 ```
 
 ```bash
-sudo rm -r /opt/<app> /etc/tmpfiles.d/<app>.conf
+sudo rm -r /opt/<app> /srv/temp/<app> /etc/tmpfiles.d/<app>.conf
 ```
 
-Named volumes stay: list them with `sudo docker volume ls`, and remove the app's with `sudo docker volume rm <volume>`.
+Its volumes stay (and stay in the backups): list them with `sudo docker volume ls`, and remove the app's with `sudo docker volume rm <volume>`.
 
-**Moving data into `data` or `temp`** (e.g. from a named volume, or from another folder): stop the app (`sudo docker compose down`), copy the files (for a named volume: `sudo cp -a /var/lib/docker/volumes/<volume>/_data/. /opt/<app>/data/<folder>/`), fix the owner (`sudo chown -R sal:sal /opt/<app>/data`, except for folders owned by a container's user), change the mount in the compose file, and start it again. Remove the old volume once everything works.
+**Moving an app's short-retention data to `/srv/temp`:** set up `/srv/temp/<app>` as above, stop the app (`sudo docker compose down`), move the files that should be kept for now (for a named volume: `sudo mv /var/lib/docker/volumes/<volume>/_data/<folder>/* /srv/temp/<app>/`), add the mount to the compose file, and start it again. Files that were already in the backups stay there until those expire.

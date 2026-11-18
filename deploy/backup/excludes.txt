@@ -1,3 +1,0 @@
-# Not backed up (restic exclude patterns; * doesn't cross a /).
-# Data with a short retention: deleted after a set time, so it must not live on in backups.
-/opt/*/temp
