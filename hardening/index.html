@@ -1,0 +1,1700 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <link rel="prev" href="../backup-strategies/">
+      
+      
+        <link rel="next" href="../auth-2fa/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.1">
+    
+    
+      
+        <title>Hardening plan - Lab Infrastructure Registry</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.57a0d79d.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#hardening-plan" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="Lab Infrastructure Registry" class="md-header__button md-logo" aria-label="Lab Infrastructure Registry" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Lab Infrastructure Registry
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Hardening plan
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="Lab Infrastructure Registry" class="md-nav__button md-logo" aria-label="Lab Infrastructure Registry" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    Lab Infrastructure Registry
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Servers
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Servers
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../servers/lab/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Lab server
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../servers/database/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Database server
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../servers/keycloak/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Keycloak VM
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../servers/service-vms/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Service VMs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../servers/services/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hosted services
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation guides
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Installation guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../install/vm/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    University VMs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../install/apps/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apps on our servers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../install/compose/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Docker Compose standards
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../install/backups/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Backups
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../install/lab-server/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Lab server
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../install/keycloak/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Keycloak VM
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../install/docker/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ⚠️ Docker warnings
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Software development
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Software development
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../software/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Our software
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../auth/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Authentication standard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../auth-install/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Authentication provider
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../auth-migration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Migration guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../amcat/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AmCAT
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../annotinder/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AnnoTinder
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Policies
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Policies
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../policies/privacy/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Privacy statement
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../policies/aup/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Acceptable use policy
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Discussion
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Discussion
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../discussion/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    About
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../decisions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Decisions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../backup-strategies/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Backup strategies
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hardening plan
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hardening plan
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#where-we-stand" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Where we stand
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-plan" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The plan
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The plan">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-ssh-only-from-the-vu-network" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. SSH only from the VU network
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-security-keys" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Security keys
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-keycloak-up-to-date-quickly" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Keycloak up to date, quickly
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-access-to-the-vms-through-the-portal" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Access to the VMs through the portal
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#where-keycloak-runs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Where Keycloak runs
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#further-options-if-needed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Further options, if needed
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#questions-for-vu-it" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Questions for VU IT
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../auth-2fa/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2FA: where should it live?
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../auth-providers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Provider comparison
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#where-we-stand" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Where we stand
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-plan" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The plan
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The plan">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-ssh-only-from-the-vu-network" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. SSH only from the VU network
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-security-keys" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Security keys
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-keycloak-up-to-date-quickly" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Keycloak up to date, quickly
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-access-to-the-vms-through-the-portal" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Access to the VMs through the portal
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#where-keycloak-runs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Where Keycloak runs
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#further-options-if-needed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Further options, if needed
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#questions-for-vu-it" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Questions for VU IT
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="hardening-plan">Hardening plan</h1>
+<p>What else to do to make the lab's infrastructure harder to break into, beyond what is set up now. The aim is a setup that is safe <em>and</em> simple: every step here is cheap, easy to understand, and hard to get wrong. More elaborate options are at the end, for when there is a concrete reason. Nothing on this page is in place yet, unless it says so.</p>
+<p>The most sensitive machine is the <a href="../servers/keycloak/">Keycloak VM</a>: whoever controls it controls every login of the lab.</p>
+<h2 id="where-we-stand">Where we stand</h2>
+<ul>
+<li><strong>SSH</strong> to the VMs: keys only, no <code>root</code> logins (<a href="../install/vm/#3-secure-ssh-logins">University VMs</a>).</li>
+<li><strong>Keycloak's admin consoles:</strong> on a separate admin hostname, reachable only from VU IP ranges (campus and VPN); administrators need a password and a second factor (an authenticator app, a passkey or a security key).</li>
+<li><strong>Everything else public</strong> is behind Caddy, with only HTTPS open.</li>
+</ul>
+<p>What remains, from most to least serious:</p>
+<ol>
+<li><strong>SSH on the Keycloak VM is reachable from the whole internet</strong> (found in November 2026, still to fix). The VM was created from an <strong>(extern)</strong> template, which allows SSH from anywhere. Keys-only logins make guessing useless, but SSH runs code for every connection, before any login, and serious flaws there do occur (e.g. "regreSSHion", 2024).</li>
+<li><strong>The VU account is the real master key</strong> of a VM: whoever can log in to the SciCloud portal as its owner can take it over, regardless of SSH (<a href="#4-access-to-the-vms-through-the-portal">step 4</a>).</li>
+<li><strong>Second factors can be phished:</strong> a code from an authenticator app can be typed into a fake page; a security key can't. And SSH keys are files on laptops, which malware or a thief can take.</li>
+<li><strong>A flaw in Keycloak itself</strong> could be tried by anyone who can reach its admin console: now the whole VU network.</li>
+</ol>
+<h2 id="the-plan">The plan</h2>
+<h3 id="1-ssh-only-from-the-vu-network">1. SSH only from the VU network</h3>
+<p>Allow SSH on every server only from the VU network (campus and VPN, which includes the VU SSH gateway), and keep ports 80 and 443 open to everyone. One firewall change per server: <a href="../install/vm/#ssh-only-from-the-vu-network">SSH only from the VU network</a>, or <code>setup-vm.sh --ssh-from</code> for new VMs. This is now the default for new VMs.</p>
+<p><mark>TODO: apply on the Keycloak VM; check the other VMs, and the lab server (a physical server with a firewall of its own).</mark></p>
+<h3 id="2-security-keys">2. Security keys</h3>
+<p><strong>The lab buys a set of security keys</strong> (e.g. YubiKeys), two per person with sensitive access: one to use, one as a spare in a safe place. A security key holds its secret on the device itself: it can't be copied, it only works on the real site (so it can't be phished), and it needs a touch and a PIN. Use them for:</p>
+<ul>
+<li><strong>SSH</strong> to the servers (below);</li>
+<li><strong>the second factor of Keycloak administrators:</strong> the <code>master</code> realm, and the realm admins of <code>lab</code> and <code>idp</code>. Keycloak accepts security keys as a second factor already; making them mandatory for administrators (no authenticator app) is a separate login flow. <mark>TODO: work out and test in the realm files.</mark></li>
+<li><strong>the VU accounts</strong> of VM owners, if the VU supports security keys.</li>
+</ul>
+<p><mark>TODO: how many (two per administrator, plus a few spares), which model (with USB-C and NFC), and who keeps track of them.</mark></p>
+<p><strong>SSH with a security key.</strong> OpenSSH supports security keys directly. On the admin's laptop, once per key:</p>
+<div class="highlight"><pre><span></span><code>ssh-keygen<span class="w"> </span>-t<span class="w"> </span>ed25519-sk<span class="w"> </span>-O<span class="w"> </span>verify-required<span class="w"> </span>-C<span class="w"> </span><span class="s2">"&lt;name&gt; yubikey 1"</span>
+</code></pre></div>
+<p>Give both public keys (<code>~/.ssh/id_ed25519_sk.pub</code>, from the key and the spare) to whoever manages the server. Once every admin of a server uses one, the server can accept nothing else, in <code>/etc/ssh/sshd_config.d/00-hardening.conf</code>:</p>
+<div class="highlight"><pre><span></span><code># Only security keys, and only these accounts
+PubkeyAcceptedAlgorithms sk-ssh-ed25519@openssh.com,sk-ecdsa-sha2-nistp256@openssh.com
+AllowUsers &lt;admin 1&gt; &lt;admin 2&gt;
+</code></pre></div>
+<p>The console in the SciCloud portal stays the way back in when both keys are lost. (Without hardware, 1Password's SSH agent is a step up from key files: it asks for approval at every use. But anyone who gets into the 1Password account has the key.)</p>
+<h3 id="3-keycloak-up-to-date-quickly">3. Keycloak up to date, quickly</h3>
+<p>A barrier in front of the admin console is there because of possible flaws in Keycloak. The most direct defense against those is installing security updates quickly:</p>
+<ul>
+<li><strong>Follow Keycloak's security announcements</strong> (the <a href="https://www.keycloak.org/blog">Keycloak blog</a>, and the releases on GitHub, which can send notifications), and apply a security release within days, following <a href="../install/keycloak/#10-maintenance">Upgrading Keycloak</a>.</li>
+<li><strong>The same for the rest of the VM:</strong> the operating system updates itself (<a href="../install/vm/#5-updates-and-docker">University VMs</a>); Caddy and PostgreSQL follow their releases.</li>
+</ul>
+<p><mark>TODO: who follows the announcements, and who updates.</mark></p>
+<h3 id="4-access-to-the-vms-through-the-portal">4. Access to the VMs through the portal</h3>
+<p><strong>The problem.</strong> SciCloud runs on OpenNebula. At every start, OpenNebula hands the VM its "context": settings that the <code>one-context</code> package in the VM applies <strong>as root</strong>, such as an SSH key, a password, and a start script that may run anything. The owner of a VM can change its context in the portal and restart it, and can open its console there (a virtual screen and keyboard), from which a restart and a changed boot command (<code>init=/bin/bash</code>) give a root shell. So anyone who can log in to the portal as an owner can take the VM over. Turning off <code>root</code> logins over SSH doesn't prevent this. (VU IT itself can always reach the VMs: that is the trust any cloud requires.)</p>
+<p><strong>Now:</strong></p>
+<ul>
+<li><strong>Protect the VU accounts of the VM owners</strong> with a second factor, preferably a security key, and keep the number of owners small.</li>
+<li><strong>Ask VU IT</strong> whether normal users can be prevented from changing the context of a VM, and whether changes to VMs are logged.</li>
+</ul>
+<p><strong>Later, after testing on a test VM</strong> (each of these can break a VM if done wrong):</p>
+<ul>
+<li><strong>Turn off contextualization once a VM is set up</strong> (disable <code>one-context</code>), so later changes to the context do nothing. On SciCloud, the network settings often come from the context, so the network configuration must first be fixed in the VM itself, and a restart tested.</li>
+<li><strong>A password on the boot menu (GRUB),</strong> so the boot command can't be changed from the console.</li>
+<li><strong>A notification at every start of a VM, and when SSH keys change:</strong> an unexpected restart with new keys is what this attack looks like.</li>
+</ul>
+<h2 id="where-keycloak-runs">Where Keycloak runs</h2>
+<p>An open question: is a SciCloud VM the best place for the lab's login service? What matters:</p>
+<ul>
+<li><strong>Who can take over the machine</strong> outside SSH: owner accounts, the console, the provider's own staff, and how well those are protected (security keys, logging).</li>
+<li><strong>Availability:</strong> when Keycloak is down, nobody in the lab can log in. Is there a support agreement, and how quickly is a failure fixed?</li>
+<li><strong>Backups and recovery</strong> by the platform itself.</li>
+<li><strong>Data location and agreements:</strong> the accounts of lab members and others are personal data; an external provider needs a data processing agreement.</li>
+<li><strong>Cost, effort, and whether VU IT accepts it.</strong></li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>Place</th>
+<th>Pros</th>
+<th>Cons</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>A SciCloud VM (now)</strong></td>
+<td>Free; VU hardware, data stays at the VU; a public address is possible</td>
+<td>Self-service portal: an owner's VU account can take the VM over (<a href="#4-access-to-the-vms-through-the-portal">step 4</a>); a research cloud, possibly without guaranteed availability; its own backups unclear</td>
+</tr>
+<tr>
+<td><strong>A VM managed by VU IT</strong> (their regular hosting, not the research cloud)</td>
+<td>Run by people whose job it is; backups and monitoring by IT; probably no self-service console for owners</td>
+<td>A request process; less control over updates and configuration; possibly costs</td>
+</tr>
+<tr>
+<td><strong>A dedicated physical server on VU premises</strong></td>
+<td>No portal</td>
+<td>The hardware is our job (disks, failures); a remote console (IPMI) is a risk of its own. Not on the lab server, which runs many apps</td>
+</tr>
+<tr>
+<td><strong>A VM at a European cloud provider</strong> (e.g. Hetzner, Scaleway, OVH)</td>
+<td>A provider account with a security key, snapshots, good consoles; a few euros a month</td>
+<td>Outside the VU: a data processing agreement is needed, and the VU network restrictions no longer apply by themselves</td>
+</tr>
+<tr>
+<td><strong>Hosted Keycloak</strong> (as a service)</td>
+<td>No server of our own</td>
+<td>Costs; the provider can reach everything; less control</td>
+</tr>
+<tr>
+<td><strong>No Keycloak of our own</strong> (the VU's login or SURF SRAM for <code>lab</code>)</td>
+<td>Nothing to host</td>
+<td>Considered before: no open sign-up for <code>idp</code>, and less control over 2FA and account recovery (<a href="../decisions/#keycloak">Decisions</a>)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>For now,</strong> a SciCloud VM is reasonable if two things hold: the VU accounts of its owners are well protected (<a href="#4-access-to-the-vms-through-the-portal">step 4</a>), and VU IT confirms its availability and access rules. The most obvious alternative is a VM managed by VU IT. <mark>TODO: ask VU IT (see below).</mark></p>
+<h2 id="further-options-if-needed">Further options, if needed</h2>
+<p>Only for when there is a concrete reason, e.g. realm admins from outside the VU (who have no VU VPN), or a request from VU IT. Each adds something to run and maintain.</p>
+<ul>
+<li><strong>A VPN of our own (WireGuard),</strong> on a small VM of its own. Each admin's device gets a key and an address in a private network (e.g. <code>10.8.0.x</code>): traffic to that network is encrypted and sent to the VPN server's public address, which unwraps it. The admin console (and SSH) would then only accept the VPN. Without a key, the VPN doesn't answer at all, and it is easy for realm admins (switch on the app). But the keys are files on devices, with no second factor per session; it needs a UDP port that VU IT has to allow; and it is one more machine. Self-hosted tools on top of WireGuard (Headscale, NetBird) add a login with a second factor, at the cost of another service.</li>
+<li><strong>A jump host:</strong> a small VM with only SSH, the one way in to the servers (<code>ProxyJump</code>). Simple for technical admins; for the admin console, users need an SSH tunnel and a browser profile that uses it. A jump host and a VPN can be the same small VM.</li>
+<li><strong>Tunnel-only SSH accounts</strong> (on the Keycloak VM, or on a jump host or the lab server): an account that can only forward to the admin console, without a shell (<code>nologin</code>, and <code>restrict,port-forwarding,permitopen=...</code> on its key).</li>
+<li><strong>Tailscale:</strong> a VPN without setup; but a US company's server decides who joins, and the free plan is for 3 users. <strong>Cloudflare Tunnel:</strong> no open ports; but Cloudflare decrypts all traffic, including passwords. <strong>Client certificates:</strong> strong, but cumbersome to issue and revoke.</li>
+</ul>
+<p>Whatever is chosen: <strong>never put private keys on a jump host or VPN server,</strong> and don't forward your SSH agent to it (<code>ssh -A</code>). With <code>ProxyJump</code>, the connection to a server runs from your own laptop, through the jump host, so a broken-into jump host gives no logins.</p>
+<h2 id="questions-for-vu-it">Questions for VU IT</h2>
+<ul>
+<li>Can normal users be prevented from changing the context of a VM, and are changes to VMs logged?</li>
+<li>Is the SciCloud portal only reachable from the VU network or VPN, and do VU accounts support security keys?</li>
+<li>Which address ranges are the VU network and VPN (for the SSH and admin restrictions)?</li>
+<li>What availability does SciCloud offer (support, failures, backups)? And could the lab's login service run on a VM managed by VU IT instead, and who could reach its console there?</li>
+</ul>
+<p>These go together with the open questions about backups (<a href="../#open-points">Open points</a>).</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.a5f9d56c.min.js"></script>
+      
+    
+  </body>
+</html>

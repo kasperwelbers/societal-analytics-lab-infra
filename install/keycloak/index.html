@@ -1,0 +1,2844 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <link rel="prev" href="../lab-server/">
+      
+      
+        <link rel="next" href="../docker/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.1">
+    
+    
+      
+        <title>Keycloak VM - Lab Infrastructure Registry</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.57a0d79d.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#installation-keycloak-vm" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Lab Infrastructure Registry" class="md-header__button md-logo" aria-label="Lab Infrastructure Registry" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Lab Infrastructure Registry
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Keycloak VM
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Lab Infrastructure Registry" class="md-nav__button md-logo" aria-label="Lab Infrastructure Registry" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    Lab Infrastructure Registry
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Servers
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Servers
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../servers/lab/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Lab server
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../servers/database/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Database server
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../servers/keycloak/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Keycloak VM
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../servers/service-vms/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Service VMs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../servers/services/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hosted services
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation guides
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Installation guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../vm/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    University VMs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../apps/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apps on our servers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../compose/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Docker Compose standards
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../backups/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Backups
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../lab-server/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Lab server
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Keycloak VM
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Keycloak VM
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Overview
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#1-prerequisites" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Prerequisites
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-installation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Installation
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2. Installation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#users-and-permissions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Users and permissions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#system-user-and-folder" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        System user and folder
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#files-and-settings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Files and settings
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#build-and-start" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Build and start
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-point-the-admin-realm-to-the-admin-hostname" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Point the admin realm to the admin hostname
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-restrict-admin-access" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Restrict admin access
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4. Restrict admin access">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#find-your-ip-ranges" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Find your IP ranges
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#restrict-the-admin-hostname" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Restrict the admin hostname
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#exceptions-for-specific-realms" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Exceptions for specific realms
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-checks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Checks
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-permanent-admin-account" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Permanent admin account
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7-realms" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. Realms
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="7. Realms">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#google-and-github-idp-realm" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Google and GitHub (idp realm)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#email-the-relay" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Email: the relay
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#check" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Check
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#setting-up-a-realm-again" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Setting up a realm again
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#changing-the-realm-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Changing the realm files
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#8-clients-for-our-deployments" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. Clients for our deployments
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#9-backups" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9. Backups
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#10-maintenance" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        10. Maintenance
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="10. Maintenance">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#email-limits" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Email limits
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#adding-lab-members" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Adding lab members
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#themes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Themes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#a-user-lost-their-second-factor" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A user lost their second factor
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#recovering-admin-access" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Recovering admin access
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#changing-the-hostnames" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Changing the hostnames
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#moving-from-the-old-layout-one-time" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Moving from the old layout (one time)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#troubleshooting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Troubleshooting
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#why-it-is-set-up-this-way" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why it is set up this way
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#next-steps" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Next steps
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../docker/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ⚠️ Docker warnings
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Software development
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Software development
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../software/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Our software
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../auth/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Authentication standard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../auth-install/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Authentication provider
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../auth-migration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Migration guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../amcat/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AmCAT
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../annotinder/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AnnoTinder
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Policies
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Policies
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../policies/privacy/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Privacy statement
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../policies/aup/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Acceptable use policy
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Discussion
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Discussion
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../discussion/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    About
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../decisions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Decisions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../backup-strategies/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Backup strategies
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../hardening/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hardening plan
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../auth-2fa/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2FA: where should it live?
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../auth-providers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Provider comparison
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Overview
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#1-prerequisites" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Prerequisites
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-installation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Installation
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2. Installation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#users-and-permissions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Users and permissions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#system-user-and-folder" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        System user and folder
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#files-and-settings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Files and settings
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#build-and-start" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Build and start
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-point-the-admin-realm-to-the-admin-hostname" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Point the admin realm to the admin hostname
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-restrict-admin-access" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Restrict admin access
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4. Restrict admin access">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#find-your-ip-ranges" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Find your IP ranges
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#restrict-the-admin-hostname" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Restrict the admin hostname
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#exceptions-for-specific-realms" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Exceptions for specific realms
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-checks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Checks
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-permanent-admin-account" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Permanent admin account
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7-realms" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. Realms
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="7. Realms">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#google-and-github-idp-realm" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Google and GitHub (idp realm)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#email-the-relay" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Email: the relay
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#check" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Check
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#setting-up-a-realm-again" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Setting up a realm again
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#changing-the-realm-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Changing the realm files
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#8-clients-for-our-deployments" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. Clients for our deployments
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#9-backups" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9. Backups
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#10-maintenance" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        10. Maintenance
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="10. Maintenance">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#email-limits" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Email limits
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#adding-lab-members" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Adding lab members
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#themes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Themes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#a-user-lost-their-second-factor" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A user lost their second factor
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#recovering-admin-access" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Recovering admin access
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#changing-the-hostnames" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Changing the hostnames
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#moving-from-the-old-layout-one-time" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Moving from the old layout (one time)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#troubleshooting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Troubleshooting
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#why-it-is-set-up-this-way" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why it is set up this way
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#next-steps" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Next steps
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="installation-keycloak-vm">Installation: Keycloak VM</h1>
+<p>This guide sets up the lab's login service: Keycloak on a single VM, with PostgreSQL and Caddy (TLS via Let's Encrypt), using the files in the repository <a href="https://github.com/vu-societal-analytics/deploy-keycloak">deploy-keycloak</a>, cloned to <code>/opt/keycloak</code>. It takes about an hour. What the result looks like (the hostnames, the realms, how users log in, and the security measures): <a href="../../servers/keycloak/">Keycloak VM</a>. What was tested: the <a href="../../auth-providers/#keycloak-test-checklist">test checklist</a>.</p>
+<div class="admonition info">
+<p class="admonition-title">The admin hostname</p>
+<p>The admin hostname is not published: replace <code>&lt;admin hostname&gt;</code> with it. The IP ranges and the secrets are only on the VM (in <code>.env</code> and <code>caddy/admin-access.caddy</code>).</p>
+</div>
+<h2 id="overview">Overview</h2>
+<table>
+<thead>
+<tr>
+<th>Component</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Caddy</strong></td>
+<td>Public TLS certificates via Let's Encrypt. Forwards only the paths that need to be public to Keycloak, over a second TLS connection (re-encrypt). Built with a rate limit module, to limit requests that make Keycloak send emails.</td>
+</tr>
+<tr>
+<td><strong>Keycloak</strong></td>
+<td>An optimized image (built from the official image), started with <code>start --optimized</code>. Creates the realms from <code>realms/</code> when it starts, if they don't exist yet. Only accepts HTTPS, with an internal certificate (valid for 10 years) that only Caddy trusts.</td>
+</tr>
+<tr>
+<td><strong>tls-init</strong></td>
+<td>A one-off service that creates the internal certificate on the first start (and does nothing on later starts).</td>
+</tr>
+<tr>
+<td><strong>PostgreSQL</strong></td>
+<td>The database, only reachable by Keycloak.</td>
+</tr>
+<tr>
+<td><strong>mail-relay</strong></td>
+<td>Sends all email of the realms to the email provider; the only place with the provider's password (<a href="#email-the-relay">step 7</a>).</td>
+</tr>
+</tbody>
+</table>
+<p>The two hostnames: <code>auth.societal-analytics.nl</code> (public: <code>/realms/</code>, <code>/resources/</code> and <code>/.well-known/</code>; everything else returns 404) and the admin hostname (the admin consoles, the admin API and the <code>master</code> realm; restricted to the VPN in <a href="#4-restrict-admin-access">step 4</a>).</p>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Contents</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>compose.yml</code></td>
+<td>The services, pinned versions, memory limits, health checks, and two networks (the database network has no internet access)</td>
+</tr>
+<tr>
+<td><code>Dockerfile</code></td>
+<td>The optimized Keycloak image (<code>kc.sh build</code> with PostgreSQL and health endpoints)</td>
+</tr>
+<tr>
+<td><code>Caddy.Dockerfile</code></td>
+<td>Caddy with the <a href="https://github.com/mholt/caddy-ratelimit">rate limit module</a></td>
+</tr>
+<tr>
+<td><code>realms/</code></td>
+<td>The realms (<code>master</code>, <code>lab</code>, <code>idp</code>) as Keycloak realm files, imported when a realm doesn't exist yet (<a href="#7-realms">step 7</a>); <code>realms/README.md</code> explains what we changed</td>
+</tr>
+<tr>
+<td><code>check-realms.py</code></td>
+<td>Checks <code>realms/</code> for mistakes that Keycloak accepts silently (run it after every change)</td>
+</tr>
+<tr>
+<td><code>themes/</code></td>
+<td>Our look and texts for the login pages, the account console and emails (logo, colours, the texts for lab members), mounted into Keycloak (<a href="#themes">Themes</a>); <code>themes/README.md</code> lists them</td>
+</tr>
+<tr>
+<td><code>internal-tls.sh</code></td>
+<td>Creates the internal certificate (run by the tls-init service)</td>
+</tr>
+<tr>
+<td><code>admin-cli.sh</code></td>
+<td>Runs Keycloak's admin command-line tool (<code>kcadm.sh</code>) inside the container, over the internal TLS connection</td>
+</tr>
+<tr>
+<td><code>caddy/</code></td>
+<td>Everything for Caddy, mounted into its container:</td>
+</tr>
+<tr>
+<td><code>caddy/Caddyfile</code></td>
+<td>The public and admin hostnames, and the email limits</td>
+</tr>
+<tr>
+<td><code>caddy/admin-access.example.caddy</code></td>
+<td>The template for the local Caddy setting <code>caddy/admin-access.caddy</code> (copied in step 2, never committed): the restrictions of the admin hostname (<a href="#4-restrict-admin-access">step 4</a>).</td>
+</tr>
+<tr>
+<td><code>caddy/init.sh</code></td>
+<td>Run by the caddy-init service before Caddy starts: creates <code>caddy/admin-access.caddy</code> from its template if it is missing, so that Caddy can always start</td>
+</tr>
+<tr>
+<td><code>.env.example</code></td>
+<td>All settings. Copied to <code>.env</code>, which holds the secrets and is never committed.</td>
+</tr>
+<tr>
+<td><code>db-backup.sh</code></td>
+<td>The <code>db-backup</code> service: a daily database dump into <code>backups/</code> (<a href="#9-backups">step 9</a>)</td>
+</tr>
+</tbody>
+</table>
+<h2 id="1-prerequisites">1. Prerequisites</h2>
+<p><strong>The VM.</strong> On a university VM, first follow <a href="../vm/">Installation: university VMs</a>: secure SSH logins, open ports 80 and 443 in the VM firewall, and install Docker. Read the warning there about Docker bypassing the VM firewall.</p>
+<p><strong>DNS.</strong> Create two <strong>A records</strong> pointing to the VM's IPv4 address, <code>auth</code> and the admin hostname. Don't create AAAA (IPv6) records: with IPv4 only, the IP restriction of the admin hostname only needs IPv4 ranges, and Let's Encrypt can't fail on a stale IPv6 address. If your DNS provider can proxy traffic (e.g. Cloudflare), use "DNS only", otherwise Caddy can't see visitors' IP addresses. Check from your own machine:</p>
+<div class="highlight"><pre><span></span><code>dig<span class="w"> </span>+short<span class="w"> </span>auth.societal-analytics.nl
+</code></pre></div>
+<p><strong>Ports.</strong> Ports 80 and 443 must be reachable from the internet (Let's Encrypt needs port 80), and nothing else on the VM may use them. Check on the VM:</p>
+<div class="highlight"><pre><span></span><code>sudo<span class="w"> </span>ss<span class="w"> </span>-tlnp<span class="w"> </span><span class="s1">'( sport = :80 or sport = :443 )'</span>
+</code></pre></div>
+<p>Only a header line, without any rows below it, means the ports are free. This doesn't show whether they are reachable from outside: that shows in step 2, when Caddy obtains its certificates.</p>
+<p><strong>Docker.</strong> Docker Engine with the compose plugin (<a href="https://docs.docker.com/engine/install/">installation</a>). This guide runs Docker with <code>sudo</code> (see <a href="#users-and-permissions">Users and permissions</a>).</p>
+<div class="highlight"><pre><span></span><code>sudo<span class="w"> </span>docker<span class="w"> </span>compose<span class="w"> </span>version
+</code></pre></div>
+<h2 id="2-installation">2. Installation</h2>
+<h3 id="users-and-permissions">Users and permissions</h3>
+<p>The deployment uses two accounts:</p>
+<table>
+<thead>
+<tr>
+<th>Account</th>
+<th>Role</th>
+<th>Rights</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong><code>keycloak</code></strong> (system user)</td>
+<td>Owns the files in <code>/opt/keycloak</code>, including <code>.env</code> with the secrets</td>
+<td>No login shell, no <code>sudo</code>, not in the <code>docker</code> group</td>
+</tr>
+<tr>
+<td><strong>Your own admin account</strong> (your personal account on the VM)</td>
+<td>Runs the commands in this guide</td>
+<td><code>sudo</code>, and <strong>member of the <code>keycloak</code> group</strong></td>
+</tr>
+</tbody>
+</table>
+<p>How commands are run:</p>
+<ul>
+<li><strong>File operations</strong> (cloning, editing <code>.env</code>, <code>git pull</code>) run <strong>as <code>keycloak</code></strong>, with <code>sudo -u keycloak ...</code>, so that the files stay owned by <code>keycloak</code>.</li>
+<li><strong>Docker commands</strong> (<code>docker compose ...</code>, <code>./admin-cli.sh</code>) run <strong>from your own account with <code>sudo</code></strong>, from <code>/opt/keycloak</code>. Docker reads <code>.env</code> as root, so your account doesn't need to be able to read it.</li>
+</ul>
+<div class="admonition warning">
+<p class="admonition-title">Required: your admin account must be in the <code>keycloak</code> group</p>
+<p><code>/opt/keycloak</code> is only accessible to the <code>keycloak</code> user and group (<code>chmod 750</code>). The Docker commands are run from it, so your admin account must be a member of the <code>keycloak</code> group, otherwise <code>cd</code> into the folder fails with <code>Permission denied</code>. Group membership gives access to the folder and the deployment files, but not to <code>.env</code>, which stays readable only by <code>keycloak</code> (<code>chmod 600</code>).</p>
+</div>
+<p>Why not simpler:</p>
+<ul>
+<li><strong>Don't add <code>keycloak</code> (or anyone) to the <code>docker</code> group.</strong> Membership of the <code>docker</code> group is effectively root access: anyone who can run Docker can mount the whole disk into a container. Running Docker with <code>sudo</code> keeps that power with administrators, and <code>sudo</code> logs who did what.</li>
+<li><strong>Don't give <code>keycloak</code> <code>sudo</code> rights.</strong> That would turn the service account into an admin account.</li>
+<li>The containers don't run as the <code>keycloak</code> host user: Keycloak runs as its own user inside its container. The host user only owns the files.</li>
+</ul>
+<h3 id="system-user-and-folder">System user and folder</h3>
+<p>Create the <code>keycloak</code> system user and group, with <code>/opt/keycloak</code> as its home folder:</p>
+<div class="highlight"><pre><span></span><code>sudo<span class="w"> </span>groupadd<span class="w"> </span>--system<span class="w"> </span>keycloak
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>sudo<span class="w"> </span>useradd<span class="w"> </span>--system<span class="w"> </span>-g<span class="w"> </span>keycloak<span class="w"> </span>--shell<span class="w"> </span>/usr/sbin/nologin<span class="w"> </span>--home-dir<span class="w"> </span>/opt/keycloak<span class="w"> </span>keycloak
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>sudo<span class="w"> </span>mkdir<span class="w"> </span>/opt/keycloak<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>sudo<span class="w"> </span>chown<span class="w"> </span>keycloak:keycloak<span class="w"> </span>/opt/keycloak<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>sudo<span class="w"> </span>chmod<span class="w"> </span><span class="m">750</span><span class="w"> </span>/opt/keycloak
+</code></pre></div>
+<p>Add your own admin account to the <code>keycloak</code> group:</p>
+<div class="highlight"><pre><span></span><code>sudo<span class="w"> </span>usermod<span class="w"> </span>-aG<span class="w"> </span>keycloak<span class="w"> </span><span class="s2">"</span><span class="nv">$USER</span><span class="s2">"</span>
+</code></pre></div>
+<p><strong>Log out and log in again</strong>, so that the group membership takes effect. Then check that <code>keycloak</code> is listed in your groups, and that you can open the folder:</p>
+<div class="highlight"><pre><span></span><code>id
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>ls<span class="w"> </span>/opt/keycloak
+</code></pre></div>
+<h3 id="files-and-settings">Files and settings</h3>
+<p>Get the files onto the VM, as <code>keycloak</code>, into the (still empty) folder:</p>
+<div class="highlight"><pre><span></span><code>sudo<span class="w"> </span>-u<span class="w"> </span>keycloak<span class="w"> </span>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/vu-societal-analytics/deploy-keycloak.git<span class="w"> </span>/opt/keycloak
+</code></pre></div>
+<p>All further commands in this guide are run from here:</p>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/opt/keycloak
+</code></pre></div>
+<p>Create <code>.env</code>, readable only by <code>keycloak</code>:</p>
+<div class="highlight"><pre><span></span><code>sudo<span class="w"> </span>-u<span class="w"> </span>keycloak<span class="w"> </span>cp<span class="w"> </span>.env.example<span class="w"> </span>.env<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>sudo<span class="w"> </span>-u<span class="w"> </span>keycloak<span class="w"> </span>chmod<span class="w"> </span><span class="m">600</span><span class="w"> </span>.env
+</code></pre></div>
+<p>Generate two secrets with the command below (run it once per secret), and paste them into <code>.env</code>: <code>POSTGRES_PASSWORD</code> and <code>INTERNAL_TLS_KEYSTORE_PASSWORD</code>.</p>
+<div class="highlight"><pre><span></span><code>openssl<span class="w"> </span>rand<span class="w"> </span>-hex<span class="w"> </span><span class="m">32</span>
+</code></pre></div>
+<p>The password of the temporary admin (<code>KC_BOOTSTRAP_ADMIN_PASSWORD</code>) must meet the password policy of the <code>master</code> realm (an uppercase letter and a digit); generate it with:</p>
+<div class="highlight"><pre><span></span><code><span class="nb">echo</span><span class="w"> </span><span class="s2">"Temp-</span><span class="k">$(</span>openssl<span class="w"> </span>rand<span class="w"> </span>-hex<span class="w"> </span><span class="m">24</span><span class="k">)</span><span class="s2">"</span>
+</code></pre></div>
+<p>Fill in the other values in <code>.env</code>: the two hostnames (without <code>https://</code>), <code>ACME_EMAIL</code> (for Let's Encrypt expiry notices), and the values under "Realms": the email provider and the Google and GitHub apps (see <a href="#7-realms">step 7</a>). Keycloak creates the realms on its first start, with these values, and doesn't start while one is missing. Store the secrets in your password manager as well.</p>
+<div class="highlight"><pre><span></span><code>sudo<span class="w"> </span>-u<span class="w"> </span>keycloak<span class="w"> </span>nano<span class="w"> </span>.env
+</code></pre></div>
+<p>Create the local Caddy setting <code>caddy/admin-access.caddy</code> from its template: it restricts the admin hostname (<a href="#4-restrict-admin-access">step 4</a>). The copy is not in the repository, so <code>git pull</code> never changes it.</p>
+<div class="highlight"><pre><span></span><code>sudo<span class="w"> </span>-u<span class="w"> </span>keycloak<span class="w"> </span>cp<span class="w"> </span>caddy/admin-access.example.caddy<span class="w"> </span>caddy/admin-access.caddy
+</code></pre></div>
+<p>Set up the admin restriction now, so the admin hostname is restricted from the first start: find your IP ranges and edit <code>caddy/admin-access.caddy</code> as described in <a href="#4-restrict-admin-access">step 4</a>.</p>
+<p>If the file is missing when the stack starts, it is created from the template (Caddy doesn't start without it): unchanged, the template adds no admin restriction.</p>
+<h3 id="build-and-start">Build and start</h3>
+<p>From your own account, in the deployment folder. The first time, this builds the Keycloak image, and the tls-init service creates the internal certificate:</p>
+<div class="highlight"><pre><span></span><code>sudo<span class="w"> </span>docker<span class="w"> </span>compose<span class="w"> </span>up<span class="w"> </span>-d<span class="w"> </span>--build
+</code></pre></div>
+<p>Wait until Keycloak is <code>healthy</code> (about a minute):</p>
+<div class="highlight"><pre><span></span><code>sudo<span class="w"> </span>docker<span class="w"> </span>compose<span class="w"> </span>ps
+</code></pre></div>
+<p>On this first start, Keycloak also creates the realms from <code>realms/</code> (<a href="#7-realms">step 7</a>).</p>
+<p>Check that Caddy obtained the certificates (look for <code>certificate obtained successfully</code>):</p>
+<div class="highlight"><pre><span></span><code>sudo<span class="w"> </span>docker<span class="w"> </span>compose<span class="w"> </span>logs<span class="w"> </span>caddy<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>-i<span class="w"> </span>certificate
+</code></pre></div>
+<h2 id="3-point-the-admin-realm-to-the-admin-hostname">3. Point the admin realm to the admin hostname</h2>
+<p>The login pages of the <code>master</code> realm (used by the admin console) must be on the admin hostname: the public hostname blocks them. On a new installation this is already done: <code>master-realm.json</code> sets the frontend URL of <code>master</code> to <code>KC_HOSTNAME_ADMIN</code>. Check it (it should show the admin hostname):</p>
+<div class="highlight"><pre><span></span><code>curl<span class="w"> </span>-s<span class="w"> </span>https://&lt;admin<span class="w"> </span>hostname&gt;/realms/master/.well-known/openid-configuration<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>-o<span class="w"> </span><span class="s1">'"issuer":"[^"]*"'</span>
+</code></pre></div>
+<p>On an installation from before the realm files, or after changing the admin hostname, set it directly in the database (see <a href="#changing-the-hostnames">Changing the hostnames</a>).</p>
+<h2 id="4-restrict-admin-access">4. Restrict admin access</h2>
+<p>Keycloak recommends not exposing the administration interfaces to the public internet, and in particular restricting the administrative <code>master</code> realm to internal access (see <a href="https://www.keycloak.org/server/configuration-production">Configuring Keycloak for production</a> and the <a href="https://www.keycloak.org/server/reverseproxy#_exposed_path_recommendations">exposed path recommendations</a>). With this step, everything on the admin hostname (the admin consoles, the admin API and the <code>master</code> realm) is only reachable from the IP ranges you choose, e.g. the university network and its VPN. The public hostname, where users log in, is not affected.</p>
+<p><strong>How it works.</strong> The admin hostname reads the rules in <code>caddy/admin-access.caddy</code> (copied from <code>caddy/admin-access.example.caddy</code> in <a href="#files-and-settings">step 2</a>), from top to bottom; the first rule that matches a request decides. Requests that match no rule go to Keycloak. The file is local to the VM: it is not in the repository, so <code>git pull</code> never changes it.</p>
+<p>Set this up before the first start (step 2), so the admin hostname is never open; you can also do it later. After a change while Caddy runs, apply it with a reload, which checks the file first: if it contains a mistake, the reload fails with an error message, and Caddy keeps running with the previous settings.</p>
+<div class="highlight"><pre><span></span><code>sudo<span class="w"> </span>docker<span class="w"> </span>compose<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>caddy<span class="w"> </span>caddy<span class="w"> </span>reload<span class="w"> </span>--config<span class="w"> </span>/etc/caddy/Caddyfile
+</code></pre></div>
+<h3 id="find-your-ip-ranges">Find your IP ranges</h3>
+<p>Run this <strong>on your own device</strong> (not on the VM), connected to the VPN:</p>
+<div class="highlight"><pre><span></span><code>curl<span class="w"> </span>-4<span class="w"> </span>https://ifconfig.me
+</code></pre></div>
+<p>Then look up the range that address belongs to (the <code>whois</code> port is blocked on some networks; this uses HTTPS):</p>
+<div class="highlight"><pre><span></span><code>curl<span class="w"> </span>-s<span class="w"> </span>https://rdap.db.ripe.net/ip/&lt;your<span class="w"> </span>IP&gt;<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>-E<span class="w"> </span><span class="s1">'"(name|startAddress|endAddress)"'</span>
+</code></pre></div>
+<p>Check that <code>name</code> belongs to your institution, and write the range in CIDR notation. This command calculates it from <code>startAddress</code> and <code>endAddress</code>:</p>
+<div class="highlight"><pre><span></span><code>python3<span class="w"> </span>-c<span class="w"> </span><span class="s2">"import ipaddress as i; print(*i.summarize_address_range(i.ip_address('START'), i.ip_address('END')))"</span>
+</code></pre></div>
+<p>For example, <code>192.0.2.0</code> to <code>192.0.2.255</code> is <code>192.0.2.0/24</code>. The VPN and the campus network may use different ranges: repeat this on campus without VPN (wired and Wi-Fi) if you also want access from there, and list every range you find. The university's IT department can tell you the official ranges. A whole institutional range includes everyone on that network: it is an extra layer, admin accounts still need 2FA.</p>
+<h3 id="restrict-the-admin-hostname">Restrict the admin hostname</h3>
+<p>Edit the file (in step 2, or later):</p>
+<div class="highlight"><pre><span></span><code>sudo<span class="w"> </span>-u<span class="w"> </span>keycloak<span class="w"> </span>nano<span class="w"> </span>caddy/admin-access.caddy
+</code></pre></div>
+<p>At the bottom, remove the <code>#</code> in front of the restriction, and put your ranges after <code>remote_ip</code>, separated by spaces:</p>
+<div class="highlight"><pre><span></span><code>@not_allowed not remote_ip 192.0.2.0/24 198.51.100.0/24
+handle @not_allowed {
+    respond 403
+}
+</code></pre></div>
+<p>If Caddy is already running, apply it with the reload above. Check, from your own device (once the stack runs). On the VPN this shows the <code>master</code> realm's issuer; <strong>without the VPN</strong> (e.g. on a phone hotspot) it should return <code>403</code>:</p>
+<div class="highlight"><pre><span></span><code>curl<span class="w"> </span>-s<span class="w"> </span>-o<span class="w"> </span>/dev/null<span class="w"> </span>-w<span class="w"> </span><span class="s1">'%{http_code}\n'</span><span class="w"> </span>https://&lt;admin<span class="w"> </span>hostname&gt;/realms/master/.well-known/openid-configuration
+</code></pre></div>
+<h3 id="exceptions-for-specific-realms">Exceptions for specific realms</h3>
+<p>The <code>idp</code> realm gets no exception: its users never need the admin console, and its clients are managed by our own admins.</p>
+<p>A realm can have admins who are not on your network, e.g. a research group outside the university that manages its own realm (see <a href="../../auth-providers/#use-cases">Isolated OIDC providers</a>). For such a realm, add an exception <strong>above</strong> the restriction, in the same file. It makes the admin console of that realm, and only that realm, reachable from another range (or from anywhere, without the <code>remote_ip</code> line):</p>
+<div class="highlight"><pre><span></span><code>@realm_research_group {
+    path /admin/research-group/* /admin/realms/research-group /admin/realms/research-group/* /admin/serverinfo /resources/*
+    remote_ip 203.0.113.0/24
+}
+handle @realm_research_group {
+    import keycloak
+}
+</code></pre></div>
+<ul>
+<li>Replace <code>research-group</code> with the name of the realm (four times), and use a unique name after <code>@</code> for each exception (letters, digits and underscores).</li>
+<li>The paths are what a realm's admin console needs: its console, the admin API for that realm, general server information (<code>/admin/serverinfo</code>, behind login), and scripts and styles (<code>/resources/</code>).</li>
+<li>The <code>master</code> realm and the other realms stay restricted: their paths are not part of the exception. Admins of the realm can only manage their own realm.</li>
+<li>Admins of such a realm have an account <strong>in that realm</strong> with the role <code>realm-admin</code> of the client <code>realm-management</code> (in that realm: <strong>Users → the user → Role mapping → Assign role → filter by clients</strong>). They use the console at <code>https://&lt;admin hostname&gt;/admin/&lt;realm&gt;/console/</code>. Make 2FA required for them in that realm.</li>
+<li>Apply it with <code>sudo docker compose exec caddy caddy reload --config /etc/caddy/Caddyfile</code>.</li>
+</ul>
+<p>Tested: with the restriction and an exception, the realm's admin console works from the exception range, while the <code>master</code> realm, the console of another realm, and the admin API of other realms are refused (by Caddy, and by Keycloak for the realm admin's own token).</p>
+<h2 id="5-checks">5. Checks</h2>
+<p>From your own device (on an allowed network, if you restricted admin access in step 4):</p>
+<div class="highlight"><pre><span></span><code>curl<span class="w"> </span>-s<span class="w"> </span>https://&lt;admin<span class="w"> </span>hostname&gt;/realms/master/.well-known/openid-configuration<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>-o<span class="w"> </span><span class="s1">'"issuer":"[^"]*"'</span>
+</code></pre></div>
+<p>This should show <code>https://&lt;admin hostname&gt;/realms/master</code>. Then check that the public hostname doesn't expose the admin console or the admin realm (both should return <code>404</code>):</p>
+<div class="highlight"><pre><span></span><code>curl<span class="w"> </span>-s<span class="w"> </span>-o<span class="w"> </span>/dev/null<span class="w"> </span>-w<span class="w"> </span><span class="s1">'%{http_code}\n'</span><span class="w"> </span>https://auth.societal-analytics.nl/admin/
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>curl<span class="w"> </span>-s<span class="w"> </span>-o<span class="w"> </span>/dev/null<span class="w"> </span>-w<span class="w"> </span><span class="s1">'%{http_code}\n'</span><span class="w"> </span>https://auth.societal-analytics.nl/realms/master/.well-known/openid-configuration
+</code></pre></div>
+<h2 id="6-permanent-admin-account">6. Permanent admin account</h2>
+<p>Following <a href="https://www.keycloak.org/server/bootstrap-admin-recovery">Bootstrapping and recovering an admin account</a>: the bootstrap account is temporary, and must be replaced by a permanent admin with 2FA. The <code>master</code> realm is for administrators only; users never go in <code>master</code>.</p>
+<ol>
+<li>Open <code>https://&lt;admin hostname&gt;/admin/</code> (from an allowed network, if you restricted admin access) and log in as <code>temp-admin</code>. Because 2FA is mandatory in <code>master</code>, Keycloak first asks you to set up an authenticator app and recovery codes for <code>temp-admin</code> too (it is deleted in step 6). A yellow banner then says you are using a temporary admin account.</li>
+<li>In the <code>master</code> realm, go to <strong>Users → Add user</strong>. Fill in your email address (it is the username), turn on <strong>Email verified</strong>, and under <strong>Required user actions</strong> choose <strong>Configure OTP</strong>. Click <strong>Create</strong>.</li>
+<li>On the <strong>Credentials</strong> tab, click <strong>Set password</strong>, and turn off <strong>Temporary</strong>.</li>
+<li>On the <strong>Role mapping</strong> tab, click <strong>Assign role</strong>, filter by realm roles, and assign <strong>admin</strong>.</li>
+<li>Open a private browser window, go to the admin console, and log in as the new admin. Keycloak shows <strong>Mobile Authenticator Setup</strong>: scan the QR code with an authenticator app. Then it shows <strong>Recovery Authentication Codes</strong>: save them somewhere safe (e.g. a password manager), apart from the authenticator app. Check that you can use the admin console.</li>
+<li>As the new admin, go to <strong>Users</strong>, and delete <code>temp-admin</code>.</li>
+<li>Remove the value of <code>KC_BOOTSTRAP_ADMIN_PASSWORD</code> from <code>.env</code>. It is only used on the very first start, but there is no reason to keep it.</li>
+</ol>
+<p>By default, Keycloak asks for the second factor of every user who has one configured, so the permanent admin always needs their authenticator app.</p>
+<h2 id="7-realms">7. Realms</h2>
+<p>The realms are in <code>realms/</code> as complete Keycloak realm files (<code>master-realm.json</code>, <code>lab-realm.json</code>, <code>idp-realm.json</code>). Keycloak imports them itself when it starts (its own <code>--import-realm</code>), but only realms that don't exist yet: an existing realm is never changed. So the files set up the realms once, document how they are configured (<code>realms/README.md</code> explains what we changed), and make it easy to set them up again. Later changes are made in the admin console.</p>
+<table>
+<thead>
+<tr>
+<th>Realm</th>
+<th>For</th>
+<th>Login</th>
+<th>Registration</th>
+<th>External login</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>master</code></td>
+<td>Administrators only</td>
+<td>Password + mandatory 2FA</td>
+<td>No</td>
+<td>No (and no email)</td>
+</tr>
+<tr>
+<td><code>lab</code></td>
+<td>The lab's own infrastructure</td>
+<td>Password + mandatory 2FA</td>
+<td>Added by us (<a href="#adding-lab-members">Adding lab members</a>)</td>
+<td>No (institutional addresses)</td>
+</tr>
+<tr>
+<td><code>idp</code></td>
+<td>The login for the lab's own servers (AmCAT, AnnoTinder, and more)</td>
+<td>Password + optional 2FA</td>
+<td>Open: an account gives no access by itself</td>
+<td>Google, GitHub</td>
+</tr>
+</tbody>
+</table>
+<p>In all realms:</p>
+<ul>
+<li><strong>2FA:</strong> OTP (authenticator app), passkeys or security keys, and recovery codes count as a second factor. Users can also sign in with only a passkey ("Sign in with Passkey" on the login page), which counts as 2FA, also where 2FA is mandatory. With mandatory 2FA, users without a second factor are asked to set up OTP when they log in. After setting up OTP, users set up recovery codes. In <code>idp</code>, Google and GitHub replace only the password: the second factor is asked after them, in the same way. All login paths, and why: <a href="../../servers/keycloak/#how-users-log-in">How users log in</a>.</li>
+<li><strong>Forgot password, or first time</strong> (<code>lab</code>, <code>idp</code>): after the email link (valid 30 minutes), users with a second factor enter it, then choose a new password, and are logged in. The email link never replaces the second factor. In <code>lab</code>, users without a second factor set one up in the same go.</li>
+<li><strong>The <code>amr</code> claim</strong> in tokens contains <code>mfa</code> when a second factor was used, and <code>pwd</code> for a password (for our software: <code>OIDC_MFA_CLAIM=amr:mfa</code>, see the <a href="../../auth/">Authentication standard</a>).</li>
+<li><strong>Passwords:</strong> at least 10 characters, with an uppercase letter and a digit, not equal to the username or email.</li>
+<li><strong>Login action timeout</strong> 30 minutes for each page of the login (e.g. setting up 2FA, saving the recovery codes), brute force detection, and login and admin events kept for 90 days.</li>
+<li><strong>Sessions</strong> at Keycloak last 30 minutes in <code>idp</code> (applications keep their own sessions), and up to 8 hours in <code>master</code>. In <code>lab</code>, a session ends after 2 hours without activity, and lasts at most 10 hours: the lab login on the lab server checks it regularly, so this is how long members stay signed in to the lab's services (<a href="../../servers/lab/#signing-out-and-inactivity">Lab server</a>). In <code>lab</code>, <strong>Remember me</strong> on the login page keeps users logged in on that device for up to 30 days (7 days idle).</li>
+<li><strong>The email address is the username</strong>, and users log in with it. In <code>lab</code> and <code>idp</code>, users change their address in the account console (<strong>Personal info → Update email</strong>): the address, and with it the username, only changes after they confirm the new address with a link sent to it. The user stays the same (same <code>sub</code>), also for users who log in with Google or GitHub. In <code>master</code>, which has no email server, admins change an address in the admin console. Existing usernames without an email address (<code>temp-admin</code>, a recovery admin) keep working.</li>
+<li><strong>Registration</strong> (in <code>idp</code>) asks only for email and name: users choose their password after verifying their email address. This is Keycloak's default when email verification is on, so that nobody can set a password for an address they don't own.</li>
+</ul>
+<p>The files contain no users, signing keys or IDs: Keycloak creates those. Values from <code>.env</code> are placeholders (<code>${SMTP_FROM}</code>, <code>${IDP_GOOGLE_CLIENT_SECRET}</code>, ...); Keycloak doesn't start while one of them is missing (<code>Missing in .env: ...</code> in its log).</p>
+<h3 id="google-and-github-idp-realm">Google and GitHub (idp realm)</h3>
+<p>The <code>idp</code> realm offers login with Google and GitHub. The <code>lab</code> realm doesn't: its accounts are tied to institutional email addresses (institutional login may be added later). Register an OAuth app at both, with this redirect URI (callback URL):</p>
+<div class="highlight"><pre><span></span><code>https://auth.societal-analytics.nl/realms/idp/broker/&lt;google or github&gt;/endpoint
+</code></pre></div>
+<ul>
+<li><strong>Google:</strong> in the <a href="https://console.cloud.google.com/apis/credentials">Google Cloud console</a>, <strong>Create credentials → OAuth client ID → Web application</strong>, with the redirect URI above. The OAuth consent screen needs the scopes <code>openid</code>, <code>email</code> and <code>profile</code>, and must be published (<strong>In production</strong>), otherwise only test users can log in.</li>
+<li><strong>GitHub:</strong> under the organization's <strong>Settings → Developer settings → OAuth Apps → New OAuth App</strong>, with the redirect URI above as <strong>Authorization callback URL</strong>. Email addresses from GitHub are not trusted as verified: Keycloak verifies them itself.</li>
+</ul>
+<p>Put the client IDs and secrets in <code>.env</code> (<code>IDP_GOOGLE_CLIENT_ID</code>, <code>IDP_GOOGLE_CLIENT_SECRET</code>, <code>IDP_GITHUB_CLIENT_ID</code>, <code>IDP_GITHUB_CLIENT_SECRET</code>). The import stores the secrets in Keycloak's database. The admin console never shows them, and Keycloak only sends a secret to the provider it was entered for: an admin who changes where a provider points must enter the secret again.</p>
+<h3 id="email-the-relay">Email: the relay</h3>
+<p>All email of the <code>lab</code> and <code>idp</code> realms goes through the email relay (<code>mail-relay</code>, a Postfix container), which sends it on to the email provider. <code>master</code> has no email: admin access never depends on an inbox.</p>
+<ul>
+<li><strong>Only the relay has the provider's password.</strong> Keycloak sends to the relay without a password, and only Keycloak can reach the relay (on its own internal network). A realm admin who points the realm's email settings elsewhere gets no password.</li>
+<li><strong>Only one sender address:</strong> the relay refuses emails from any other address than <code>SMTP_FROM</code>.</li>
+<li><strong>A cap for the whole Keycloak instance:</strong> at most <code>EMAIL_RELAY_LIMIT</code> emails per <code>EMAIL_RELAY_LIMIT_PERIOD</code> (default 400 per hour). Above it, the relay refuses emails until the period ends, and users see an error that the email could not be sent. It protects the monthly quota of the email provider; see <a href="#email-limits">Email limits</a>. Apply a change with <code>sudo docker compose up -d mail-relay</code>.</li>
+<li><strong>Queueing:</strong> when the provider is unreachable, the relay keeps the emails and retries.</li>
+</ul>
+<p>Fill in <code>SMTP_HOST</code>, <code>SMTP_PORT</code>, <code>SMTP_USER</code>, <code>SMTP_PASSWORD</code>, <code>SMTP_FROM</code> and <code>SMTP_FROM_NAME</code> in <code>.env</code>. The relay requires TLS to the provider: use port 587 (STARTTLS). For Scaleway Transactional Email: host <code>smtp.tem.scaleway.com</code>, user your Scaleway project ID, and as password an API secret key with only the permission to send email.</p>
+<p>Check the relay's log (each email shows up with <code>status=sent</code>, or the reason it wasn't):</p>
+<div class="highlight"><pre><span></span><code>sudo<span class="w"> </span>docker<span class="w"> </span>compose<span class="w"> </span>logs<span class="w"> </span>mail-relay
+</code></pre></div>
+<h3 id="check">Check</h3>
+<p>Keycloak's log shows the import on the first start (<code>Realm 'lab' imported</code>, ...; on later starts: <code>already exists. Import skipped</code>):</p>
+<div class="highlight"><pre><span></span><code>sudo<span class="w"> </span>docker<span class="w"> </span>compose<span class="w"> </span>logs<span class="w"> </span>keycloak<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>-i<span class="w"> </span>import
+</code></pre></div>
+<p>Then check, in a private browser window:</p>
+<ul>
+<li>the <code>idp</code> login page (<code>https://auth.societal-analytics.nl/realms/idp/account</code>) shows Google and GitHub, and the <code>lab</code> login page doesn't;</li>
+<li>a user without a second factor is asked to set up OTP in <code>lab</code>, and not in <code>idp</code>;</li>
+<li><strong>Realm settings → Email → Test connection</strong> works in both realms, and the email shows up in <code>sudo docker compose logs mail-relay</code>.</li>
+</ul>
+<h3 id="setting-up-a-realm-again">Setting up a realm again</h3>
+<p>To set up <code>lab</code> or <code>idp</code> again from its file (e.g. after experiments, or to get the latest version of the file): make a backup (<a href="#9-backups">Backups</a>), delete the realm in the admin console (<strong>Manage realms</strong> → the realm → <strong>Action → Delete</strong>; this deletes its users too), and restart Keycloak:</p>
+<div class="highlight"><pre><span></span><code>sudo<span class="w"> </span>docker<span class="w"> </span>compose<span class="w"> </span>restart<span class="w"> </span>keycloak
+</code></pre></div>
+<p>After setting up <code>idp</code> again, create the clients of our deployments again (step 8), with their new secrets. <code>master</code> is only imported on a new installation: on an existing one, it keeps its settings.</p>
+<p><strong>Changes to the realm files after the realms were created</strong> only reach a new realm. (For <code>lab</code>, the latest change is its session times: <strong>Realm settings → Sessions → SSO Session Idle</strong> 2 hours, <strong>SSO Session Max</strong> 10 hours, which can be set by hand instead.) For <code>lab</code> and <code>idp</code> without users, set them up again as above. <code>master</code> keeps its settings. It still works with a password and a second factor; to bring it in line with the files by hand, in the admin console of <code>master</code>:</p>
+<ul>
+<li><strong>Recovery codes after OTP setup:</strong> <strong>Authentication → Required actions → Configure OTP</strong>, the gear icon, turn on <strong>Add Recovery Codes</strong>.</li>
+<li><strong>Login action timeout:</strong> <strong>Realm settings → Sessions → Login action timeout</strong>: 30 minutes.</li>
+<li><strong>Passkey login</strong> (optional; it takes more steps, see <code>realms/README.md</code>): admins can do without it, and <code>master</code> gets it on a new installation.</li>
+</ul>
+<details class="note">
+<summary>Upgrading an installation from before November 2026</summary>
+<p><strong>Updating from the version with the app registration site:</strong> after <code>git pull</code>, remove its container with <code>sudo docker compose up -d --remove-orphans</code>, delete <code>caddy/email-tiers.caddy</code>, and remove <code>APPS_HOSTNAME</code>, <code>APP_REGISTRATION_CLIENT_SECRET</code>, <code>APP_REGISTRATION_SESSION_SECRET</code>, <code>MAX_APPS_PER_USER</code> and <code>CONTACT_EMAIL</code> from <code>.env</code>, and the DNS record of the apps hostname. Set up <code>idp</code> again (above): this removes the site's client and service account, and adds the client policy of step 8.</p>
+<p><strong>Updating from the version with keycloak-config-cli:</strong> the <code>keycloak-config</code> client in <code>master</code> is no longer used, and it has admin rights: delete it (<strong>Clients</strong> → <code>keycloak-config</code> → <strong>Action → Delete</strong>), and remove <code>KEYCLOAK_CONFIG_SECRET</code> from <code>.env</code>. If <code>lab</code> and <code>idp</code> have no users yet, delete them and restart Keycloak to set them up from the files, as above. (From the version with a vault, also: put the SMTP password in <code>.env</code> as <code>SMTP_PASSWORD</code>, the idp client secrets as <code>IDP_GOOGLE_CLIENT_SECRET</code> and <code>IDP_GITHUB_CLIENT_SECRET</code>, set <code>SMTP_PORT=587</code>, and delete the <code>vault/</code> folder.)</p>
+</details>
+<h3 id="changing-the-realm-files">Changing the realm files</h3>
+<p>The files are the starting point and the documentation; the realms themselves are changed in the admin console. To keep a change in the files too:</p>
+<ul>
+<li>
+<p><strong>Small changes:</strong> edit the file directly, and run the checks:</p>
+<div class="highlight"><pre><span></span><code>python3<span class="w"> </span>check-realms.py
+</code></pre></div>
+<p>It catches mistakes in flows that Keycloak accepts silently, e.g. a "Condition - sub-flow executed" that refers to a flow that doesn't exist (which happens when a flow is copied in the admin console: the copy keeps the old name), and placeholders that <code>compose.yml</code> doesn't pass to Keycloak.
+* <strong>New values from <code>.env</code>:</strong> write <code>${NAME}</code> (upper case), and add <code>NAME</code> to the environment of the <code>keycloak</code> service in <code>compose.yml</code>. Lower-case placeholders, e.g. <code>${role_admin}</code>, are Keycloak's own texts.
+* <strong>Larger changes:</strong> make them in the admin console of a test installation, and export the realm (<strong>Realm settings → Action → Partial export</strong>, with clients, groups and roles). Then put the placeholders back for the secrets and hostnames, and compare with the old file before replacing it.</p>
+</li>
+</ul>
+<h2 id="8-clients-for-our-deployments">8. Clients for our deployments</h2>
+<p>Each AmCAT or AnnoTinder server of the lab (and anything else that logs in with <code>idp</code>) is a client in the <code>idp</code> realm. AmCAT and AnnoTinder on the same host share one client, so users consent once per host. Create it in the admin console of <code>idp</code>:</p>
+<ol>
+<li><strong>Clients → Create client.</strong> <strong>Client ID:</strong> the host, e.g. <code>amcat-example-org</code>. <strong>Name:</strong> shown to users on the consent screen, e.g. "AmCAT (example.org)". <strong>Next.</strong></li>
+<li><strong>Client authentication:</strong> on. <strong>Authentication flow:</strong> only <strong>Standard flow</strong>. <strong>Next.</strong></li>
+<li><strong>Valid redirect URIs:</strong> the exact callback URL of the server (see its documentation), e.g. <code>https://amcat.example.org/api/auth/callback</code>: <code>https://</code>, no wildcards (<code>*</code>). <strong>Valid post logout redirect URIs:</strong> <code>+</code> (the same as the redirect URIs). Don't leave this field empty: Keycloak refuses an empty value. <strong>Save.</strong></li>
+<li><strong>Credentials</strong> tab: copy the <strong>Client secret</strong>.</li>
+<li>Configure the server: <code>OIDC_HOST=https://auth.societal-analytics.nl/realms/idp</code>, <code>OIDC_CLIENT_ID</code>, <code>OIDC_CLIENT_SECRET</code>, and <code>OIDC_MFA_CLAIM=amr:mfa</code> (see the <a href="../../auth/#configuration">Authentication standard</a>). Our software requests the scopes <code>openid email</code>.</li>
+</ol>
+<p>A new client gets the scopes <code>email</code> (address and whether it is verified), <code>amr</code> (2FA), and the basics (<code>sub</code>, <code>auth_time</code>), and <code>profile</code> (the name) only when it asks for it; no roles. Users see that on the consent screen: "This app will be able to: see your email address; see whether you signed in with two-factor authentication", and "see your name" for a service that requests <code>profile</code>. Other services (not ours) work the same way: they often request <code>openid profile email</code>.</p>
+<p>The client policy <code>deployment-clients</code> (in <code>realms/idp-realm.json</code>) applies to every confidential client that an admin creates or changes in <code>idp</code>. It prevents mistakes, not misuse (an admin can change the policy):</p>
+<ul>
+<li><strong>Consent</strong> is turned on automatically: users see the client's name before it gets their name and email address.</li>
+<li><strong>PKCE</strong> (S256) is turned on automatically, and required at every login: a login request without PKCE is refused (our software always uses it).</li>
+<li><strong>Redirect URIs</strong> with <code>http://</code>, wildcards or other unsafe forms are refused, with "Invalid Redirect Uri". Local development doesn't need a client: our software has a <a href="../../auth/#development-mode">development mode</a>.</li>
+</ul>
+<p>Tested on a test installation: a client created step by step as above gets consent and PKCE; a wildcard redirect URI is refused; a login without PKCE is refused, with PKCE it shows the consent screen and gives tokens. Keycloak's own clients (e.g. the account console, which is public) are not affected.</p>
+<h2 id="9-backups">9. Backups</h2>
+<p>The VM is backed up like every server (<a href="../backups/">Backups</a>): every night, <code>/opt</code> (with <code>.env</code>, <code>caddy/admin-access.caddy</code> and the database dumps) is backed up, encrypted. Set that up after this guide.</p>
+<p>The database itself is dumped by the <code>db-backup</code> service in <code>compose.yml</code>: at its start, and every day at 02:00 (UTC), into <code>/opt/keycloak/backups/keycloak-&lt;date&gt;.dump</code>, kept for 7 days. It starts with the rest. Check it after the first start:</p>
+<div class="highlight"><pre><span></span><code>sudo<span class="w"> </span>docker<span class="w"> </span>compose<span class="w"> </span>logs<span class="w"> </span>db-backup
+</code></pre></div>
+<ul>
+<li><strong>The dumps are sensitive:</strong> they contain user data, password hashes, client secrets and the realm signing keys. They are only readable by root, and the backups are encrypted.</li>
+<li><strong>Keycloak has no master key:</strong> a dump, plus <code>.env</code> and <code>caddy/admin-access.caddy</code>, is all you need to restore. The internal certificate is not needed: on a new VM, tls-init creates a new one.</li>
+<li><strong>Keycloak's register of running instances</strong> (the <code>jgroups_ping</code> table) is left out of the dump. Restoring old entries would make Keycloak believe another instance is running.</li>
+</ul>
+<p><strong>Restore</strong> (tested; this replaces the current database). Choose a dump in <code>backups/</code>, or an older one from the nightly backup (<a href="../backups/#restoring">Restoring</a>, <code>--include /opt/keycloak/backups</code>). Then:</p>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/opt/keycloak
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>sudo<span class="w"> </span>docker<span class="w"> </span>compose<span class="w"> </span>stop<span class="w"> </span>keycloak<span class="w"> </span>db-backup
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>sudo<span class="w"> </span>docker<span class="w"> </span>compose<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>-T<span class="w"> </span>postgres<span class="w"> </span>dropdb<span class="w"> </span>-U<span class="w"> </span>keycloak<span class="w"> </span>keycloak
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>sudo<span class="w"> </span>docker<span class="w"> </span>compose<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>-T<span class="w"> </span>postgres<span class="w"> </span>createdb<span class="w"> </span>-U<span class="w"> </span>keycloak<span class="w"> </span>keycloak
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>sudo<span class="w"> </span>cat<span class="w"> </span>backups/&lt;dump&gt;<span class="w"> </span><span class="p">|</span><span class="w"> </span>sudo<span class="w"> </span>docker<span class="w"> </span>compose<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>-T<span class="w"> </span>postgres<span class="w"> </span>pg_restore<span class="w"> </span>-U<span class="w"> </span>keycloak<span class="w"> </span>-d<span class="w"> </span>keycloak<span class="w"> </span>--no-owner
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>sudo<span class="w"> </span>docker<span class="w"> </span>compose<span class="w"> </span>up<span class="w"> </span>-d
+</code></pre></div>
+<p>Do a restore test after setting up the backups, e.g. on a test machine.</p>
+<h2 id="10-maintenance">10. Maintenance</h2>
+<p><strong>Logs:</strong></p>
+<div class="highlight"><pre><span></span><code>sudo<span class="w"> </span>docker<span class="w"> </span>compose<span class="w"> </span>logs<span class="w"> </span>-f<span class="w"> </span>keycloak
+</code></pre></div>
+<p>A warning about deprecated features (<code>identity-brokering-api:v1</code>, <code>twitter-broker:v1</code>) being enabled by default is expected.</p>
+<p><strong>The internal certificate</strong> is valid for 10 years. Check its expiry date (shown in the output of tls-init):</p>
+<div class="highlight"><pre><span></span><code>sudo<span class="w"> </span>docker<span class="w"> </span>compose<span class="w"> </span>logs<span class="w"> </span>tls-init
+</code></pre></div>
+<p>To replace it (e.g. before it expires), create a new one, and restart Keycloak and Caddy so that both use it:</p>
+<div class="highlight"><pre><span></span><code>sudo<span class="w"> </span>docker<span class="w"> </span>compose<span class="w"> </span>run<span class="w"> </span>--rm<span class="w"> </span>tls-init<span class="w"> </span>renew
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>sudo<span class="w"> </span>docker<span class="w"> </span>compose<span class="w"> </span>restart<span class="w"> </span>keycloak<span class="w"> </span>caddy
+</code></pre></div>
+<p><strong>Upgrading Keycloak.</strong> Keycloak has quarterly feature releases and frequent patch releases; follow the <a href="https://www.keycloak.org/blog">Keycloak blog</a> for releases and security announcements.</p>
+<ol>
+<li>Read the release notes and the <a href="https://www.keycloak.org/docs/latest/upgrading/">upgrading guide</a> for the new version.</li>
+<li>Make a backup: <code>sudo systemctl start backup.service</code> (then check it with <code>journalctl -u backup.service -n 20</code>).</li>
+<li>Change the version in <code>compose.yml</code> (<code>KEYCLOAK_IMAGE</code>, the only place where it is set). Preferably make the change in the repository, and get it onto the VM with <code>sudo -u keycloak git pull</code>.</li>
+<li>Rebuild and restart. Keycloak migrates the database on start.</li>
+</ol>
+<div class="highlight"><pre><span></span><code>sudo<span class="w"> </span>docker<span class="w"> </span>compose<span class="w"> </span>build<span class="w"> </span>--pull<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>sudo<span class="w"> </span>docker<span class="w"> </span>compose<span class="w"> </span>up<span class="w"> </span>-d
+</code></pre></div>
+<p><strong>PostgreSQL:</strong> change the image tag in <code>compose.yml</code>, and run <code>sudo docker compose up -d</code>. Minor PostgreSQL versions (e.g. 18.7 to 18.8) need nothing else. A new major version (e.g. 18 to 19) needs a dump and restore; check that Keycloak supports it first.</p>
+<p><strong>Caddy</strong> is built with the rate limit module: change <code>CADDY_VERSION</code> in <code>Caddy.Dockerfile</code> (and, if needed, the pinned commit of the module), then rebuild with <code>sudo docker compose up -d --build caddy</code>.</p>
+<p><strong>The realm files</strong> stay importable after a Keycloak upgrade: Keycloak converts older realm files when it imports them. After a major upgrade, set up a test realm from the files once to check.</p>
+<h3 id="email-limits">Email limits</h3>
+<p>Keycloak has no limit on the emails it sends. Without limits, anyone could use the registration and "forgot password" forms to send many emails: to bomb someone's inbox, or to use up the monthly quota of the email provider (after which nobody gets a verification or reset email until the next month). There are two limits:</p>
+<table>
+<thead>
+<tr>
+<th>Limit</th>
+<th>Where</th>
+<th>Default</th>
+<th>Counts</th>
+<th>Above the limit</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Per IP address</strong></td>
+<td>Caddy; <code>.env</code>: <code>EMAIL_LIMIT_PER_IP</code> per <code>EMAIL_LIMIT_PER_IP_WINDOW</code></td>
+<td>200 per hour</td>
+<td>Requests that can send an email, plus registrations and first logins with Google or GitHub</td>
+<td>That person sees "Too many attempts from your network"</td>
+</tr>
+<tr>
+<td><strong>All email</strong></td>
+<td>The relay; <code>.env</code>: <code>EMAIL_RELAY_LIMIT</code> per <code>EMAIL_RELAY_LIMIT_PERIOD</code></td>
+<td>400 per hour</td>
+<td>Emails actually sent</td>
+<td>Keycloak can't send email; users see that the email could not be sent</td>
+</tr>
+</tbody>
+</table>
+<p>The requests that can send an email are the first visit to the "verify your email" page (after registering, or when a user with an unverified email address logs in) and submitting "forgot password". Logins (with password, OTP, passkey, Google or GitHub), token requests and refresh grants, and choosing the new password after the email link are never limited. (Users with a second factor enter it on the reset page after the link, which counts once more: a reset counts 1, or 2 with a second factor.)</p>
+<p><strong>How they count:</strong></p>
+<ul>
+<li><strong>Caddy (per IP): a sliding window.</strong> A request is allowed if fewer than the maximum were allowed in the last period, so spots free up one by one, each exactly one period after the request that took it. Refused requests are not counted, so trying again doesn't make the wait longer. The error page sends the wait time as <code>Retry-After</code>.</li>
+<li><strong>The relay (all email): a fixed period.</strong> The count starts at the first email and is reset when the period ends. Above the cap, all email is refused until then (from seconds to the whole period), after which the full number is available again. Refused emails are not queued: users have to try again.</li>
+<li><strong>Why the limit on all email is only in the relay:</strong> Caddy counts requests, and anyone can send requests that make Keycloak send nothing (e.g. reloading a page, or invalid requests). A limit on all requests together in Caddy could be used up by one person, and would block sign-ups for everyone. The relay only counts emails that were actually sent, which one person can't do in large numbers, because of the limit per IP address. So the cap on all email is only reached by an attack from many addresses, or by email that doesn't pass Caddy (e.g. emails that admins trigger).</li>
+</ul>
+<p><strong>Choosing the numbers:</strong></p>
+<ul>
+<li><strong>All email</strong> protects the provider's monthly quota (check it in the provider's console; for Scaleway under the project's quotas). Keep the cap well below it: an attack that keeps going sends at most the cap per period, e.g. 400 × 24 = 9,600 per day. Set up a usage alert at the provider (e.g. at half the monthly quota) if it offers one: an attack that stays below the cap is only visible in the usage, and in the logs below.</li>
+<li><strong>Per IP address</strong> is generous, because many people can share one address (e.g. a class on a campus network): 200 per hour is about 100 sign-ups per hour from one address. It must stay well below the cap on all email, so that one address can't use that up.</li>
+</ul>
+<p><strong>Is a limit being hit?</strong> Caddy logs every refused request, with the limit (<code>zone</code>) and the IP address (<code>key</code>), and the relay logs every refused email:</p>
+<div class="highlight"><pre><span></span><code>sudo<span class="w"> </span>docker<span class="w"> </span>compose<span class="w"> </span>logs<span class="w"> </span>caddy<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span><span class="s1">'rate limit exceeded'</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>sudo<span class="w"> </span>docker<span class="w"> </span>compose<span class="w"> </span>logs<span class="w"> </span>mail-relay<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>-E<span class="w"> </span><span class="s1">'rate limit exceeded|reject'</span>
+</code></pre></div>
+<p>The counts are kept in memory: a restart of Caddy or the relay resets them (a Caddy reload doesn't).</p>
+<h3 id="adding-lab-members">Adding lab members</h3>
+<p><code>lab</code> has no registration form: only people we add can use it. We add them without a password and without sending anything. When they want to use a lab service, they click <strong>First time, or forgot your password?</strong> on the login page. Keycloak then emails them a link (only if they are a member; the page says the same to everyone). After the link, in one go, they choose a password, fill in their name, set up an authenticator app and save their recovery codes, and they are logged in.</p>
+<ol>
+<li>
+<p>Write the members to a file, e.g. <code>members.json</code>. An import doesn't fill anything in by itself, so each user needs a username (the email address) and the realm's default roles (<code>default-roles-lab</code>). Without these roles, users can log in, but the account page shows "Sorry, an unexpected error has occurred" (its requests are refused with 401):</p>
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">"users"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span><span class="nt">"username"</span><span class="p">:</span><span class="w"> </span><span class="s2">"j.doe@example.org"</span><span class="p">,</span><span class="w"> </span><span class="nt">"email"</span><span class="p">:</span><span class="w"> </span><span class="s2">"j.doe@example.org"</span><span class="p">,</span><span class="w"> </span><span class="nt">"enabled"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span><span class="w"> </span><span class="nt">"emailVerified"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span><span class="w"> </span><span class="nt">"realmRoles"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">"default-roles-lab"</span><span class="p">]},</span>
+<span class="w">    </span><span class="p">{</span><span class="nt">"username"</span><span class="p">:</span><span class="w"> </span><span class="s2">"a.smith@example.org"</span><span class="p">,</span><span class="w"> </span><span class="nt">"email"</span><span class="p">:</span><span class="w"> </span><span class="s2">"a.smith@example.org"</span><span class="p">,</span><span class="w"> </span><span class="nt">"enabled"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span><span class="w"> </span><span class="nt">"emailVerified"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span><span class="w"> </span><span class="nt">"realmRoles"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">"default-roles-lab"</span><span class="p">]}</span>
+<span class="w">  </span><span class="p">]</span>
+<span class="p">}</span>
+</code></pre></div>
+</li>
+<li>
+<p>In the admin console of <code>lab</code>: <strong>Realm settings → Action</strong> (top right) <strong>→ Partial import</strong>, choose the file, tick <strong>Users</strong>, choose <strong>Skip</strong> for existing users, and click <strong>Import</strong>. If it fails, the reason is in the log: <code>sudo docker compose logs --since 10m keycloak | grep -E "WARN|ERROR"</code>.</p>
+</li>
+<li>Tell the members, e.g.: <em>"Go to <a lab service, or https://auth.societal-analytics.nl/realms/lab/account>, click 'First time, or forgot your password?', and enter your VU email address. You'll get an email with a link to set your lab password (not your VU password). You'll also need an authenticator app on your phone, e.g. Microsoft Authenticator."</em></li>
+</ol>
+<p>One member at a time: <strong>Users → Add user</strong>, with the email address (and <strong>Email verified</strong> on); users added this way get the default roles automatically.</p>
+<p>Members imported without <code>default-roles-lab</code>: import the file again with the roles and <strong>Overwrite</strong> (this recreates them, so members who already set a password start again with "First time?"), or give one user the role in <strong>Users → the user → Role mapping → Assign role</strong> (filter by realm roles).</p>
+<p>The texts on the login pages and the email subject ("Sign in with your lab account", "First time, or forgot your password?", "Set your lab password", ...) are in the theme <code>sal-lab</code> (<a href="#themes">Themes</a>).</p>
+<h3 id="themes">Themes</h3>
+<p>The login pages, the account console and the emails of all realms use our themes in <code>themes/</code> (mounted into Keycloak): the lab logo, the blue of the logo, the lab name with a subtitle per realm ("Administration", "Lab account", "Identity provider"), a link to the department page at the bottom, and the texts for lab members. <code>themes/README.md</code> lists which realm uses which theme.</p>
+<ul>
+<li><strong>Changing a text:</strong> edit <code>messages/messages_en.properties</code> of the theme (the keys are Keycloak's own), and restart Keycloak (<code>sudo docker compose restart keycloak</code>): it caches themes. For a quick change without a restart, a realm override (<strong>Realm settings → Localization → Realm overrides</strong>) takes precedence over the theme.</li>
+<li><strong>After a Keycloak upgrade:</strong> look at the login pages of each realm. The themes change no page templates (only texts, CSS, images, and the footer that Keycloak provides for this), so they normally keep working; a renamed text key falls back to Keycloak's own text.</li>
+<li><strong>On an existing installation:</strong> realms created before the themes keep Keycloak's look. Set them in <strong>Realm settings → Themes</strong>: <code>master</code>: login theme <code>sal-admin</code>, account theme <code>sal</code>; <code>lab</code>: <code>sal-lab</code> (login and email), account <code>sal</code>; <code>idp</code>: <code>sal-idp</code>, account <code>sal</code>. Also set <strong>Realm settings → General → Display name</strong> (it is shown in the browser tab): "Societal Analytics Lab administration", "Societal Analytics Lab", "Societal Analytics Lab identity provider". On <code>master</code>, also empty <strong>HTML Display name</strong> (it holds Keycloak's own logo text).</li>
+</ul>
+<h3 id="a-user-lost-their-second-factor">A user lost their second factor</h3>
+<p>First check who the user is, not by email alone (the inbox may be the problem): e.g. in person, or by a video call. Then, in the admin console of the realm: <strong>Users</strong> → the user → <strong>Credentials</strong>, and delete the lost credential (e.g. <strong>otp</strong>). In <code>lab</code>, the user sets up a new authenticator app (and new recovery codes) at the next login; in <code>idp</code>, they can set up a new one in the account console. For an admin in <code>master</code>, another admin does the same, or see below.</p>
+<p>Users who still have a recovery code don't need an admin: they log in with it, and set up a new second factor themselves (see <a href="../../servers/keycloak/#how-users-log-in">How users log in</a>).</p>
+<h3 id="recovering-admin-access">Recovering admin access</h3>
+<p>Recovering admin access (e.g. a lost authenticator app, or no admin left), following the <a href="https://www.keycloak.org/server/bootstrap-admin-recovery">recovery guide</a>. This requires access to the VM, which is the break-glass route. Stop Keycloak and create a temporary admin (you are prompted for a password):</p>
+<div class="highlight"><pre><span></span><code>sudo<span class="w"> </span>docker<span class="w"> </span>compose<span class="w"> </span>stop<span class="w"> </span>keycloak
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>sudo<span class="w"> </span>docker<span class="w"> </span>compose<span class="w"> </span>run<span class="w"> </span>--rm<span class="w"> </span>keycloak<span class="w"> </span>bootstrap-admin<span class="w"> </span>user<span class="w"> </span>--optimized<span class="w"> </span>--username<span class="w"> </span>recovery-admin
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>sudo<span class="w"> </span>docker<span class="w"> </span>compose<span class="w"> </span>start<span class="w"> </span>keycloak
+</code></pre></div>
+<p>Log in to the admin console as <code>recovery-admin</code>, fix the problem (e.g. delete the lost OTP credential on the admin's <strong>Credentials</strong> tab), and delete <code>recovery-admin</code> again.</p>
+<h3 id="changing-the-hostnames">Changing the hostnames</h3>
+<p>Keycloak reads its hostnames from <code>.env</code> (<code>KC_HOSTNAME</code>, <code>KC_HOSTNAME_ADMIN</code>), and Caddy too, so changing them is: point the DNS records to the VM, change <code>.env</code>, and <code>sudo docker compose up -d</code>. Beyond the VM:</p>
+<ul>
+<li>
+<p><strong>The <code>master</code> realm stores its admin hostname</strong> (its frontend URL) since it was set up. After changing <code>KC_HOSTNAME_ADMIN</code>, the admin console keeps sending you to the old one. Change it in the database (fill in the new admin hostname; it should print <code>UPDATE 1</code>), and restart Keycloak:</p>
+<div class="highlight"><pre><span></span><code>sudo<span class="w"> </span>docker<span class="w"> </span>compose<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>postgres<span class="w"> </span>psql<span class="w"> </span>-U<span class="w"> </span>keycloak<span class="w"> </span>-d<span class="w"> </span>keycloak<span class="w"> </span>-c<span class="w"> </span><span class="s2">"UPDATE realm_attribute SET value = 'https://&lt;admin hostname&gt;' WHERE name = 'frontendUrl' AND realm_id = (SELECT id FROM realm WHERE name = 'master');"</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>sudo<span class="w"> </span>docker<span class="w"> </span>compose<span class="w"> </span>restart<span class="w"> </span>keycloak
+</code></pre></div>
+</li>
+<li>
+<p><strong>Every app that uses Keycloak</strong> has a new issuer URL (<code>https://&lt;hostname&gt;/realms/&lt;realm&gt;</code>): update it everywhere, e.g. the lab login on the lab server. Our own software recognizes users by issuer and user ID, so a new issuer makes existing users look new: check before moving a realm that our servers use (<a href="../../auth-migration/">Migration guide</a>).</p>
+</li>
+<li><strong>Google and GitHub</strong> (<code>idp</code>): update the redirect URI in both developer consoles (<code>https://&lt;hostname&gt;/realms/idp/broker/&lt;google or github&gt;/endpoint</code>).</li>
+<li><strong>Passkeys</strong> only work on the domain they were created on: users sign in with their password and second factor, and register their passkey again.</li>
+<li><strong>Everyone signs in again,</strong> and links in emails sent before the change no longer work.</li>
+</ul>
+<h3 id="moving-from-the-old-layout-one-time">Moving from the old layout (one time)</h3>
+<p>Until November 2026, the files were in a clone of the documentation repository, in <code>/opt/keycloak/societal-analytics-lab-infra/deploy/keycloak</code>, with a database backup by cron (<code>backup.sh</code>). To move to <code>/opt/keycloak</code> (the database and the realms stay as they are: the volumes belong to the compose project <code>keycloak</code>, whatever its folder):</p>
+<ol>
+<li>
+<p>Make a database backup with the old script, and stop everything (without <code>-v</code>: the volumes stay):</p>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/opt/keycloak/societal-analytics-lab-infra/deploy/keycloak<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>sudo<span class="w"> </span>./backup.sh
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>sudo<span class="w"> </span>docker<span class="w"> </span>compose<span class="w"> </span>down
+</code></pre></div>
+</li>
+<li>
+<p>Move the old folder aside, and create a new, empty one:</p>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>sudo<span class="w"> </span>mv<span class="w"> </span>/opt/keycloak<span class="w"> </span>/opt/keycloak-old
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>sudo<span class="w"> </span>mkdir<span class="w"> </span>/opt/keycloak<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>sudo<span class="w"> </span>chown<span class="w"> </span>keycloak:keycloak<span class="w"> </span>/opt/keycloak<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>sudo<span class="w"> </span>chmod<span class="w"> </span><span class="m">750</span><span class="w"> </span>/opt/keycloak
+</code></pre></div>
+</li>
+<li>
+<p>Clone the new repository, and copy the local files over:</p>
+<div class="highlight"><pre><span></span><code>sudo<span class="w"> </span>-u<span class="w"> </span>keycloak<span class="w"> </span>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/vu-societal-analytics/deploy-keycloak.git<span class="w"> </span>/opt/keycloak
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>sudo<span class="w"> </span>cp<span class="w"> </span>-p<span class="w"> </span>/opt/keycloak-old/societal-analytics-lab-infra/deploy/keycloak/.env<span class="w"> </span>/opt/keycloak/.env
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>sudo<span class="w"> </span>cp<span class="w"> </span>-p<span class="w"> </span>/opt/keycloak-old/societal-analytics-lab-infra/deploy/keycloak/caddy/admin-access.caddy<span class="w"> </span>/opt/keycloak/caddy/admin-access.caddy
+</code></pre></div>
+</li>
+<li>
+<p>Start it, and check that Keycloak works and that the first dump is there:</p>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/opt/keycloak<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>sudo<span class="w"> </span>docker<span class="w"> </span>compose<span class="w"> </span>up<span class="w"> </span>-d<span class="w"> </span>--build
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>sudo<span class="w"> </span>docker<span class="w"> </span>compose<span class="w"> </span>logs<span class="w"> </span>db-backup
+</code></pre></div>
+</li>
+<li>
+<p>Remove the old cron job, and set up the nightly backup (<a href="../backups/">Backups</a>):</p>
+<div class="highlight"><pre><span></span><code>sudo<span class="w"> </span>rm<span class="w"> </span>-f<span class="w"> </span>/etc/cron.d/keycloak-backup
+</code></pre></div>
+</li>
+<li>
+<p>After a week or two, remove <code>/opt/keycloak-old</code> and the old dumps in <code>/var/backups/keycloak</code>.</p>
+</li>
+</ol>
+<h2 id="troubleshooting">Troubleshooting</h2>
+<table>
+<thead>
+<tr>
+<th>Problem</th>
+<th>Likely cause</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>cd /opt/keycloak/...</code> gives <code>Permission denied</code></td>
+<td>Your account is not in the <code>keycloak</code> group yet, or you haven't logged in again since adding it. Check with <code>id</code>.</td>
+</tr>
+<tr>
+<td><code>permission denied while trying to connect to the Docker daemon socket</code></td>
+<td>The command was run without <code>sudo</code> (see <a href="#users-and-permissions">Users and permissions</a>).</td>
+</tr>
+<tr>
+<td><code>sudo: ... is not in the sudoers file</code> while logged in as <code>keycloak</code></td>
+<td>Docker commands are run from your own admin account, not as <code>keycloak</code>.</td>
+</tr>
+<tr>
+<td>No certificate, or browser warnings</td>
+<td>The DNS record doesn't point to the VM yet, or port 80 is blocked. Check <code>sudo docker compose logs caddy</code>.</td>
+</tr>
+<tr>
+<td>Admin console stays on a loading spinner</td>
+<td>The frontend URL of <code>master</code> is wrong: check <code>KC_HOSTNAME_ADMIN</code> in <code>.env</code>, or, on an installation from before the realm files, step 3.</td>
+</tr>
+<tr>
+<td>Admin hostname returns 403 while on the VPN</td>
+<td>Your IP address is not in the ranges in <code>caddy/admin-access.caddy</code>. Check <code>curl -4 https://ifconfig.me</code> on your device. After changing the file, run <code>sudo docker compose exec caddy caddy reload --config /etc/caddy/Caddyfile</code>.</td>
+</tr>
+<tr>
+<td>A reload of Caddy fails, or Caddy doesn't start after a restart</td>
+<td>A mistake in <code>caddy/admin-access.caddy</code>: the error message names the file and line. Fix it and reload again (<code>sudo docker compose up -d caddy</code> if Caddy is not running).</td>
+</tr>
+<tr>
+<td>The admin console of a realm with an exception stays on "Loading", or shows a permission error</td>
+<td>The exception is missing <code>/resources/*</code> or <code>/admin/serverinfo</code>, or the realm name in the paths is misspelled (see step 4).</td>
+</tr>
+<tr>
+<td>Requests through Caddy return 502 Bad Gateway</td>
+<td>Keycloak is still starting, or Caddy doesn't trust Keycloak's internal certificate (e.g. after <code>tls-init renew</code> without restarting Caddy). Run <code>sudo docker compose restart caddy</code>, and check <code>sudo docker compose logs caddy</code>.</td>
+</tr>
+<tr>
+<td>Requests through Caddy return 403 Forbidden</td>
+<td><code>KC_PROXY_HEADERS</code> is not set to <code>xforwarded</code>, so Keycloak's origin checks fail (see the reverse proxy guide).</td>
+</tr>
+<tr>
+<td>Keycloak doesn't start: <code>Missing in .env: ...</code></td>
+<td>A value used in the realm files is not set in <code>.env</code> (see <a href="#7-realms">step 7</a>).</td>
+</tr>
+<tr>
+<td>Keycloak doesn't start on the first start: <code>invalidPasswordMinUpperCaseCharsMessage</code> (or a similar password message)</td>
+<td><code>KC_BOOTSTRAP_ADMIN_PASSWORD</code> doesn't meet the password policy of <code>master</code> (at least 10 characters, an uppercase letter and a digit). Generate a new one (step 2), and remove the database volume of this failed first start: <code>sudo docker compose down -v</code> (only on a new installation: this deletes all data).</td>
+</tr>
+<tr>
+<td>Locked out of the admin console after turning on <strong>Verify email</strong> in <code>master</code></td>
+<td><code>master</code> has no email server, so the verification email never arrives. Don't turn it on (the realm configuration keeps it off). To recover, follow <a href="#recovering-admin-access">Recovering admin access</a>, but create a service account (<code>bootstrap-admin service --optimized --client-id recovery</code>) instead of a user, because a new user would also have to verify their email. Log in to the admin tool with <code>sudo ./admin-cli.sh login-client recovery</code> (it asks for the secret), turn verification off with <code>sudo ./admin-cli.sh update realms/master -s verifyEmail=false</code>, and delete the <code>recovery</code> client.</td>
+</tr>
+<tr>
+<td>After renaming a realm, the account console or admin console of that realm doesn't load</td>
+<td>Keycloak doesn't update the URLs of the built-in clients (<code>account</code>, <code>account-console</code>, <code>security-admin-console</code>): fix their root and redirect URLs by hand, or create the realm again with the new name.</td>
+</tr>
+<tr>
+<td><code>admin-cli.sh login &lt;username&gt;</code> fails with <code>Account is not fully set up</code></td>
+<td>The account has no email address, while the realm uses email addresses as usernames and has the required action <strong>Update email</strong> turned on. The realm configuration keeps <strong>Update email</strong> off in <code>master</code> for this reason; check <strong>Authentication → Required actions</strong> in <code>master</code>.</td>
+</tr>
+<tr>
+<td>A login flow asks for OTP twice, or not at all</td>
+<td>A "Condition - sub-flow executed" refers to a flow name that doesn't exist (e.g. after copying a flow). Run <code>python3 check-realms.py</code>.</td>
+</tr>
+<tr>
+<td>Users see that an email could not be sent</td>
+<td>The relay refused or couldn't deliver it. <code>sudo docker compose logs mail-relay</code> shows why, e.g. the cap was reached (<code>Message delivery request rate limit exceeded</code>), a wrong sender address in a realm (<code>Sender address rejected</code>), or a login or TLS problem with the provider.</td>
+</tr>
+<tr>
+<td>Users see "Please try again later"</td>
+<td>The email limit per IP address was reached (see <a href="#email-limits">Email limits</a>).</td>
+</tr>
+<tr>
+<td>An app's login fails with <code>invalid_scope</code> ("Invalid scopes")</td>
+<td>The app requests a scope that <code>idp</code> doesn't offer (only <code>openid</code>, <code>email</code> and <code>profile</code> are offered), e.g. <code>roles</code> or <code>phone</code>. Remove it from the app's settings, or add the scope to that client (<strong>Clients</strong> → the client → <strong>Client scopes</strong>) if it really needs it.</td>
+</tr>
+<tr>
+<td>Creating a client fails with "Invalid Redirect Uri"</td>
+<td>A redirect URI with <code>http://</code> or a wildcard, or an empty <strong>Valid post logout redirect URIs</strong> field: use <code>+</code> there (see step 8).</td>
+</tr>
+<tr>
+<td><code>WARN ... configured to build using Bake, but buildx isn't installed</code></td>
+<td>Harmless: Compose falls back to the classic build. To remove the warning, install the buildx plugin (<code>sudo apt install docker-buildx-plugin</code>, with Docker from Docker's own repository).</td>
+</tr>
+</tbody>
+</table>
+<h2 id="why-it-is-set-up-this-way">Why it is set up this way</h2>
+<p>The choices behind this setup, and the alternatives that were dropped: <a href="../../decisions/">Decisions</a>.</p>
+<h2 id="next-steps">Next steps</h2>
+<ul>
+<li>Work through the <a href="../../auth-providers/#keycloak-test-checklist">test checklist</a>, including real logins with Google and GitHub.</li>
+<li>"Sign in with your lab account" in <code>idp</code>: <code>lab</code> as a login option of <code>idp</code>, so lab members use one account (see <a href="../../decisions/#later">Decisions</a>).</li>
+<li>Clients for the lab's own servers (step 8), once they move to <code>idp</code>.</li>
+<li>Institutional login for the <code>lab</code> realm (e.g. via the university).</li>
+<li>Backups off the VM (<a href="../backups/#changing-the-location">Backups</a>).</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.a5f9d56c.min.js"></script>
+      
+    
+  </body>
+</html>

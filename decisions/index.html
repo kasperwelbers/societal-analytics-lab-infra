@@ -1,0 +1,2121 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <link rel="prev" href="../discussion/">
+      
+      
+        <link rel="next" href="../backup-strategies/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.1">
+    
+    
+      
+        <title>Decisions - Lab Infrastructure Registry</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.57a0d79d.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#decisions" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="Lab Infrastructure Registry" class="md-header__button md-logo" aria-label="Lab Infrastructure Registry" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Lab Infrastructure Registry
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Decisions
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="Lab Infrastructure Registry" class="md-nav__button md-logo" aria-label="Lab Infrastructure Registry" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    Lab Infrastructure Registry
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Servers
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Servers
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../servers/lab/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Lab server
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../servers/database/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Database server
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../servers/keycloak/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Keycloak VM
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../servers/service-vms/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Service VMs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../servers/services/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hosted services
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation guides
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Installation guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../install/vm/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    University VMs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../install/apps/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apps on our servers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../install/compose/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Docker Compose standards
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../install/backups/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Backups
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../install/lab-server/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Lab server
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../install/keycloak/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Keycloak VM
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../install/docker/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ⚠️ Docker warnings
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Software development
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Software development
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../software/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Our software
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../auth/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Authentication standard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../auth-install/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Authentication provider
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../auth-migration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Migration guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../amcat/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AmCAT
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../annotinder/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AnnoTinder
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Policies
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Policies
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../policies/privacy/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Privacy statement
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../policies/aup/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Acceptable use policy
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Discussion
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Discussion
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../discussion/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    About
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Decisions
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Decisions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#authentication-in-our-software" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Authentication in our software
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Authentication in our software">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#oidc-for-all-our-software" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        OIDC for all our software
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#requirements-verified-email-2fa-signal-step-up" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Requirements: verified email, 2FA signal, step-up
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2fa-lives-at-the-oidc-provider" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2FA lives at the OIDC provider
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#weaker-security-for-teaching-two-explicit-settings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Weaker security for teaching: two explicit settings
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#email_verified-and-has_mfa-in-the-user-table" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        email_verified and has_mfa in the user table
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-identity-provider-of-the-lab" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The identity provider of the lab
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The identity provider of the lab">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#keycloak" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Keycloak
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#lab-and-idp-are-separate-realms" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        lab and idp are separate realms
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-idp-realm-the-labs-own-login-not-a-public-service" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The idp realm: the lab's own login, not a public service
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#login-in-lab-password-and-mandatory-2fa" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Login in lab: password and mandatory 2FA
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#a-password-reset-never-replaces-the-second-factor" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A password reset never replaces the second factor
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#recovery-codes-and-otp-as-the-default-second-factor" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Recovery codes, and OTP as the default second factor
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#our-look-texts-and-css-only" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Our look: texts and CSS only
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-keycloak-deployment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Keycloak deployment
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The Keycloak deployment">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Setup
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#realm-files-imported-by-keycloak-itself" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Realm files, imported by Keycloak itself
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-email-relay-and-secrets-admins-can-use-but-not-take" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The email relay, and secrets admins can use but not take
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#email-limits" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Email limits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-lab-server" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The lab server
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The lab server">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#one-system-account-every-app-in-opt-with-docker-compose-caddy-on-the-server-docker-with-sudo" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        One system account, every app in /opt with Docker Compose, Caddy on the server, Docker with sudo
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#all-lab-services-under-lab-with-one-login-cookie-for-the-zone" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        All lab services under lab., with one login cookie for the zone
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#later" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Later
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Later">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#institutional-login-via-sram" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Institutional login via SRAM
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../backup-strategies/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Backup strategies
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../hardening/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hardening plan
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../auth-2fa/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2FA: where should it live?
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../auth-providers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Provider comparison
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#authentication-in-our-software" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Authentication in our software
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Authentication in our software">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#oidc-for-all-our-software" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        OIDC for all our software
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#requirements-verified-email-2fa-signal-step-up" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Requirements: verified email, 2FA signal, step-up
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2fa-lives-at-the-oidc-provider" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2FA lives at the OIDC provider
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#weaker-security-for-teaching-two-explicit-settings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Weaker security for teaching: two explicit settings
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#email_verified-and-has_mfa-in-the-user-table" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        email_verified and has_mfa in the user table
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-identity-provider-of-the-lab" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The identity provider of the lab
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The identity provider of the lab">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#keycloak" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Keycloak
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#lab-and-idp-are-separate-realms" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        lab and idp are separate realms
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-idp-realm-the-labs-own-login-not-a-public-service" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The idp realm: the lab's own login, not a public service
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#login-in-lab-password-and-mandatory-2fa" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Login in lab: password and mandatory 2FA
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#a-password-reset-never-replaces-the-second-factor" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A password reset never replaces the second factor
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#recovery-codes-and-otp-as-the-default-second-factor" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Recovery codes, and OTP as the default second factor
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#our-look-texts-and-css-only" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Our look: texts and CSS only
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-keycloak-deployment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Keycloak deployment
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The Keycloak deployment">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Setup
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#realm-files-imported-by-keycloak-itself" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Realm files, imported by Keycloak itself
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-email-relay-and-secrets-admins-can-use-but-not-take" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The email relay, and secrets admins can use but not take
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#email-limits" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Email limits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-lab-server" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The lab server
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The lab server">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#one-system-account-every-app-in-opt-with-docker-compose-caddy-on-the-server-docker-with-sudo" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        One system account, every app in /opt with Docker Compose, Caddy on the server, Docker with sudo
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#all-lab-services-under-lab-with-one-login-cookie-for-the-zone" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        All lab services under lab., with one login cookie for the zone
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#later" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Later
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Later">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#institutional-login-via-sram" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Institutional login via SRAM
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="decisions">Decisions</h1>
+<p>The choices behind the lab's setup: what was chosen, why, and which alternatives were dropped. The other pages describe how things are; this page explains why. The evaluations behind these decisions: <a href="../auth-2fa/">2FA: where should it live?</a> and <a href="../auth-providers/">Provider comparison</a>.</p>
+<p>Last reviewed: November 2026.</p>
+<h2 id="authentication-in-our-software">Authentication in our software</h2>
+<h3 id="oidc-for-all-our-software">OIDC for all our software</h3>
+<p><strong>Chosen:</strong> AmCAT and AnnoTinder delegate logins to an OIDC provider, and work with any provider that meets our <a href="../auth/#oidc-provider-requirements">requirements</a>.</p>
+<p><strong>Why:</strong> logins, passwords, second factors and account recovery are the provider's job, done by people who specialize in it; our software contains no password or 2FA code. The person hosting a server can use the provider their institution already has.</p>
+<h3 id="requirements-verified-email-2fa-signal-step-up">Requirements: verified email, 2FA signal, step-up</h3>
+<p><strong>Chosen:</strong> by default, the provider must confirm email addresses (<code>email_verified</code>), signal 2FA (<code>amr</code> or <code>acr</code>), and support step-up (<code>max_age</code>, <code>auth_time</code>). Our software checks the tokens itself.</p>
+<p><strong>Why:</strong> roles can be given to an email address, so the address must be verified. Sensitive actions (API keys, roles) need a recent login with a second factor. Providers don't always enforce what is asked of them, so our software checks the result itself instead of trusting the request. See the <a href="../auth/">Authentication standard</a>.</p>
+<h3 id="2fa-lives-at-the-oidc-provider">2FA lives at the OIDC provider</h3>
+<p><strong>Chosen:</strong> the second factor is part of the login at the provider (option A in <a href="../auth-2fa/">2FA: where should it live?</a>).</p>
+<p><strong>Dropped (for now): a local broker on each server</strong> (option B), which would add its own second factor on top of any provider. It would make the second factor independent of the provider, but each server would then run a security-critical login service, with an admin page for recovery that has to be exposed and protected too. Setting that up properly is harder than a clear, visible limitation. Option B needs no change to our software, so it can still be added later (see <a href="#later">Later</a>).</p>
+<h3 id="weaker-security-for-teaching-two-explicit-settings">Weaker security for teaching: two explicit settings</h3>
+<p><strong>Chosen:</strong> <code>AUTH_INSECURE_DISABLE_2FA</code> and <code>AUTH_INSECURE_DISABLE_EMAIL_VERIFICATION</code> (<a href="../auth/#weaker-security-teaching-and-low-sensitivity-servers">Weaker security</a>). Both are off by default, named "insecure", logged at every start, and shown permanently on the admin page.</p>
+<p><strong>Why:</strong> teams need an easy way to run a server for teaching or a pilot, with whatever login they have. A limitation that everyone understands ("this server doesn't require 2FA") is better than a complex setup that is easy to get wrong.</p>
+<p><strong>Dropped:</strong></p>
+<ul>
+<li><strong>A shared OIDC provider run by the lab for other teams' servers</strong> (the <code>idp</code> realm with self-service app registration). It would make us responsible for the availability of their servers, and for recovering their users' second factors, and as the operator we could log in as any of their users. See <a href="#the-idp-realm-the-labs-own-login-not-a-public-service">The idp realm</a>.</li>
+<li><strong><code>OIDC_MFA_CLAIM=none</code>:</strong> reads like a harmless default, not like a deliberate weakening.</li>
+<li><strong>A setting that "trusts" the provider's email addresses:</strong> we record <code>email_verified = false</code> when the claim is missing, so we don't trust it; we skip the check. Hence a flag of the same kind as the 2FA flag.</li>
+</ul>
+<h3 id="email_verified-and-has_mfa-in-the-user-table"><code>email_verified</code> and <code>has_mfa</code> in the user table</h3>
+<p><strong>Chosen:</strong> the user table records <code>email_verified</code> (what the provider sent at the last login: <code>true</code>, otherwise <code>false</code>; <code>NULL</code> for shadow users) next to <code>has_mfa</code>. The admin page warns about users with roles and an unverified address; <code>has_mfa</code> is shown without a warning, because 2FA is only needed for sensitive actions.</p>
+<p><strong>Why:</strong> with <code>AUTH_INSECURE_DISABLE_EMAIL_VERIFICATION</code>, admins must be able to see who could claim roles without a verified address. Later, our software could verify addresses itself (see <a href="#later">Later</a>).</p>
+<h2 id="the-identity-provider-of-the-lab">The identity provider of the lab</h2>
+<h3 id="keycloak">Keycloak</h3>
+<p><strong>Chosen:</strong> one Keycloak installation for the lab (<a href="../servers/keycloak/">Keycloak VM</a>).</p>
+<p><strong>What the lab needs:</strong></p>
+<ul>
+<li><strong>Our <a href="../auth/">Authentication standard</a>:</strong> verified email (<code>email_verified</code>), a 2FA signal (<code>amr</code>), and step-up (<code>max_age</code>, <code>auth_time</code>).</li>
+<li><strong>A login for services without their own</strong> (the lab login on the lab server), through forward auth.</li>
+<li><strong>External collaborators:</strong> researchers from other institutions, including abroad, and guests without an institutional account.</li>
+<li><strong>Little maintenance,</strong> and a clear route for account recovery: lab admins can reset a member's second factor.</li>
+</ul>
+<p><strong>Why Keycloak:</strong></p>
+<ul>
+<li><strong>Realms:</strong> separate logins (users, sessions, keys, admins) in one installation: <code>lab</code>, <code>idp</code>, and later realms for other teams.</li>
+<li><strong>Everything our standard needs:</strong> <code>email_verified</code>, <code>amr</code> (with our configuration), step-up with <code>max_age</code>, and it can also be asked for 2FA (<code>acr_values</code>). Consent per client, enforced by client policies.</li>
+<li><strong>Realm files:</strong> the configuration of a realm is a file in the repository, which documents it and sets it up again.</li>
+<li><strong>A mature project</strong> with a large community, backed by Red Hat and the CNCF.</li>
+</ul>
+<p><strong>Dropped:</strong></p>
+<ul>
+<li><strong>Authentik</strong> (our previous provider): no isolated pools within one installation (its multi-tenancy was removed), and it depends on a small company. It also can't be <em>asked</em> for 2FA: an app can't send <code>acr_values</code> to make Authentik require a second factor; whether 2FA is asked depends only on the login flow. With our step-up (<code>max_age</code>, checking <code>amr</code>) that matters little, as long as the flow asks for 2FA from everyone who has it.</li>
+<li><strong>ZITADEL:</strong> no consent screen (any registered app gets the data of a signed-in user), and its organizations don't isolate users.</li>
+<li><strong>SURF SRAM as our provider:</strong> less control (we can't reset 2FA or recover accounts ourselves), depends on approval by the university, and not suitable for our open <code>idp</code>. It may become a login option of <code>lab</code> (see <a href="#later">Later</a>).</li>
+</ul>
+<p>The comparison and the hands-on tests: <a href="../auth-providers/">Provider comparison</a>.</p>
+<h3 id="lab-and-idp-are-separate-realms"><code>lab</code> and <code>idp</code> are separate realms</h3>
+<p><strong>Chosen:</strong> <code>lab</code> (the lab's infrastructure: members added by us, mandatory 2FA, no Google or GitHub) and <code>idp</code> (the lab's AmCAT and AnnoTinder servers: open sign-up, optional 2FA) are separate realms.</p>
+<p><strong>Dropped: one realm, with roles for lab access and mandatory 2FA per client.</strong></p>
+<ul>
+<li><strong>Mandatory 2FA per client works badly with single sign-on:</strong> after a login without 2FA to one server, the session would also open a lab service, unless Keycloak's levels of authentication are used, the mechanism of a recent bypass vulnerability (CVE-2026-97176).</li>
+<li><strong>Open sign-up in the realm of the lab services:</strong> one lab service that forgets its role check would be open to anyone with a Google account. Separate realms make this impossible by design.</li>
+<li><strong>Different rules:</strong> login options, texts, recovery and admins differ between the two.</li>
+</ul>
+<p>The cost: lab members have two accounts. <code>lab</code> as a login option of <code>idp</code> solves that later (see <a href="#later">Later</a>).</p>
+<h3 id="the-idp-realm-the-labs-own-login-not-a-public-service">The <code>idp</code> realm: the lab's own login, not a public service</h3>
+<p><strong>Chosen:</strong> <code>idp</code> is the one login for the lab's own servers. Anyone can create an account (with email, Google or GitHub), but an account gives no access by itself: each server gives roles. Our admins create the clients of our servers in the admin console; a client policy turns on consent and PKCE and refuses unsafe redirect URIs (<a href="../install/keycloak/#8-clients-for-our-deployments">step 8 of the installation guide</a>).</p>
+<p><strong>Why:</strong> students and collaborators sign up themselves when a project gives them access, instead of waiting for an admin. The client policy prevents mistakes, not misuse: admins are trusted.</p>
+<p><strong>Servers get the email address and the 2FA signal</strong> (and the account ID and login time), and the name only if they ask for it (the scope <code>profile</code>), not roles. Our software only uses the email address and the 2FA signal, so it requests <code>openid email</code>; other services (which often request <code>profile</code>) work too. The consent screen says it in words everyone understands: "see your email address; see whether you signed in with two-factor authentication", plus "see your name" for services that ask for it. Keycloak refuses a request for a scope it doesn't offer (e.g. <code>roles</code>), so only these are offered.</p>
+<p><strong>Dropped:</strong></p>
+<ul>
+<li><strong><code>idp</code> as a public service for other teams' servers</strong>, with the app registration site (where others registered their servers) and email limits per app in tiers. See <a href="#weaker-security-for-teaching-two-explicit-settings">Weaker security for teaching</a> for why; with only our own servers, these are no longer needed.</li>
+<li><strong>Closed sign-up in <code>idp</code>:</strong> every student and collaborator would have to be added by an admin first.</li>
+<li><strong>Letting app owners manage their client in the admin console</strong> (fine-grained admin permissions): creating those permissions requires a role that can change the whole realm. (No longer relevant without outside app owners.)</li>
+</ul>
+<h3 id="login-in-lab-password-and-mandatory-2fa">Login in <code>lab</code>: password and mandatory 2FA</h3>
+<p><strong>Chosen:</strong></p>
+<ul>
+<li><strong>Members are added by us,</strong> without a password and without an email from us. They set their password themselves with <strong>First time, or forgot your password?</strong> on the login page. After the email link, in one go: a password, their name, an authenticator app, recovery codes, and they're in (<a href="../install/keycloak/#adding-lab-members">Adding lab members</a>).</li>
+<li><strong>2FA is mandatory:</strong> these accounts give access to our infrastructure, and a mandatory second factor is needed for <code>lab</code> to become a trusted login option of <code>idp</code> later.</li>
+<li><strong>"Remember me"</strong> keeps members logged in for up to 30 days on their own device.</li>
+</ul>
+<p><strong>Dropped:</strong></p>
+<ul>
+<li><strong>Login with a code or link by email, without passwords:</strong> Keycloak can't do this without a third-party extension, and we don't install extensions in our login service.</li>
+<li><strong>Invitation emails sent by us:</strong> members sign up when they need a lab service.</li>
+<li><strong>Passkeys as the default second factor:</strong> many people don't understand them. Passkeys are offered in the account console, and a passkey alone counts as two factors.</li>
+<li><strong>Optional 2FA in <code>lab</code>, with a recommendation:</strong> a login flow can't offer a skippable step. A landing page could recommend 2FA (an app can send users to the 2FA setup with a <strong>Cancel</strong> button), but <code>lab</code> keeps 2FA mandatory.</li>
+</ul>
+<h3 id="a-password-reset-never-replaces-the-second-factor">A password reset never replaces the second factor</h3>
+<p><strong>Chosen:</strong> after the email link, users with a second factor enter it before they can choose a new password (<a href="../servers/keycloak/#how-users-log-in">How users log in</a>).</p>
+<p><strong>Dropped:</strong> Keycloak's default reset, which logs the user in after the new password without the second factor, and lets them set up a new authenticator app, so an inbox was enough to take over an account. Also dropped: a first fix that made users log in again after the reset (secure, but clumsy for new members).</p>
+<h3 id="recovery-codes-and-otp-as-the-default-second-factor">Recovery codes, and OTP as the default second factor</h3>
+<p><strong>Chosen:</strong> users who set up an authenticator app (OTP) get recovery codes right after. Where 2FA is mandatory, users without a second factor are asked to set up OTP.</p>
+<p><strong>Why:</strong> OTP works on every device, with any authenticator app. Recovery codes let users recover from a lost phone without us, which matters because email can't be used for that.</p>
+<h3 id="our-look-texts-and-css-only">Our look: texts and CSS only</h3>
+<p><strong>Chosen:</strong> Keycloak themes with the lab logo, colours and our texts, but no changed page templates (<a href="../install/keycloak/#themes">Themes</a>).</p>
+<p><strong>Why:</strong> page templates change between Keycloak versions and can break after an upgrade; texts, CSS and images rarely do. Users see whose login this is.</p>
+<p><strong>Dropped:</strong> the VU logo (its use is usually restricted to official VU communication; a link to the department page instead), and realm overrides for texts (a changed "Email" label then also showed up outside the login pages).</p>
+<h2 id="the-keycloak-deployment">The Keycloak deployment</h2>
+<h3 id="setup">Setup</h3>
+<ul>
+<li><strong>One VM, Docker Compose, Keycloak's optimized image:</strong> recommended in <a href="https://www.keycloak.org/server/containers">Running Keycloak in a container</a>; build options are baked in, so starts are faster and predictable.</li>
+<li><strong>Caddy in front, re-encrypt:</strong> the <a href="https://www.keycloak.org/server/reverseproxy">reverse proxy guide</a> prefers re-encrypt over plain HTTP between proxy and Keycloak. Caddy terminates the public TLS connection, so it can filter paths and IP addresses; Keycloak only accepts HTTPS, with an internal, long-lived certificate that only Caddy trusts. (Passthrough would make path and IP filtering impossible.)</li>
+<li><strong>Only <code>/realms/</code>, <code>/resources/</code> and <code>/.well-known/</code> are public:</strong> the exposed paths recommended in the reverse proxy guide. The admin consoles, the admin API and the <code>master</code> realm are only on a separate admin hostname, restricted to the university's IP ranges. The ranges are in a local file on the VM, not in the repository; a realm for a team outside the university can get an exception for its own admin console.</li>
+<li><strong>The health endpoint on plain HTTP</strong> (port 9000): only used by the container's health check, and not exposed.</li>
+<li><strong>All Caddy settings in one mounted folder:</strong> Docker keeps showing the old version of a single mounted file after an editor replaces it, so a reload would silently not apply a change.</li>
+<li><strong>PostgreSQL 18:</strong> the version Keycloak 26.8 is tested with.</li>
+<li><strong>A temporary bootstrap admin,</strong> replaced by a permanent admin with 2FA (<a href="https://www.keycloak.org/server/bootstrap-admin-recovery">Bootstrapping and recovering an admin account</a>).</li>
+</ul>
+<h3 id="realm-files-imported-by-keycloak-itself">Realm files, imported by Keycloak itself</h3>
+<p><strong>Chosen:</strong> complete realm files, imported by Keycloak's own <code>--import-realm</code> when a realm doesn't exist yet (<a href="../install/keycloak/#7-realms">Realms</a>). Later changes are made in the admin console.</p>
+<p><strong>Dropped:</strong> keycloak-config-cli, a third-party tool that applies the files again and again. It needs an admin client with a secret on the server, for a workflow we don't use.</p>
+<h3 id="the-email-relay-and-secrets-admins-can-use-but-not-take">The email relay, and secrets admins can use but not take</h3>
+<p><strong>Chosen:</strong> Keycloak sends all email through a relay on the VM, without a password; only the relay holds the email provider's password. It also caps all email, accepts only our sender address, and queues mail. The Google and GitHub secrets of <code>idp</code> are stored masked in Keycloak, which requires them again when a provider is pointed elsewhere.</p>
+<p><strong>Why:</strong> a realm admin can change a realm's email server. With Keycloak's own SMTP login, Keycloak would send the password to whatever server they enter. This is an extra layer, not a wall: admins can send email and use the Google and GitHub logins, and a real admin can always replace the secrets, but not read them out. It matters most once other teams get their own realm.</p>
+<p><strong>Dropped:</strong> Keycloak's file vault for the secrets: a realm admin can use a vault reference anywhere, and so send the secret to their own server (tested).</p>
+<h3 id="email-limits">Email limits</h3>
+<p><strong>Chosen:</strong> a limit per IP address in Caddy, on the requests that make Keycloak send an email, and a cap on all email in the relay (<a href="../install/keycloak/#email-limits">Email limits</a>).</p>
+<p><strong>Why:</strong> Keycloak has no limit on the emails it sends, and its brute force detection only covers logins. Blocking only the requests that send an email never breaks logins or the sessions of a server. The cap on all email is in the relay, because only the relay counts emails that were actually sent; a limit on all requests in Caddy could be used up by one person.</p>
+<p><strong>Dropped:</strong> limits per app, in tiers (only needed while others could register apps), and disabling a client that sends too much email (it would also break the logins and refresh grants of that server, and could be abused to block it).</p>
+<h2 id="the-lab-server">The lab server</h2>
+<h3 id="one-system-account-every-app-in-opt-with-docker-compose-caddy-on-the-server-docker-with-sudo">One system account, every app in <code>/opt</code> with Docker Compose, Caddy on the server, Docker with <code>sudo</code></h3>
+<p><strong>Chosen:</strong> every app in <code>/opt/&lt;app&gt;</code>, owned by the system account <code>sal</code> (no login, no home directory); admins are in the <code>sal</code> group and work as <code>sal</code> with <code>sudo -u sal</code> and <code>sudoedit -u sal</code>. Caddy runs on the server itself and is the only way in. Admins run Docker with <code>sudo</code>. The same on the service VMs (<a href="../install/apps/">Apps on our servers</a>).</p>
+<p><strong>Why:</strong> one convention for all apps on a server with many small apps, and no app files owned by root or by an admin's personal account. Caddy in front of everything gives HTTPS and one place to decide what is reachable.</p>
+<p><strong>Every app runs with Docker Compose,</strong> from <code>/opt/&lt;app&gt;/compose.yml</code>: one way of working, so the examples on <a href="../install/compose/">Docker Compose standards</a> apply to every app, and its whole setup can be read in one file. Apps the lab maintains itself (Keycloak, the backup job) have their own repository, cloned to <code>/opt/&lt;app&gt;</code>; apps we only host have a <code>compose.yml</code> written from the examples.</p>
+<p><strong>Two layers of backups:</strong> VU IT's server backups as the last resort, and our own backups per app (<a href="../backup-strategies/">Backup strategies</a>). Everything needed to restore an app is under <code>/opt/&lt;app&gt;</code>: its <code>compose.yml</code> and <code>.env</code>, its files in <code>data/</code>, and its databases as dumps in <code>backups/</code>, made every day by a backup service in its own compose file. Every night, restic backs up <code>/opt</code>, encrypted, keeps 7 daily, 4 weekly and 6 monthly backups, checks them, and reports to healthchecks.io, which emails us when a backup failed or didn't run (<a href="../install/backups/">Backups</a>).</p>
+<p><strong>Why:</strong></p>
+<ul>
+<li><strong>Databases are dumped,</strong> because a copy of a running database's files can be inconsistent.</li>
+<li><strong>The apps dump their own databases,</strong> in a container of their own compose file. A script on the server that runs per-app commands as root would let anyone who can change an app's files (<code>sal</code>) run code as root.</li>
+<li><strong>Data with a short retention</strong> is in named volumes, which our backups don't contain, with a cleanup service in the same compose file (or the app's own setting): the retention policy sits next to the app, and deleted data doesn't live on in our backups.</li>
+<li><strong>Monitoring by a "dead man's switch"</strong> (healthchecks.io) also notices a backup that didn't run at all, and needs no mail credentials on the servers.</li>
+</ul>
+<p><strong>Dropped:</strong></p>
+<ul>
+<li><strong><code>sal</code> in the <code>docker</code> group:</strong> membership of that group is effectively root access, and apps that run as <code>sal</code> without Docker would get it too.</li>
+<li><strong>Backing up all Docker volumes as well:</strong> they contain the raw files of running databases (unreliable, and large) and caches. With VU IT's server backups as the last resort, our backups only need what each app sets up.</li>
+<li><strong>Dump scripts per app run by the backup job as root</strong> (<code>hooks.d</code>, or <code>/opt/&lt;app&gt;/backup.sh</code>): see above.</li>
+<li><strong>A policy file per app read by our own tool:</strong> the compose file already declares the app's backup and retention, with standard images.</li>
+<li><strong>Data in <code>/srv/&lt;app&gt;</code>:</strong> two places per app instead of one. A separate data disk would be a reason to revisit this.</li>
+<li><strong>Retention with <code>systemd-tmpfiles</code> on the server:</strong> works, but the rule then lives outside the app's compose file, and needs a step on the server per app.</li>
+<li><strong>One repository with everything</strong> (documentation and deployments): the apps then lived deep inside a clone (<code>/opt/keycloak/societal-analytics-lab-infra/deploy/keycloak</code>), and every server cloned all of it.</li>
+</ul>
+<h3 id="all-lab-services-under-lab-with-one-login-cookie-for-the-zone">All lab services under <code>lab.</code>, with one login cookie for the zone</h3>
+<p><strong>Chosen:</strong> every service the lab runs for its members gets an address under <code>lab.societal-analytics.nl</code> (e.g. <code>whisper.lab.societal-analytics.nl</code>), with or without its own login, and <code>lab.societal-analytics.nl</code> is the overview page. Services without their own login sit behind oauth2-proxy with Caddy's <code>forward_auth</code>, against the <code>lab</code> realm. oauth2-proxy sets <strong>one login cookie for the zone</strong> (<code>.lab.societal-analytics.nl</code>), and every login comes back to one fixed address (<code>lab.societal-analytics.nl/oauth2/callback</code>). Signing out ends the login for all services and the Keycloak session (oauth2-proxy's backend logout). oauth2-proxy checks the session with Keycloak every 10 minutes, so inactive users (2 hours, Keycloak's idle time) and removed members are signed out (<a href="../servers/lab/">Lab server</a>).</p>
+<p><strong>Why:</strong> users need one login, and one sign-out that ends everything. oauth2-proxy can't do that with a cookie per service: a browser only lets a site clear its own cookies, and oauth2-proxy doesn't support Keycloak's back-channel logout. A shared cookie is the common way to use oauth2-proxy, but a cookie for the whole domain would also go to the lab's website, which is hosted by GitHub Pages. A zone of its own keeps the cookie within the lab's own services on this server, which could reach each other anyway. The zone also makes the rule visible: everything under <code>lab.</code> is a lab service.</p>
+<p><strong>The condition:</strong> only services the lab runs on its own servers may be under <code>lab.</code>. A site hosted by someone else would receive a login that works for all services behind the lab login (the cookie isn't bound to one service).</p>
+<p><strong>oauth2-proxy in a Docker network of its own,</strong> with its port published on <code>127.0.0.1</code> only, and only the gateway of that network trusted for <code>X-Forwarded-*</code> headers. It can't reach the apps on the server's localhost, and no other container can reach it.</p>
+<p><strong>Dropped:</strong></p>
+<ul>
+<li><strong>A cookie per service:</strong> signing out of one service would leave the others logged in until their next check with Keycloak. (oauth2-proxy also doesn't bind a cookie to a service, so it protected less than it seemed.)</li>
+<li><strong>One cookie for the whole domain:</strong> it would be sent to the website on GitHub Pages.</li>
+<li><strong>Services under one address, by path</strong> (<code>lab.societal-analytics.nl/whisper</code>): all services would share one origin, so their cookies could clash, and a bug in one could read the others' pages; many apps also can't run under a sub-path.</li>
+<li><strong>A wildcard redirect URI</strong> (<code>https://*.lab.societal-analytics.nl/...</code>): Keycloak doesn't allow a wildcard in the host name (tested). One fixed callback replaces it.</li>
+<li><strong><code>network_mode: host</code> for oauth2-proxy</strong> (simpler, but a compromised oauth2-proxy could reach every app on the server's localhost).</li>
+<li><strong>A CMS for the website on the lab server:</strong> the public website stays on GitHub Pages (quick updates, nothing to maintain); the overview page of lab services is a static page behind the lab login.</li>
+</ul>
+<h2 id="later">Later</h2>
+<ul>
+<li><strong>"Sign in with your lab account" in <code>idp</code>:</strong> <code>lab</code> as a login option of <code>idp</code>, so lab members use one account. A login through <code>lab</code> (which always requires 2FA) could count as 2FA in <code>idp</code>, if step-up works: <code>idp</code> must pass a request for a fresh login (<code>max_age</code>) on to <code>lab</code>. To be tested.</li>
+<li><strong>Institutional login for <code>lab</code>,</strong> via SURF SRAM (<a href="#institutional-login-via-sram">below</a>).</li>
+<li><strong>A local broker (option B)</strong> as a deployment option, if the field moves towards passkeys that sync across devices, or a lightweight broker with upstream login and enforced 2FA matures (see <a href="../auth-2fa/#why-b-can-be-added-later">2FA: where should it live?</a>).</li>
+<li><strong>Recommending 2FA in <code>idp</code></strong> on a landing page of the lab's services: an app can send users to the 2FA setup with a <strong>Cancel</strong> button (<code>kc_action</code>), and learns whether they set it up.</li>
+<li><strong>Verifying email addresses in our software,</strong> for servers with their own email server, so that <code>email_verified</code> can become <code>true</code> without the provider.</li>
+</ul>
+<h3 id="institutional-login-via-sram">Institutional login via SRAM</h3>
+<p>SURF Research Access Management (SRAM) is SURF's service for research collaborations: members log in with their own institution (VU, or other institutions worldwide via eduGAIN), or with eduID if they have no institutional account. The VU already uses SRAM, for instance for Yoda.</p>
+<p>Keycloak can offer SRAM as a login option of the <code>lab</code> realm (as an external OIDC provider), so lab members and collaborators could log in with their institution, while the lab's services keep talking to Keycloak, with the same claims. Open questions:</p>
+<ul>
+<li>Does SRAM's ID token include <code>email_verified</code>, a 2FA signal (<code>amr</code>/<code>acr</code>), and <code>auth_time</code>, and does it honour <code>max_age</code>? If SRAM enforces 2FA but doesn't signal it, the <code>lab</code> realm would still ask for its own second factor.</li>
+<li>SRAM depends on the VU: the lab may need to request a collaboration, and service registrations are reviewed. Each service needs a privacy policy and an acceptable use policy (<a href="../policies/privacy/">privacy statement</a>, <a href="../policies/aup/">AUP</a>).</li>
+<li><code>lab</code> fits such a review well: a known list of lab services, for lab members and invited collaborators. <code>idp</code>, open to anyone, would be much harder to justify as a login service that passes identities on.</li>
+</ul>
+<p>The next step is a test on SRAM's acceptance environment (<code>acc.sram.surf.nl</code>). Sources: <a href="https://wiki.surfnet.nl/x/UsLaAQ">SURF Research Access Management (SURF wiki)</a>, <a href="https://rdm.vu.nl/tools/yoda/sram_invitations_eduid_activation.html">VU Research Support Handbook: SRAM invitations and eduID</a>, <a href="https://sorenwacker.github.io/sram-fastapi/sram-setup/">SRAM setup guide</a>.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.a5f9d56c.min.js"></script>
+      
+    
+  </body>
+</html>
