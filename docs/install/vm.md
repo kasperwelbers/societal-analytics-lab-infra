@@ -146,7 +146,7 @@ The file contains VU-specific rules (e.g. access to university services). Leave 
 
 ### SSH only from the VU network
 
-On an **(extern)** VM, SSH is reachable from the whole internet: anyone can try to log in, or try a flaw in SSH itself. Keys-only logins (step 3) make guessing useless, but SSH still runs code for every connection, before any login. So allow SSH only from the VU network (campus and VPN, which includes the VU SSH gateway), and keep ports 80 and 443 open to everyone. (Later, with a jump host of our own: only from the jump host, see the [Hardening plan](../hardening.md#a-jump-host-of-our-own).)
+On an **(extern)** VM, SSH is reachable from the whole internet: anyone can try to log in, or try a flaw in SSH itself. Keys-only logins (step 3) make guessing useless, but SSH still runs code for every connection, before any login. So allow SSH only from the VU network (campus and VPN, which includes the VU SSH gateway), and keep ports 80 and 443 open to everyone. (More options for later: [Hardening plan](../hardening.md#further-options-if-needed).)
 
 **Your VU ranges:** the address ranges of the VU network and VPN, as found for the admin restriction of Keycloak ([Find your IP ranges](keycloak.md#find-your-ip-ranges)). Like the rest of the firewall file, they stay on the VM, not in this documentation.
 

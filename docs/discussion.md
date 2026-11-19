@@ -6,4 +6,4 @@ The pages in this section record recent decisions and the information behind the
 * [2FA: where should it live?](./auth-2fa.md): whether the second factor belongs at the login provider or in our software.
 * [Provider comparison](./auth-providers.md): the identity providers that were evaluated and tested.
 * [Backup strategies](./backup-strategies.md): common approaches to backups, and how ours relate to them.
-* [Hardening plan](./hardening.md): proposals to make the infrastructure harder to break into (security keys, SSH tunnels to the admin consoles, access to the VMs).
+* [Hardening plan](./hardening.md): what else to do to make the infrastructure harder to break into (SSH only from the VU network, security keys, quick updates, access to the VMs through the portal).
