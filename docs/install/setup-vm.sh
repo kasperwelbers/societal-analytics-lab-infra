@@ -4,9 +4,11 @@
 # Read it before running this script. Safe to run more than once.
 #
 # Step 1, as root on the new VM (creates your admin user, the firewall rules, updates, Docker):
-#   bash setup-vm.sh <username> [--web] [--caddy]
-#     --web     also allow incoming HTTP and HTTPS (ports 80 and 443) in the VM firewall
-#     --caddy   also install Caddy on the VM itself (for service VMs; not for the Keycloak VM)
+#   bash setup-vm.sh <username> [--web] [--ssh-from <range>,<range>] [--caddy]
+#     --web       also allow incoming HTTP and HTTPS (ports 80 and 443) in the VM firewall
+#     --ssh-from  allow SSH only from these address ranges (e.g. the VU network), instead of from
+#                 anywhere; refuses if a current SSH connection comes from outside them
+#     --caddy     also install Caddy on the VM itself (for service VMs; not for the Keycloak VM)
 #
 # Step 2, after checking in a second terminal that you can log in as <username> and use sudo:
 #   sudo bash setup-vm.sh --harden-ssh
@@ -57,23 +59,64 @@ add_rule() {
 	fi
 }
 
+in_ranges() {
+	# in_ranges <address> <range,range>: is the address in one of the ranges?
+	python3 -c 'import ipaddress, sys
+ip = ipaddress.ip_address(sys.argv[1])
+sys.exit(0 if any(ip in ipaddress.ip_network(r.strip(), strict=False) for r in sys.argv[2].split(",") if r.strip()) else 1)' "$1" "$2"
+}
+
+check_ssh_from() {
+	# check_ssh_from <range,range>: valid ranges, and every current SSH connection comes from one of
+	# them (so the person running this isn't locked out). Runs before anything is changed.
+	local ranges="$1" range peer
+	for range in ${ranges//,/ }; do
+		python3 -c 'import ipaddress, sys; ipaddress.ip_network(sys.argv[1], strict=False)' "$range" 2>/dev/null || die "not an address range: $range"
+	done
+	for peer in $(ss -Htn state established '( sport = :22 )' | awk '{ print $4 }' | sed -E 's/^\[?(::ffff:)?//; s/\]?:[0-9]+$//'); do
+		in_ranges "$peer" "$ranges" || die "your SSH connection comes from $peer, which is outside $ranges: you would be locked out"
+	done
+}
+
+restrict_ssh() {
+	# restrict_ssh <range,range>: replace the general SSH rule(s) with one rule per range
+	local ranges="$1" file=/etc/iptables-custom range
+	# Remove SSH rules without a source, and add one per range
+	local open_rules
+	open_rules="$(grep -E -- '^-A INBOUND .*--dport 22( |$)' "$file" | grep -v -- ' -s ' || true)"
+	while read -r rule; do
+		[ -n "$rule" ] || continue
+		grep -vxF -- "$rule" "$file" > "$file.new" || true
+		cat "$file.new" > "$file" && rm "$file.new"
+		echo "removed: $rule"
+	done <<< "$open_rules"
+	for range in ${ranges//,/ }; do
+		add_rule "# Services to the world" "-A INBOUND -m state --state NEW -m tcp -p tcp --dport 22 -s $range -j ACCEPT"
+	done
+}
+
 if [ "${1:-}" = "--harden-ssh" ]; then
 	harden_ssh
 	exit 0
 fi
 
 user="${1:-}"
-[ -n "$user" ] && [ "${user#-}" = "$user" ] || die "usage: bash setup-vm.sh <username> [--web] [--caddy]   (then: sudo bash setup-vm.sh --harden-ssh)"
+[ -n "$user" ] && [ "${user#-}" = "$user" ] || die "usage: bash setup-vm.sh <username> [--web] [--ssh-from <range>,<range>] [--caddy]   (then: sudo bash setup-vm.sh --harden-ssh)"
 shift
 web=no
 caddy=no
-for arg in "$@"; do
-	case "$arg" in
+ssh_from=""
+while [ $# -gt 0 ]; do
+	case "$1" in
 	--web) web=yes ;;
 	--caddy) caddy=yes ;;
-	*) die "unknown option: $arg" ;;
+	--ssh-from) [ -n "${2:-}" ] || die "--ssh-from needs address ranges, e.g. --ssh-from 192.0.2.0/24,198.51.100.0/24"; ssh_from="$2"; shift ;;
+	*) die "unknown option: $1" ;;
 	esac
+	shift
 done
+
+[ -z "$ssh_from" ] || check_ssh_from "$ssh_from"
 
 step "1. Firewall (/etc/iptables-custom)"
 if [ -f /etc/iptables-custom ]; then
@@ -82,6 +125,11 @@ if [ -f /etc/iptables-custom ]; then
 	if [ "$web" = yes ]; then
 		add_rule "# Services to the world" "-A INBOUND -m state --state NEW -m tcp -p tcp --dport 80 -j ACCEPT"
 		add_rule "# Services to the world" "-A INBOUND -m state --state NEW -m tcp -p tcp --dport 443 -j ACCEPT"
+	fi
+	if [ -n "$ssh_from" ]; then
+		restrict_ssh "$ssh_from"
+	elif grep -E -- '^-A INBOUND .*--dport 22( |$)' /etc/iptables-custom | grep -qv -- ' -s '; then
+		echo "WARNING: SSH is allowed from anywhere: consider --ssh-from with the VU ranges" >&2
 	fi
 	iptables-custom
 	echo "The original file is in /etc/iptables-custom.before-setup."
@@ -153,7 +201,8 @@ usermod -aG sal "$user"
 cat <<EOF
 
 Done. Next:
-  1. Keep this session open. In a second terminal, log in as $user and check that sudo works:
+  1. Keep this session open. In a second terminal, log in as $user and check that sudo works
+     (with --ssh-from: from one of those ranges; from outside them, SSH should now time out):
        ssh $user@<ip address>
        sudo -v
   2. Only if that works, turn off root and password logins over SSH:

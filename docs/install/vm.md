@@ -14,10 +14,10 @@ How to set up a virtual machine (VM) on VU SciCloud, the VU's research cloud, an
     ```
 
     ```bash
-    bash setup-vm.sh <username> --web
+    bash setup-vm.sh <username> --web --ssh-from <VU range 1>,<VU range 2>
     ```
 
-    `--web` opens ports 80 and 443 (for a VM that hosts a website or service); `--caddy` also installs Caddy on the VM itself (for service VMs, not for the Keycloak VM). At the end, it asks you to check in a second terminal that you can log in as your new user and use `sudo`. Only then, turn off root and password logins:
+    `--web` opens ports 80 and 443 (for a VM that hosts a website or service); `--ssh-from <range>,<range>` allows SSH only from those ranges, e.g. the VU network ([SSH only from the VU network](#ssh-only-from-the-vu-network)), after checking that your own connection comes from one of them; `--caddy` also installs Caddy on the VM itself (for service VMs, not for the Keycloak VM). At the end, it asks you to check in a second terminal that you can log in as your new user and use `sudo`. Only then, turn off root and password logins:
 
     ```bash
     sudo bash /tmp/setup-vm.sh --harden-ssh
@@ -34,7 +34,9 @@ Log in to the VM portal at [one.labs.vu.nl](https://one.labs.vu.nl), from the VU
 **Create the VM:**
 
 1. Go to **Instances → VMs** in the left sidebar, and click **Create VM** (top right).
-2. Choose a template: the latest Ubuntu LTS version (currently **Ubuntu 26.04**). Choose the **(extern)** variant if the VM needs a public IP address, e.g. to host a website or service.
+2. Choose a template: the latest Ubuntu LTS version (currently **Ubuntu 26.04**), in one of two variants:
+    * **(intern):** the VM only gets an address inside the VU network. From outside, nothing on it can be reached, whatever its firewall says.
+    * **(extern):** the VM gets a public internet address, e.g. to host a website or service. What can be reached then depends entirely on the VM's own firewall, and the template allows SSH from anywhere: restrict it in [step 4](#ssh-only-from-the-vu-network).
 3. Settings:
     * A name for the VM.
     * Turn on **Instantiate as persistent** for a long-running server that stores data (see [Persistence](#persistence)).
@@ -142,16 +144,40 @@ The file contains VU-specific rules (e.g. access to university services). Leave 
 -A INBOUND -m state --state NEW -m tcp -p tcp --dport 443 -j ACCEPT
 ```
 
-**Apply the changes.** The VMs don't use the standard Ubuntu firewall packages; load the rules with:
+### SSH only from the VU network
+
+On an **(extern)** VM, SSH is reachable from the whole internet: anyone can try to log in, or try a flaw in SSH itself. Keys-only logins (step 3) make guessing useless, but SSH still runs code for every connection, before any login. So allow SSH only from the VU network (campus and VPN, which includes the VU SSH gateway), and keep ports 80 and 443 open to everyone. (Later, with a jump host of our own: only from the jump host, see the [Hardening plan](../hardening.md#a-jump-host-of-our-own).)
+
+**Your VU ranges:** the address ranges of the VU network and VPN, as found for the admin restriction of Keycloak ([Find your IP ranges](keycloak.md#find-your-ip-ranges)). Like the rest of the firewall file, they stay on the VM, not in this documentation.
+
+**Replace the general SSH rule.** Find it under `# Services to the world`: a rule with `--dport 22` and without `-s`, e.g. `-A INBOUND -p tcp --dport 22 -j ACCEPT`. Remove it, and add one rule per VU range in its place:
+
+```
+# SSH only from the VU network (campus and VPN, including the VU SSH gateway)
+-A INBOUND -m state --state NEW -m tcp -p tcp --dport 22 -s <VU range 1> -j ACCEPT
+-A INBOUND -m state --state NEW -m tcp -p tcp --dport 22 -s <VU range 2> -j ACCEPT
+```
+
+Apply it with a safety net: keep your current SSH session open (connected via the VU network or VPN), apply the rules (below), and check that a **new** login via the VU VPN still works before closing the old one. If something goes wrong, the VM's console in the portal is the way back.
+
+**Check from outside:** on a phone on mobile data (Wi-Fi off, no VU VPN), `ssh <user>@<ip address>` (or `nc -vz -w 5 <ip address> 22` on a laptop outside the VU) should now time out, while the website still loads.
+
+### Apply and check
+
+The VMs don't use the standard Ubuntu firewall packages; load the rules with:
 
 ```bash
 sudo iptables-custom
 ```
 
-Check the rules that are in effect:
+Check the rules that are in effect, for outgoing and incoming traffic:
 
 ```bash
 sudo iptables -S OUTBOUND
+```
+
+```bash
+sudo iptables -S INBOUND
 ```
 
 These rules apply to programs running **on the VM itself** (e.g. `apt`, `git`, `curl`). They don't apply to Docker containers: see the next section.
