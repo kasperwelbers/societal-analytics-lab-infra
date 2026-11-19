@@ -75,6 +75,27 @@ A barrier in front of the admin console is there because of possible flaws in Ke
 * **A password on the boot menu (GRUB),** so the boot command can't be changed from the console.
 * **A notification at every start of a VM, and when SSH keys change:** an unexpected restart with new keys is what this attack looks like.
 
+## Where Keycloak runs
+
+An open question: is a SciCloud VM the best place for the lab's login service? What matters:
+
+* **Who can take over the machine** outside SSH: owner accounts, the console, the provider's own staff, and how well those are protected (security keys, logging).
+* **Availability:** when Keycloak is down, nobody in the lab can log in. Is there a support agreement, and how quickly is a failure fixed?
+* **Backups and recovery** by the platform itself.
+* **Data location and agreements:** the accounts of lab members and others are personal data; an external provider needs a data processing agreement.
+* **Cost, effort, and whether VU IT accepts it.**
+
+| Place | Pros | Cons |
+| --- | --- | --- |
+| **A SciCloud VM (now)** | Free; VU hardware, data stays at the VU; a public address is possible | Self-service portal: an owner's VU account can take the VM over ([step 4](#4-access-to-the-vms-through-the-portal)); a research cloud, possibly without guaranteed availability; its own backups unclear |
+| **A VM managed by VU IT** (their regular hosting, not the research cloud) | Run by people whose job it is; backups and monitoring by IT; probably no self-service console for owners | A request process; less control over updates and configuration; possibly costs |
+| **A dedicated physical server on VU premises** | No portal | The hardware is our job (disks, failures); a remote console (IPMI) is a risk of its own. Not on the lab server, which runs many apps |
+| **A VM at a European cloud provider** (e.g. Hetzner, Scaleway, OVH) | A provider account with a security key, snapshots, good consoles; a few euros a month | Outside the VU: a data processing agreement is needed, and the VU network restrictions no longer apply by themselves |
+| **Hosted Keycloak** (as a service) | No server of our own | Costs; the provider can reach everything; less control |
+| **No Keycloak of our own** (the VU's login or SURF SRAM for `lab`) | Nothing to host | Considered before: no open sign-up for `idp`, and less control over 2FA and account recovery ([Decisions](decisions.md#keycloak)) |
+
+**For now,** a SciCloud VM is reasonable if two things hold: the VU accounts of its owners are well protected ([step 4](#4-access-to-the-vms-through-the-portal)), and VU IT confirms its availability and access rules. The most obvious alternative is a VM managed by VU IT. ==TODO: ask VU IT (see below).==
+
 ## Further options, if needed
 
 Only for when there is a concrete reason, e.g. realm admins from outside the VU (who have no VU VPN), or a request from VU IT. Each adds something to run and maintain.
@@ -91,5 +112,6 @@ Whatever is chosen: **never put private keys on a jump host or VPN server,** and
 * Can normal users be prevented from changing the context of a VM, and are changes to VMs logged?
 * Is the SciCloud portal only reachable from the VU network or VPN, and do VU accounts support security keys?
 * Which address ranges are the VU network and VPN (for the SSH and admin restrictions)?
+* What availability does SciCloud offer (support, failures, backups)? And could the lab's login service run on a VM managed by VU IT instead, and who could reach its console there?
 
 These go together with the open questions about backups ([Open points](index.md#open-points)).
